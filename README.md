@@ -1,5 +1,9 @@
 # Dự án Đồng Tâm
 
+## Sơ đồ tổng quát
+
+![OverviewPicture.](/Image/OverviewDiagram.png)
+
 ## Yêu cầu
 
 - Điều khiển đóng cắt 16 van khí
