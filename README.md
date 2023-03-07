@@ -19,6 +19,8 @@
 
 - MOSFET kích 16 valve khí [SI2300](https://icdayroi.com/si2300ds)(SL:16)
 - Diode xả ngược bảo vệ MOSFET valve khí [1N4148WS](https://www.thegioiic.com/1n4148ws-diode-chinh-luu-0-15a-75v) (SL:16)
+- IC mở rộng output [74HC595](https://www.thegioiic.com/74hc595d-cn) (SL:2)
+- IC mở rộng input [74HC165](https://www.thegioiic.com/74hc165d-ic-shift-register-1-element-8-bit-complementary-16-soic)(SL:2)
 - Đọc tín hiệu 16 van gửi về ( 14TSSOP)
 [TL084IPT](https://www.thegioiic.com/tl084ipt-ic-opamp-j-fet-amplifier-4-circuit-4mhz-14-tssop) (số lượng 4).
 - Đọc áp suất cảm biến (I2C) (AMS5915 khách hàng cung cấp)
