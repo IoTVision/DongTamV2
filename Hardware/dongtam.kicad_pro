@@ -324,6 +324,18 @@
     [
       "a7fee4a4-39f7-4b27-a83b-bfff60fc9086",
       "a"
+    ],
+    [
+      "011f2cd8-e5be-40c6-a9dd-361db53a77c0",
+      "ESP32"
+    ],
+    [
+      "8a9a49af-4613-4924-b0e5-5a587356bc25",
+      "Peripheral"
+    ],
+    [
+      "ff85a423-4d65-40f5-86b7-8c3129e74fb3",
+      "Power"
     ]
   ],
   "text_variables": {}
