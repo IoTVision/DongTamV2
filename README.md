@@ -2,7 +2,7 @@
 
 ## Sơ đồ tổng quát
 
-![OverviewPicture.](/Image/OverviewDiagram.png)
+![OverviewPicture.](/Image/DongTamBlockDiagram_Overview.drawio.png)
 
 ## Yêu cầu
 
