@@ -447,6 +447,11 @@
     (uuid 51431efc-0463-46e1-9133-d1c0cfda8c81)
   )
 
+  (polyline (pts (xy 160.02 20.32) (xy 20.32 20.32))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid 5595f724-6b76-4808-b250-8b193c8c7e6e)
+  )
+
   (wire (pts (xy 72.39 41.91) (xy 74.93 41.91))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid 560c9ee3-42d2-4a4e-97b4-3d875fa62647)
@@ -523,10 +528,20 @@
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid 8b92e07f-dec4-4e29-b441-415340c7895e)
   )
+  (polyline (pts (xy 160.02 119.38) (xy 160.02 20.32))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid 8ccd779a-feb4-45ab-b7a5-d25f2335015e)
+  )
+
   (wire (pts (xy 64.77 71.12) (xy 63.5 71.12))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid 90fb8b71-7c06-453c-a340-9726c2d49ead)
   )
+  (polyline (pts (xy 20.32 24.13) (xy 20.32 119.38))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid 966c8ec1-c1fc-4d21-a54d-717dd6faac76)
+  )
+
   (wire (pts (xy 115.57 63.5) (xy 114.3 63.5))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid 9b19cb87-b4a1-4a6c-aee7-e11a506845d6)
@@ -615,6 +630,11 @@
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid f0dfe568-4ef7-4c0c-b85e-ed03cd0c781e)
   )
+  (polyline (pts (xy 20.32 20.32) (xy 20.32 24.13))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid f2ab2e97-901e-485a-be2a-443089b8c73b)
+  )
+
   (wire (pts (xy 44.45 91.44) (xy 58.42 91.44))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid f340d944-fdb6-4dd8-b532-89e4d7af7925)
@@ -632,6 +652,11 @@
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid f9297313-3a02-4b90-b22f-ac015526709c)
   )
+  (polyline (pts (xy 20.32 119.38) (xy 160.02 119.38))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid fa26fd33-eadb-428a-837b-91902c141c30)
+  )
+
   (bus (pts (xy 143.51 71.12) (xy 143.51 73.66))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid fa921f91-f6a2-487c-9445-95932af27bc3)
@@ -652,6 +677,11 @@
   (bus (pts (xy 44.45 97.79) (xy 92.71 97.79))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid fe0d8214-7e5c-4b6d-bf5f-13facf307b22)
+  )
+
+  (text "74HC595" (at 74.93 114.3 0)
+    (effects (font (size 5 5) bold) (justify left bottom))
+    (uuid 085bd86c-2907-4200-a1f8-dc4349e91659)
   )
 
   (label "VI_1" (at 86.36 55.88 0)

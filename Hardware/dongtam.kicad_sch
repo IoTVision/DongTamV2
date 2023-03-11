@@ -764,9 +764,6 @@
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/1f1ba2e4-3a63-4984-a525-e25b2992c1a7"
       (reference "#PWR0145") (unit 1) (value "GND") (footprint "")
     )
-    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/fa7e2e5d-b343-4829-b13c-5ef2dc534182"
-      (reference "#PWR0146") (unit 1) (value "GND") (footprint "")
-    )
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/08b56940-d493-4421-967f-568af79e71dd"
       (reference "#PWR0168") (unit 1) (value "GND") (footprint "")
     )
@@ -1144,12 +1141,6 @@
     )
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/2c0b7c6c-e41e-4e7c-9eb9-88757dd2b972"
       (reference "C16") (unit 1) (value "22pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
-    )
-    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/1869149c-73c6-4709-a467-f584351e99d4"
-      (reference "C18") (unit 1) (value "22pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
-    )
-    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/37678e6b-bd63-40d8-8832-3a7fe2dab9b1"
-      (reference "C19") (unit 1) (value "22pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/0bd8a664-1b03-40ad-84d7-8442e1dc8582"
       (reference "C21") (unit 1) (value "100nF") (footprint "Capacitor_SMD:C_0603_1608Metric")
@@ -1640,6 +1631,9 @@
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/f90f06dd-f4a4-487a-98c4-bd3713dd7b1d"
       (reference "R?") (unit 1) (value "4k7") (footprint "")
     )
+    (path "/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/4d58ef68-206c-409c-9e80-a51a0c2621bc"
+      (reference "RV?") (unit 1) (value "R_Potentiometer") (footprint "")
+    )
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/8cd65f6b-c66e-455a-83ab-244fa032e391"
       (reference "SW3") (unit 1) (value "SW_Push") (footprint "Button_Switch_SMD:SW_SPST_PTS810")
     )
@@ -1734,9 +1728,6 @@
       (reference "Y2") (unit 1) (value "8Mhz") (footprint "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm")
     )
     (path "/a9a99304-d65b-4ed1-854e-7f464f20419d/2a41c800-4fec-4695-86be-b6a6c425e895"
-      (reference "Y?") (unit 1) (value "32.768kHz") (footprint "")
-    )
-    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/ab9b4083-42a2-49be-89a3-380545ad6cf1"
       (reference "Y?") (unit 1) (value "32.768kHz") (footprint "")
     )
   )
