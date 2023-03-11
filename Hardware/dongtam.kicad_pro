@@ -442,6 +442,22 @@
     [
       "e4ad1a02-817a-4cce-9ee6-266c75a94756",
       "OPAMP"
+    ],
+    [
+      "6341c4e6-0543-4c16-bd48-1b5ba33fb52a",
+      "1_TL084IPT"
+    ],
+    [
+      "9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc",
+      "2_TL084IPT"
+    ],
+    [
+      "4a4886c5-9f9e-4e2f-a5aa-810911de4343",
+      "3_TL084IPT"
+    ],
+    [
+      "f9795dc8-b42c-4c97-abd2-37fcb9067069",
+      "4_TL084IPT"
     ]
   ],
   "text_variables": {}
