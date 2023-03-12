@@ -965,7 +965,7 @@
   )
   (bus_entry (at 256.54 138.43) (size 2.54 -2.54)
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid 4f5d3aa3-a5d3-49dd-89e0-cc7f18105f59)
+    (uuid 4f5d3aa3-a5d3-49dd-89e0-cc7f18105f5a)
   )
   (bus_entry (at 256.54 148.59) (size 2.54 -2.54)
     (stroke (width 0) (type default) (color 0 0 0 0))
