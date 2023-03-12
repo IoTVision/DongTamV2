@@ -679,8 +679,8 @@
   )
 
   (bus_alias "UART" (members "TX" "RX"))
-  (bus_alias "button" (members "s1" "s2" "s3" "s4"))
   (bus_alias "I2C" (members "SCL" "SDA"))
+  (bus_alias "button" (members "s1" "s2" "s3" "s4"))
   (junction (at 100.965 46.355) (diameter 0) (color 0 0 0 0)
     (uuid 0160fb78-c29f-4899-b180-39b7086ae333)
   )
