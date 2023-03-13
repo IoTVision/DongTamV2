@@ -461,9 +461,6 @@
     (path "/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/28c91468-6a91-4198-8d7d-a1b76ab79e22"
       (reference "#PWR0109") (unit 1) (value "+5V") (footprint "")
     )
-    (path "/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e8cb1409-ae60-409e-bfa1-a1237c84b1e2"
-      (reference "#PWR0110") (unit 1) (value "+5V") (footprint "")
-    )
     (path "/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/89ac2ad3-218d-4c36-bb59-a51994e36db0"
       (reference "#PWR0111") (unit 1) (value "+5V") (footprint "")
     )
@@ -962,6 +959,9 @@
     (path "/dd5cb153-c90e-4ac8-8afa-001258760033/47d94b9d-0e21-41da-86a5-c7f116e1f3bb"
       (reference "#PWR?") (unit 1) (value "+5V") (footprint "")
     )
+    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/a70c1afd-72b7-4b9b-9547-f1d7a544d32c"
+      (reference "#PWR?") (unit 1) (value "GND") (footprint "")
+    )
     (path "/a9a99304-d65b-4ed1-854e-7f464f20419d/4bdfcc24-1a37-4dcd-91ce-b9b77080ca86"
       (reference "BT1") (unit 1) (value "CR1220") (footprint "IVS_FOOTPRINTS:BatteryHolder_CR1220")
     )
@@ -1331,9 +1331,6 @@
     (path "/f79579be-e03f-4679-abbf-d954881a6143/0817f277-7e01-4f49-b3f1-a3fb0b311309"
       (reference "R4") (unit 1) (value "100") (footprint "IVS_FOOTPRINTS:R0603")
     )
-    (path "/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/ae9d6754-e881-40cd-bb29-347a4dbde6b9"
-      (reference "R4") (unit 1) (value "4k7") (footprint "")
-    )
     (path "/f79579be-e03f-4679-abbf-d954881a6143/05839ccc-7055-4fde-b083-5b83d2d066e1"
       (reference "R5") (unit 1) (value "4k7") (footprint "IVS_FOOTPRINTS:R0603")
     )
@@ -1657,6 +1654,9 @@
     )
     (path "/b0d5c22f-fe0a-4806-9983-e193fa74270b/dc0aac5e-80b5-40b7-9918-807a816ad48a"
       (reference "R93") (unit 1) (value "4k7") (footprint "IVS_FOOTPRINTS:R0603")
+    )
+    (path "/dd5cb153-c90e-4ac8-8afa-001258760033/4d430c8e-5658-4cda-9936-30778f47d2f7"
+      (reference "R?") (unit 1) (value "10k") (footprint "IVS_FOOTPRINTS:R0603")
     )
     (path "/28efa0bd-b783-4a11-8af0-b13f240c719d/205a6108-a07e-4795-b23c-b17cad67445f"
       (reference "RV1") (unit 1) (value "10k") (footprint "IVS_FOOTPRINTS:Potentiometer_Bourns_TC33X_Vertical")
