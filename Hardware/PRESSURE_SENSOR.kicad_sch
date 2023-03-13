@@ -342,7 +342,7 @@
     (uuid 51e4c4e7-f12d-42ab-8f87-f6a951c9fa20)
     (property "Reference" "C5" (id 0) (at 121.285 94.615 90))
     (property "Value" "100nF" (id 1) (at 123.825 94.615 90))
-    (property "Footprint" "" (id 2) (at 127.9398 90.805 0)
+    (property "Footprint" "IVS_FOOTPRINTS:C0603" (id 2) (at 127.9398 90.805 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 128.905 94.615 0)
