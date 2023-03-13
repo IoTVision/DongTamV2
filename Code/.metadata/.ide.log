@@ -2126,3 +2126,8 @@ Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to
 2023-03-11 10:59:58,256 [INFO] ProjectBuilder:4351 - Time for Generating toolchain IDE Files: 3567mS.
 2023-03-11 10:59:58,256 [INFO] ProjectBuilder:2790 - Time for Copy CMSIS : 0mS.
 2023-03-11 10:59:58,258 [INFO] ProjectBuilder:2790 - Time for Copy CMSIS : 0mS.
+2023-03-11 17:52:09,802 [INFO] NvicIntPanel:100 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,851x363,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
+2023-03-11 18:33:36,391 [INFO] JxBrowserEngine:114 - Initiate JxBrowser Engine with user profile folder
+2023-03-11 18:33:40,046 [INFO] WebAppUi:459 - Close the Jxbrowser engine manually
+2023-03-11 18:33:40,070 [INFO] WebAppUi:462 - Profiles folder deleted
+2023-03-11 18:33:40,523 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] 
