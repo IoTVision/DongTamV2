@@ -1164,7 +1164,7 @@
     (property "Value" "MCP41010" (id 1) (at 99.8094 120.65 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "" (id 2) (at 97.79 130.81 0)
+    (property "Footprint" "IVS_FOOTPRINTS:TSSOP14" (id 2) (at 97.79 130.81 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/11195c.pdf" (id 3) (at 97.79 130.81 0)

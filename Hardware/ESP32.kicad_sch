@@ -1628,7 +1628,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 89da15c2-0710-4fbf-bb87-4f029d30a295)
     (property "Reference" "J1" (id 0) (at 219.075 41.275 90))
-    (property "Value" " " (id 1) (at 219.075 41.275 90)
+    (property "Value" "Conn_01x05_Male" (id 1) (at 219.075 41.275 90)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" (id 2) (at 220.345 43.815 0)

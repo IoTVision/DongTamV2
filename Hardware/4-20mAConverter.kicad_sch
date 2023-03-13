@@ -2046,7 +2046,7 @@
     (property "Value" "Screw_Terminal" (id 1) (at 208.28 114.2999 0)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
-    (property "Footprint" "" (id 2) (at 205.74 113.03 0)
+    (property "Footprint" "IVS_FOOTPRINTS:HT - 3.96mm - 3pin" (id 2) (at 205.74 113.03 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 205.74 113.03 0)
