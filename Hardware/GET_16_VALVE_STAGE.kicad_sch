@@ -905,7 +905,7 @@
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid a42f1573-3432-46f6-9ef8-d5c67c53e7c5)
   )
-  (label "MCP41010.MISO" (at 219.71 101.6 180)
+  (label "MCP41010.MOSI" (at 219.71 101.6 180)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid affa4fcf-f99e-48e5-bd00-f2778c1ae10c)
   )

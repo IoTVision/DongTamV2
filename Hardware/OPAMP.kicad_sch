@@ -352,6 +352,7 @@
   )
 
   (no_connect (at 125.73 124.46) (uuid d2bed43c-ece8-45ee-8b57-f68101da6081))
+  (no_connect (at 107.95 133.35) (uuid e7aa7008-cb9f-47f0-a853-a33eca3611cc))
 
   (bus_entry (at 170.18 63.5) (size 2.54 2.54)
     (stroke (width 0) (type default) (color 0 0 0 0))

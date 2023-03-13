@@ -951,8 +951,8 @@
 
   (bus_alias "SPI2" (members "SCK" "MOSI" "MISO" "CS"))
   (bus_alias "74HC595" (members "RCLK" "SRCLK" "SER"))
-  (bus_alias "rs485" (members "TX" "RX" "DERE"))
   (bus_alias "I2C" (members "SDA" "SCL"))
+  (bus_alias "rs485" (members "TX" "RX" "DERE"))
   (junction (at 219.71 121.285) (diameter 0) (color 0 0 0 0)
     (uuid 0aa8582f-3d47-4b51-a1aa-460b9fece2c1)
   )
