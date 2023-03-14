@@ -40,3 +40,29 @@
 - Còi buzzer
 - Led bar
 - 4 nút nhấn 
+
+
+## Bảng kết nối chân
+
+Pin Number | Function      | Device Pin | Pin Function | Device Name
+----------|---------------|------------|--------------|----------------
+11(PA1)   | GPIO Output   | 2 & 3      | DERE         | SP3485
+12(PA2)   | UART TX 2     | 1          | RO           | 
+13(PA3)   | UART RX 2     | 4          | DI           | 
+15(PA5)   | GPIO Output   | 12         | Clock        | 74HC595
+17(PA7)   | GPIO Output   | 14(IC1)   | Data         | 
+18(PB0)   | GPIO Output   | 11         | Store        | 
+33(PA12)  | GPIO Output   | 13         | OE           | 
+25(PB12)  | GPIO Output   | 1          | CS           | MCP41010
+26(PB13)  | SPI SCK 2     | 2          | SCK          | 
+28(PB15)  | SPI MOSI 2    | 3          | MOSI         | 
+30(PA9)   | UART TX 1     | 34(RXD0)   | UART RX      | ESP32
+31(PA10)  | UART RX 1     | 35(TXD0)   | UART TX      | 
+32(PA11)  | GPIO Ouput    | 1          | Load         | 74HC165
+33(PA12)  | GPIO Output   | 15         | OE           | 
+39(PB3)   | GPIO Input    | 9 (IC2)    | Data         | 
+40(PB4)   | GPIO Output   | 2          | Clock        | 
+42(PB6)   | I2C SCL 1     | 6 (PCF)    | I2C SCL      | "PCF8574 || DS3231"
+43(PB7)   | I2C SDA 1     | 5(PCF)     | I2C SDA      | 
+42(PB6)   | I2C SCL 1     | 4          | I2C SCL      | AMS5915
+43(PB7)   | I2C SDA 1     | 3          | I2C SDA      | 
