@@ -190,11 +190,11 @@
         )
       )
     )
-    (symbol "power:+5V" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
+    (symbol "power:+3V3" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 -3.81 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "Value" "+5V" (at 0 3.556 0)
+      (property "Value" "+3V3" (at 0 3.556 0)
         (effects (font (size 1.27 1.27)))
       )
       (property "Footprint" "" (at 0 0 0)
@@ -206,10 +206,10 @@
       (property "ki_keywords" "global power" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "ki_description" "Power symbol creates a global label with name \"+5V\"" (at 0 0 0)
+      (property "ki_description" "Power symbol creates a global label with name \"+3V3\"" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (symbol "+5V_0_1"
+      (symbol "+3V3_0_1"
         (polyline
           (pts
             (xy -0.762 1.27)
@@ -235,9 +235,9 @@
           (fill (type none))
         )
       )
-      (symbol "+5V_1_1"
+      (symbol "+3V3_1_1"
         (pin power_in line (at 0 0 90) (length 0) hide
-          (name "+5V" (effects (font (size 1.27 1.27))))
+          (name "+3V3" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
       )
@@ -1000,26 +1000,29 @@
     )
   )
 
-  (symbol (lib_id "power:+5V") (at 165.1 90.17 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 28c91468-6a91-4198-8d7d-a1b76ab79e22)
-    (property "Reference" "#PWR016" (at 165.1 93.98 0)
+  (symbol (lib_id "power:+3V3") (at 170.18 90.17 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid 1844f3f9-a366-4771-899a-3d1d8398f2dc)
+    (property "Reference" "#PWR0107" (at 170.18 93.98 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Value" "+5V" (at 165.1 86.36 0)
+    (property "Value" "+3V3" (at 170.18 85.09 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "" (at 165.1 90.17 0)
+    (property "Footprint" "" (at 170.18 90.17 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "" (at 165.1 90.17 0)
+    (property "Datasheet" "" (at 170.18 90.17 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 9d32e6f8-6726-4234-9b7b-f8bed05df4d5))
+    (pin "1" (uuid 926a7546-af45-46ed-8e78-89e90f7e882b))
     (instances
       (project "dongtam"
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc"
+          (reference "#PWR0107") (unit 1)
+        )
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
-          (reference "#PWR016") (unit 1)
+          (reference "#PWR015") (unit 1)
         )
       )
     )
@@ -1157,31 +1160,6 @@
     )
   )
 
-  (symbol (lib_id "power:+5V") (at 87.63 49.53 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid 705a7d18-da44-4bc1-a948-dcb539033b3e)
-    (property "Reference" "#PWR010" (at 87.63 53.34 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 87.63 44.45 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "" (at 87.63 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 87.63 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 71ec0112-901f-471a-b072-b3beb79191e7))
-    (instances
-      (project "dongtam"
-        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
-          (reference "#PWR010") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "power:GND") (at 87.63 100.33 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 846c37a3-3a7d-4acb-b491-81dd2c47a8a8)
@@ -1202,56 +1180,6 @@
       (project "dongtam"
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
           (reference "#PWR011") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:+5V") (at 165.1 49.53 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 89ac2ad3-218d-4c36-bb59-a51994e36db0)
-    (property "Reference" "#PWR015" (at 165.1 53.34 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 165.1 45.72 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "" (at 165.1 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 165.1 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 27a70225-9ca4-47db-883f-5c1446ed34f6))
-    (instances
-      (project "dongtam"
-        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
-          (reference "#PWR015") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:+5V") (at 149.86 49.53 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid 8b2d6762-88ba-4f4f-996d-ecad6ddf3df0)
-    (property "Reference" "#PWR013" (at 149.86 53.34 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 149.86 44.45 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "" (at 149.86 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 149.86 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 33734514-5aea-41bd-abff-72566a88e25a))
-    (instances
-      (project "dongtam"
-        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
-          (reference "#PWR013") (unit 1)
         )
       )
     )
@@ -1278,6 +1206,34 @@
       (project "dongtam"
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
           (reference "R7") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+3V3") (at 149.86 49.53 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid 93e9d3fa-ebd1-49a5-aeaa-4aaaa7364f8b)
+    (property "Reference" "#PWR0107" (at 149.86 53.34 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3" (at 149.86 44.45 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 149.86 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 149.86 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 64809f0c-8a3a-4d5b-9db4-fb1ba82ac2ea))
+    (instances
+      (project "dongtam"
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc"
+          (reference "#PWR0107") (unit 1)
+        )
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
+          (reference "#PWR010") (unit 1)
         )
       )
     )
@@ -1334,26 +1290,57 @@
     )
   )
 
-  (symbol (lib_id "power:+5V") (at 170.18 90.17 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid d22aae56-d7ef-48f6-8cd7-1ef4f223aaee)
-    (property "Reference" "#PWR017" (at 170.18 93.98 0)
+  (symbol (lib_id "power:+3V3") (at 165.1 90.17 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid c28cd013-0f0c-497d-b50f-9f703841b90c)
+    (property "Reference" "#PWR0107" (at 165.1 93.98 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Value" "+5V" (at 170.18 86.36 0)
+    (property "Value" "+3V3" (at 165.1 85.09 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "" (at 170.18 90.17 0)
+    (property "Footprint" "" (at 165.1 90.17 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "" (at 170.18 90.17 0)
+    (property "Datasheet" "" (at 165.1 90.17 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 7d4b415a-3af7-4695-826c-59a756d9a2dd))
+    (pin "1" (uuid 67da59aa-c13d-4db3-874b-10ea6d4a5185))
     (instances
       (project "dongtam"
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc"
+          (reference "#PWR0107") (unit 1)
+        )
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
-          (reference "#PWR017") (unit 1)
+          (reference "#PWR016") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+3V3") (at 87.63 49.53 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid d9d07d33-e993-41e7-95d6-914a1ad34e1c)
+    (property "Reference" "#PWR0107" (at 87.63 53.34 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3" (at 87.63 44.45 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 87.63 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 87.63 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid ea0d6609-28f2-4a58-a2eb-fdd51cc70510))
+    (instances
+      (project "dongtam"
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc"
+          (reference "#PWR0107") (unit 1)
+        )
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
+          (reference "#PWR030") (unit 1)
         )
       )
     )
@@ -1379,6 +1366,34 @@
       (project "dongtam"
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
           (reference "#PWR012") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+3V3") (at 165.1 49.53 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid f8ca1240-7179-4786-9c3d-c026f5dc32f0)
+    (property "Reference" "#PWR0107" (at 165.1 53.34 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3" (at 165.1 44.45 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 165.1 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 165.1 49.53 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 0fe17058-787b-42c3-b822-e00f533a2c7e))
+    (instances
+      (project "dongtam"
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/9d30bcf3-6fd4-4ecd-bcd6-7dfab3ad93fc"
+          (reference "#PWR0107") (unit 1)
+        )
+        (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd"
+          (reference "#PWR013") (unit 1)
         )
       )
     )
