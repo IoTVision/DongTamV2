@@ -318,7 +318,7 @@
     (property "Value" "AMS5915" (at 154.305 92.075 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "IVS_FOOTPRINTS:AMS5915" (at 154.305 102.235 0)
+    (property "Footprint" "IVS_FOOTPRINTS:Sensor_Pressure-AMS5915" (at 154.305 102.235 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "" (at 154.305 102.235 0)
