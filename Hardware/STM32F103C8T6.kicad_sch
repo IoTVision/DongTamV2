@@ -3148,7 +3148,7 @@
     (property "Reference" "C10" (at 104.14 69.215 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "100uF" (at 104.14 80.645 90)
+    (property "Value" "22pF" (at 104.14 80.645 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "IVS_FOOTPRINTS:C0603" (at 107.95 75.8698 0)
