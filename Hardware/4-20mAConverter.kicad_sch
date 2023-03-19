@@ -1981,7 +1981,7 @@
     (property "Reference" "R96" (at 66.04 90.805 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "10k" (at 66.04 93.345 0)
+    (property "Value" "1k" (at 66.04 93.345 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "IVS_FOOTPRINTS:R0603" (at 61.722 91.44 90)
