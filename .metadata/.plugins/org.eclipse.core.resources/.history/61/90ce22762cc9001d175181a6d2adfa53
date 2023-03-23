@@ -1,0 +1,12 @@
+/*
+ * 74HC595.c
+ *
+ *  Created on: Mar 23, 2023
+ *      Author: hoanganh
+ */
+
+#include "74HC595.h"
+HAL_StatusTypeDef Send_Data(uint8_t dt)
+{
+	for (int c = 0;c<8;c++)
+}

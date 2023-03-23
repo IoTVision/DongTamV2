@@ -1,0 +1,20 @@
+/*
+ * 74HC595.h
+ *
+ *  Created on: Mar 23, 2023
+ *      Author: hoanganh
+ */
+
+#ifndef INC_74HC595_H_
+#define INC_74HC595_H_
+
+#include "stm32f1xx.h"
+typedef struct{
+	GPIO_TypeDef* OE;
+	GPIO_TypeDef* GPIO_CLK;
+
+	GPIO_TypeDef* GPIO_DATA;
+	GPIO_TypeDef* GPIO_CLOCK;
+} HC595;
+HAL_StatusTypeDef Send_Data(HC595* _hc595,uint8_t dt);
+#endif /* INC_74HC595_H_ */

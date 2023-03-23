@@ -9,6 +9,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include User_Libs/Src/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/subdir.mk
@@ -64,8 +65,8 @@ all: main-build
 main-build: DongTamV2.elf secondary-outputs
 
 # Tool invocations
-DongTamV2.elf DongTamV2.map: $(OBJS) $(USER_OBJS) D:\STM32_Folder\SpiritBoi\DongTamV2\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "DongTamV2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\STM32_Folder\SpiritBoi\DongTamV2\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DongTamV2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+DongTamV2.elf DongTamV2.map: $(OBJS) $(USER_OBJS) /home/hoanganh/Documents/DongTam/DongTamProjectV2/Code/DongTamV2/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "DongTamV2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/hoanganh/Documents/DongTam/DongTamProjectV2/Code/DongTamV2/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DongTamV2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
