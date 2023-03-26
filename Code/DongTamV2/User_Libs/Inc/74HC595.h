@@ -10,8 +10,6 @@
 
 #include "stm32f1xx.h"
 typedef struct{
-	GPIO_TypeDef* GPIO_OE_PORT;
-	uint16_t GPIO_OE_PIN;
 	GPIO_TypeDef* GPIO_CLK_PORT;
 	uint16_t GPIO_CLK_PIN;
 	GPIO_TypeDef* GPIO_DATA_PORT;

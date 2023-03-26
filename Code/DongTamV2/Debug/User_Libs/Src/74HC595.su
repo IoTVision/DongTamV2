@@ -1,1 +1,1 @@
-../User_Libs/Src/74HC595.c:9:6:HC595_Send_Data	24	static
+../User_Libs/Src/74HC595.c:10:6:HC595_Send_Data	24	static,ignoring_inline_asm
