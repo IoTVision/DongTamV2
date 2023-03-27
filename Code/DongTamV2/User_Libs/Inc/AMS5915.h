@@ -21,6 +21,7 @@ typedef struct AMS5915{
 	I2C_HandleTypeDef *hi2c;
 }AMS5915;
 
+
 HAL_StatusTypeDef AMS5915_Init(AMS5915 *ams, I2C_HandleTypeDef *hi2c);
-HAL_StatusTypeDef AMS5915_Read(AMS5915 *ams);
+HAL_StatusTypeDef AMS5915_ReadRAW(AMS5915 *ams);
 #endif

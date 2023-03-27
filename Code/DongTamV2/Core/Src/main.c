@@ -65,7 +65,12 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	if(hi2c->Instance == I2C1){
+		__NOP();
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -106,6 +111,8 @@ int main(void)
   HC595_ConfigOnePin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, 1);
   while(AMS5915_Init(&ams5915, &hi2c1));// if device not found, stop at this point
+  AMS5915_ReadRAW(&ams5915);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
