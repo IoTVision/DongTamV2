@@ -7,7 +7,6 @@
 
 #include "74HC595.h"
 
-
 HAL_StatusTypeDef HC595_ConfigOnePin(HC595* _hc595,GPIO_TypeDef *port,uint16_t pin, pinName pinName)
 {
 	if(!_hc595) return HAL_ERROR;

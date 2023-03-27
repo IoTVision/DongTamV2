@@ -23,5 +23,5 @@ HAL_StatusTypeDef AMS5915_Init(AMS5915 *ams, I2C_HandleTypeDef *hi2c)
 HAL_StatusTypeDef AMS5915_ReadRAW(AMS5915 *ams)
 {
 	if(!ams) return HAL_ERROR;
-	return HAL_I2C_Master_Receive_IT(ams->hi2c, 0x51, ams->buf, 4);
+	return HAL_I2C_Master_Receive_IT(ams->hi2c, ams->hi2c->Devaddress, ams->buf, 4);
 }
