@@ -1,6 +1,5 @@
 "./Core/Src/main.o"
 "./Core/Src/stm32f1xx_hal_msp.o"
-"./Core/Src/stm32f1xx_hal_timebase_tim.o"
 "./Core/Src/stm32f1xx_it.o"
 "./Core/Src/syscalls.o"
 "./Core/Src/sysmem.o"
@@ -23,3 +22,4 @@
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o"
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o"
 "./User_Libs/Src/74HC595.o"
+"./User_Libs/Src/AMS5915.o"
