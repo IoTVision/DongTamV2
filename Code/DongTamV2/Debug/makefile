@@ -61,8 +61,8 @@ all: main-build
 main-build: DongTamV2.elf secondary-outputs
 
 # Tool invocations
-DongTamV2.elf DongTamV2.map: $(OBJS) $(USER_OBJS) G:\IoTVision\Project\DongTamV2\Code\DongTamV2\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "DongTamV2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"G:\IoTVision\Project\DongTamV2\Code\DongTamV2\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DongTamV2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+DongTamV2.elf DongTamV2.map: $(OBJS) $(USER_OBJS) /home/hoanganh/Documents/DongTam/DongTamV2/Code/DongTamV2/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "DongTamV2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/hoanganh/Documents/DongTam/DongTamV2/Code/DongTamV2/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DongTamV2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

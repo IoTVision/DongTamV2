@@ -5,14 +5,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../User_Libs/Src/74HC165.c \
 ../User_Libs/Src/74HC595.c \
 ../User_Libs/Src/AMS5915.c 
 
 OBJS += \
+./User_Libs/Src/74HC165.o \
 ./User_Libs/Src/74HC595.o \
 ./User_Libs/Src/AMS5915.o 
 
 C_DEPS += \
+./User_Libs/Src/74HC165.d \
 ./User_Libs/Src/74HC595.d \
 ./User_Libs/Src/AMS5915.d 
 
@@ -24,7 +27,7 @@ User_Libs/Src/%.o User_Libs/Src/%.su: ../User_Libs/Src/%.c User_Libs/Src/subdir.
 clean: clean-User_Libs-2f-Src
 
 clean-User_Libs-2f-Src:
-	-$(RM) ./User_Libs/Src/74HC595.d ./User_Libs/Src/74HC595.o ./User_Libs/Src/74HC595.su ./User_Libs/Src/AMS5915.d ./User_Libs/Src/AMS5915.o ./User_Libs/Src/AMS5915.su
+	-$(RM) ./User_Libs/Src/74HC165.d ./User_Libs/Src/74HC165.o ./User_Libs/Src/74HC165.su ./User_Libs/Src/74HC595.d ./User_Libs/Src/74HC595.o ./User_Libs/Src/74HC595.su ./User_Libs/Src/AMS5915.d ./User_Libs/Src/AMS5915.o ./User_Libs/Src/AMS5915.su
 
 .PHONY: clean-User_Libs-2f-Src
 
