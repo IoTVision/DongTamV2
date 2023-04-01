@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-etc
-Image
-=======
 # For PCBs designed using KiCad: https://www.kicad.org/
 # Format documentation: https://kicad.org/help/file-formats/
 
@@ -11,7 +7,7 @@ Image
 !THAO_README.txt
 *.log
 Gen*
-bom/
+# bom/
 
 # Temporary files
 *.000
@@ -46,4 +42,3 @@ fp-info-cache
 *.Step
 *.STEP
 *.stp
->>>>>>> dev
