@@ -34,7 +34,7 @@ typedef enum{
 #define dsPort _hc595->ds.port
 #define dsPin _hc595->ds.pin
 
-#define HC595_WRITE(PIN,LOGIC) ( 	((PIN) == HC595_LATCH)? 	HAL_GPIO_WritePin(latchPort,latchPin,(LOGIC)) 	:	\
+#define HC595_WRITE(PIN,LOGIC) 	( 	((PIN) == HC595_LATCH)	? 	HAL_GPIO_WritePin(latchPort,latchPin,(LOGIC)) 	:	\
 									((PIN) == HC595_CLK) 	?	HAL_GPIO_WritePin(clkPort,clkPin,(LOGIC)) 		: 	\
 									((PIN) == HC595_DS) 	?	HAL_GPIO_WritePin(dsPort,dsPin,(LOGIC)) 		: 0	\
 								)

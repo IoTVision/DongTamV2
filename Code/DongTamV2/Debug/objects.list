@@ -21,5 +21,6 @@
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.o"
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o"
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o"
+"./User_Libs/Src/74HC165.o"
 "./User_Libs/Src/74HC595.o"
 "./User_Libs/Src/AMS5915.o"
