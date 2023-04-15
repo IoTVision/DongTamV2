@@ -1,0 +1,8 @@
+.devcontainer
+.vscode
+build
+*.py
+main/WebConfig
+*.log
+*.lock
+components

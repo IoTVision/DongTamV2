@@ -4,6 +4,8 @@
 #metadata
 .metadata/
 
+IoTVision_STM32Library
+
 #Debug
 Debug/
 debug/
