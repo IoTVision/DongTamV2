@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "main.h"
 #include "74HC595.h"
+#include "PressureIndicator.c"
 static const char *TAG = "example";
 
 #define HC595_OE_MASK (1ULL<<GPIO_NUM_4)
@@ -29,8 +30,15 @@ void app_main(void)
     HC595_AssignPin(&hc595,GPIO_NUM_23,HC595_DS);
     HC595_SetTarget(&hc595);
     HC595_Enable();
+    PI_SetLevel(7);
+    vTaskDelay(2000/portTICK_PERIOD_MS);
+    PI_SetLevel(3);
+    vTaskDelay(2000/portTICK_PERIOD_MS);
+    PI_SetLevel(5);
+    vTaskDelay(2000/portTICK_PERIOD_MS);
+    HC595_Disable();
     while (1) {
-    HC595_TestOutput();
+    PI_TestShowLevel_Increase();
     // vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
