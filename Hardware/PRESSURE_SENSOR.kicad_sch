@@ -204,6 +204,7 @@
     )
   )
 
+
   (junction (at 128.905 90.805) (diameter 0) (color 0 0 0 0)
     (uuid 759d2a09-9663-4f70-a3d5-292d5ac466ec)
   )
@@ -270,16 +271,16 @@
     (uuid f8ef4d96-7fe4-40f6-94c0-b1819ee0440b)
   )
 
-  (label "i2c.SDA" (at 122.555 102.235 180) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right bottom))
+  (label "i2c.SDA" (at 122.555 102.235 0) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 4bc3b30d-44bf-4b51-af91-6dcf42085126)
   )
-  (label "i2c.SCL" (at 122.555 104.775 180) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right bottom))
+  (label "i2c.SCL" (at 122.555 104.775 0) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 67f466ab-9a65-4e69-9213-f0c4113a79e6)
   )
 
-  (hierarchical_label "i2c{I2C}" (shape input) (at 116.205 108.585 180) (fields_autoplaced)
+  (hierarchical_label "i2c{pI2C}" (shape input) (at 116.205 108.585 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right))
     (uuid e0bce2a8-56ae-4a77-b76d-cc7790d0d699)
   )
@@ -375,7 +376,7 @@
     (property "Value" "100nF" (at 123.825 94.615 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "IVS_FOOTPRINTS:C0603" (at 127.9398 90.805 0)
+    (property "Footprint" "IVS_FOOTPRINTS:C_0603" (at 127.9398 90.805 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 128.905 94.615 0)
