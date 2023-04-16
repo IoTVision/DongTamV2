@@ -3,6 +3,34 @@
 #define INDICATOR_MAX_BITMASK 0x03ff
 #define INDICATOR_MIN_BITMASK 0x0200
 #define INDICATOR_MAX_LEVEL 10
+
+#define HC595_OE_MASK (1ULL<<GPIO_NUM_4)
+#define HC595_LATCH_MASK (1ULL<<GPIO_NUM_5)
+#define HC595_CLK_MASK (1ULL<<GPIO_NUM_18)
+#define HC595_DS_MASK (1ULL<<GPIO_NUM_23)
+
+HC595 hc595_pi;
+void PI_ConfigPin()
+{
+    gpio_config_t cfg = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = HC595_DS_MASK |
+                        HC595_OE_MASK |
+                        HC595_CLK_MASK|
+                        HC595_LATCH_MASK,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&cfg);
+    HC595_AssignPin(&hc595_pi,GPIO_NUM_5,HC595_LATCH);
+    HC595_AssignPin(&hc595_pi,GPIO_NUM_4,HC595_OE);
+    HC595_AssignPin(&hc595_pi,GPIO_NUM_18,HC595_CLK);
+    HC595_AssignPin(&hc595_pi,GPIO_NUM_23,HC595_DS);
+    HC595_SetTarget(&hc595_pi);
+    HC595_Enable();
+}
+
 void PI_TestShowLevel_Increase(){
     static uint16_t dataOriginal= INDICATOR_MIN_BITMASK;
     static uint8_t shft=0;
@@ -37,12 +65,10 @@ void PI_TestShowLevel_Decrease(){
 }
 
 void PI_SetLevel(uint8_t level){
-    // if(level<0 && level > 10) return;
+    if(level > 10) return;
     uint16_t indicator = INDICATOR_MAX_BITMASK;
     indicator <<= (INDICATOR_MAX_LEVEL-level);
     indicator &=INDICATOR_MAX_BITMASK;
-    uint8_t data[2];
-    data[0]=indicator >> 8;
-    data[1]=indicator;
+    uint8_t data[2] = {data[0]=indicator >> 8,data[1]=indicator,};
     HC595_Send_Data(data,2);
 }
