@@ -1040,7 +1040,6 @@
     )
   )
 
-
   (junction (at 123.19 43.815) (diameter 0) (color 0 0 0 0)
     (uuid 08d7a7eb-a8a4-4521-9fa0-bdac4f10edc1)
   )
@@ -2897,11 +2896,11 @@
     (pin "1" (uuid 2f17321b-185e-480f-b7bf-9d6ca06d60a9))
     (pin "2" (uuid e957935c-5618-4ea5-a910-5b95f69ad105))
     (pin "3" (uuid fad5080f-0382-47fa-9b53-807ece84b7cd))
-    (pin "5" (uuid 72dd27fb-aa4f-4a86-a759-cefe3c06e570))
-    (pin "6" (uuid 20a39f00-5210-4855-bac4-a570ffe77224))
-    (pin "7" (uuid a253f0bd-3a00-4af1-8d01-9e9db02cf9bd))
-    (pin "4" (uuid c7615775-e283-463e-823e-2ad336290ceb))
-    (pin "8" (uuid c82f22c8-abd2-4c7a-b9ad-5adc1609b633))
+    (pin "5" (uuid 72dd27fb-aa4f-4a86-a759-cefe3c06e571))
+    (pin "6" (uuid 20a39f00-5210-4855-bac4-a570ffe77225))
+    (pin "7" (uuid a253f0bd-3a00-4af1-8d01-9e9db02cf9be))
+    (pin "4" (uuid c7615775-e283-463e-823e-2ad336290cec))
+    (pin "8" (uuid c82f22c8-abd2-4c7a-b9ad-5adc1609b634))
     (instances
       (project "dongtam"
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/6341c4e6-0543-4c16-bd48-1b5ba33fb52a"
@@ -3037,14 +3036,14 @@
     (property "Datasheet" "http://www.ti.com/lit/ds/symlink/lm393.pdf" (at 116.84 180.34 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 0fbcc6b1-c645-4c36-9063-b243ad208067))
-    (pin "2" (uuid 7a06f4ef-457f-43a2-9794-00758d4dcc42))
-    (pin "3" (uuid de0e10d3-f868-42b5-8adf-8bb76b20605b))
+    (pin "1" (uuid 0fbcc6b1-c645-4c36-9063-b243ad208068))
+    (pin "2" (uuid 7a06f4ef-457f-43a2-9794-00758d4dcc43))
+    (pin "3" (uuid de0e10d3-f868-42b5-8adf-8bb76b20605c))
     (pin "5" (uuid a9b0c2b7-ddbf-4516-b3fa-ff27d6c8a6bf))
     (pin "6" (uuid f047c272-92c4-4817-a360-f34a3d0055f1))
     (pin "7" (uuid 10a0026b-bc79-42e2-8fea-7d80bb0aaf65))
-    (pin "4" (uuid aeccd442-7e52-4923-a2c7-7a238e56c63e))
-    (pin "8" (uuid b6ec3638-599c-4b0a-bfdf-80420ac79f37))
+    (pin "4" (uuid aeccd442-7e52-4923-a2c7-7a238e56c63f))
+    (pin "8" (uuid b6ec3638-599c-4b0a-bfdf-80420ac79f38))
     (instances
       (project "dongtam"
         (path "/6833aec4-3d1d-4261-9b3e-f0452b565dd3/992d1183-82f3-4ab3-a77f-7ab8cf195fcd/e4ad1a02-817a-4cce-9ee6-266c75a94756/6341c4e6-0543-4c16-bd48-1b5ba33fb52a"
@@ -3647,12 +3646,12 @@
     (property "Datasheet" "http://www.ti.com/lit/ds/symlink/lm393.pdf" (at 158.115 60.96 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 6419e377-5747-499f-850a-e85e01159f80))
-    (pin "2" (uuid 9dfdac17-0fd4-441d-a6f2-f0e53b2fa31f))
-    (pin "3" (uuid beda8c6b-4158-47b7-8fc4-1b3e0290f3af))
-    (pin "5" (uuid 67db63fb-514e-4acd-b619-9739c7b62867))
-    (pin "6" (uuid e9096a9e-f267-44e9-87f5-67563339051e))
-    (pin "7" (uuid b28cba4e-6fa6-4d5c-951b-5fe7760adab6))
+    (pin "1" (uuid 6419e377-5747-499f-850a-e85e01159f81))
+    (pin "2" (uuid 9dfdac17-0fd4-441d-a6f2-f0e53b2fa320))
+    (pin "3" (uuid beda8c6b-4158-47b7-8fc4-1b3e0290f3b0))
+    (pin "5" (uuid 67db63fb-514e-4acd-b619-9739c7b62868))
+    (pin "6" (uuid e9096a9e-f267-44e9-87f5-67563339051f))
+    (pin "7" (uuid b28cba4e-6fa6-4d5c-951b-5fe7760adab7))
     (pin "4" (uuid 9db0ca33-f036-4616-9e71-6d6385c9c40f))
     (pin "8" (uuid 4ca09c89-2703-40f0-b891-67b1fa20279a))
     (instances
