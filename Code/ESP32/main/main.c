@@ -23,8 +23,8 @@ void app_main(void)
 void PressureIndicator_Init()
 {
     PI_ConfigPin();
-    for(uint8_t i=0;i<10;i++)PI_TestShowLevel_Decrease();
     for(uint8_t i=0;i<10;i++)PI_TestShowLevel_Increase();
+    for(uint8_t i=0;i<10;i++)PI_TestShowLevel_Decrease();
     PI_SetLevel(0);
 }
 
