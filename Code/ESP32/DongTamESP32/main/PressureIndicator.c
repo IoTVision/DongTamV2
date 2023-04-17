@@ -1,4 +1,3 @@
-
 #include "74HC595.h"
 #define INDICATOR_MAX_BITMASK 0x03ff
 #define INDICATOR_MIN_BITMASK 0x0200
@@ -10,6 +9,16 @@
 #define HC595_DS_MASK (1ULL<<GPIO_NUM_23)
 
 HC595 hc595_pi;
+
+void PI_SetLevel(uint8_t level){
+    if(level > 10) return;
+    uint16_t indicator = INDICATOR_MAX_BITMASK;
+    indicator <<= (INDICATOR_MAX_LEVEL-level);
+    indicator &=INDICATOR_MAX_BITMASK;
+    uint8_t data[2] = {data[0]=indicator >> 8,data[1]=indicator,};
+    HC595_Send_Data(data,2);
+}
+
 void PI_ConfigPin()
 {
     gpio_config_t cfg = {
@@ -29,8 +38,18 @@ void PI_ConfigPin()
     HC595_AssignPin(&hc595_pi,GPIO_NUM_23,HC595_DS);
     HC595_SetTarget(&hc595_pi);
     HC595_Enable();
+    
+    PI_SetLevel(1);
+    vTaskDelay(500/portTICK_PERIOD_MS);
+    PI_SetLevel(3);
+    vTaskDelay(500/portTICK_PERIOD_MS);
+    PI_SetLevel(5);
+    vTaskDelay(500/portTICK_PERIOD_MS);
+    PI_SetLevel(7);
+    vTaskDelay(500/portTICK_PERIOD_MS);
+    PI_SetLevel(9);
+    vTaskDelay(500/portTICK_PERIOD_MS);
 }
-
 void PI_TestShowLevel_Increase(){
     static uint16_t dataOriginal= INDICATOR_MIN_BITMASK;
     static uint8_t shft=0;
@@ -45,7 +64,7 @@ void PI_TestShowLevel_Increase(){
     data[0]=dataOriginal >> 8;
     data[1]=dataOriginal;
     HC595_Send_Data(data,2);
-    DELAY_MS(20);
+    DELAY_MS(50);
 }
 void PI_TestShowLevel_Decrease(){
     static uint16_t dataOriginal= INDICATOR_MAX_BITMASK;
@@ -61,14 +80,6 @@ void PI_TestShowLevel_Decrease(){
     data[0]=dataOriginal >> 8;
     data[1]=dataOriginal;
     HC595_Send_Data(data,2);
-    DELAY_MS(30);
+    DELAY_MS(50);
 }
 
-void PI_SetLevel(uint8_t level){
-    if(level > 10) return;
-    uint16_t indicator = INDICATOR_MAX_BITMASK;
-    indicator <<= (INDICATOR_MAX_LEVEL-level);
-    indicator &=INDICATOR_MAX_BITMASK;
-    uint8_t data[2] = {data[0]=indicator >> 8,data[1]=indicator,};
-    HC595_Send_Data(data,2);
-}
