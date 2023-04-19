@@ -591,6 +591,14 @@
     [
       "b0d5c22f-fe0a-4806-9983-e193fa74270b",
       "IDC14pin"
+    ],
+    [
+      "08ad8a44-12f2-477f-91cc-e0e3c3184b61",
+      "LORA"
+    ],
+    [
+      "158914ca-943a-4d6a-bd93-6235e0f9e371",
+      "RELAY_OPTO"
     ]
   ],
   "text_variables": {}
