@@ -126,13 +126,19 @@ int main(void)
   HC595_AssignPin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
   HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_12,HC595_OE);
   HC595_Enable();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HC595_TestOutput();
+	  HC595_SetBitOutput(0);
+	  HC595_Send_Data(NULL, 2, 0, true);
+	  HAL_Delay(500);
+	  HC595_ClearBitOutput(0);
+	  HC595_Send_Data(NULL, 2, 0, true);
+	  HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -440,7 +446,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**
