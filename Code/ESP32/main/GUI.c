@@ -6,6 +6,7 @@
 #include "esp_check.h"
 #include "PressureIndicator.c"
 #include "74HC595.h"
+#include "GUI.h"
 LCDI2C lcdI2C;
 
 #define BTN_MODE GPIO_NUM_35
