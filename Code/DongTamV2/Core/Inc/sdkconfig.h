@@ -10,8 +10,10 @@
 
 //#define CONFIG_USE_FLAG
 #define CONFIG_USE_STRING_UTILITY
+#define CONFIG_USE_UART_UTILITY
 #define CONFIG_USE_74HC595
 #define CONFIG_USE_AMS5915
+#define CONFIG_USE_PCF8563
 
 #if defined(STM32F1)
 #include "stm32f1xx_hal.h"

@@ -134,10 +134,10 @@ int main(void)
   while (1)
   {
 	  HC595_SetBitOutput(0);
-	  HC595_Send_Data(NULL, 2, 0, true);
-	  HAL_Delay(500);
+	  HC595_Send_Data(NULL, 2, 1);
+	  HAL_Delay(1000);
 	  HC595_ClearBitOutput(0);
-	  HC595_Send_Data(NULL, 2, 0, true);
+	  HC595_Send_Data(NULL, 2, 1);
 	  HAL_Delay(2000);
     /* USER CODE END WHILE */
 
