@@ -22,7 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "74HC595.h"
-#include "AMS5915.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,9 +49,6 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 HC595 hc595;
-AMS5915 ams5915;
-float Pressure;
-uint8_t pUARTTemp[1];
 
 /* USER CODE END PV */
 
@@ -70,19 +66,6 @@ static void MX_USART3_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-	if(hi2c->Instance == I2C1){
-
-	}
-}
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart->Instance == USART3){
-		HAL_UART_Receive_IT(&huart3, pUARTTemp, 1);
-		HAL_UART_Transmit(&huart3, (uint8_t*)"k", 1, HAL_MAX_DELAY);
-	}
-}
 
 /* USER CODE END 0 */
 
@@ -120,7 +103,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart3, pUARTTemp, 1);
   HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
   HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_7, HC595_DS);
   HC595_AssignPin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
@@ -135,7 +117,7 @@ int main(void)
   {
 	  HC595_SetBitOutput(0);
 	  HC595_Send_Data(NULL, 2, 1);
-	  HAL_Delay(1000);
+	  HAL_Delay(300);
 	  HC595_ClearBitOutput(0);
 	  HC595_Send_Data(NULL, 2, 1);
 	  HAL_Delay(2000);
