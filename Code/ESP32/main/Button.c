@@ -30,11 +30,15 @@ extern Run_menu run_menu[3];
 gpio_num_t BT[4]={BT1,BT2,BT3,BT4};
 uint16_t Count[4]={0};
 char str[20];
+char tx[20];
 uint8_t pRow;
 bool flag_print;
 void Print_Setting_Menu(void);
 void Print_Run_Menu(void);
 void limit_value(void);
+void send_UART_run_menu(void);
+void return_run_to_0 (void);
+void Print_defaut(void);
 void Scan_button (void *pvParameters)
 {
     while (1)
@@ -46,7 +50,12 @@ void Scan_button (void *pvParameters)
                 flag_print = 1;
                 if (gpio_get_level(BT[i])==1)
                 {
-                    Count[i]++;  
+                    Count[i]++;
+                    if (Count[2]==1)
+                    {
+                        if (i==3) Count[i]--; 
+                    }
+                     
                     if (Count[3]>1) Count[3]=0;
                     if (Count[2]>1) Count[2]=0;
                     if (i == 3)
@@ -85,7 +94,7 @@ void Scan_button (void *pvParameters)
                     if (Count[3]==0)
                     {
                         // Count[2]=0;
-                        limit_value();
+                        
                         if (Count[2]==0)
                         {
                             if (i==0)
@@ -98,6 +107,12 @@ void Scan_button (void *pvParameters)
                                 pRow--;
                                 if (pRow == 255) pRow = 0; 
                             }
+                            if (run_menu[2].value == 1)
+                            {
+                                send_UART_run_menu();
+                                return_run_to_0 ();
+                            }
+                            
                         }
                         if (Count[2]==1)
                         {
@@ -110,6 +125,7 @@ void Scan_button (void *pvParameters)
                                 run_menu[pRow].value--;
                             };
                         }
+                        limit_value();
                         Print_Run_Menu();
                     }  
                            
@@ -118,6 +134,27 @@ void Scan_button (void *pvParameters)
         }
         vTaskDelay(10/portTICK_PERIOD_MS);
     }
+}
+
+void Print_defaut(void)
+{
+    for (int i = 0; i<3; i++)
+        {
+            LCDI2C_Print(run_menu[i].text_on_screen,1,i);
+            sprintf(str,"%d",run_menu[i].value);
+            LCDI2C_Print(str,14,i);
+            if (Count[2]==0)
+            {
+                LCDI2C_Print(" ",0,i);
+                LCDI2C_Print(P_user,0,pRow);
+                LCDI2C_Print(" ",13,pRow);
+            }
+            if (Count[2]==1)
+            {
+                LCDI2C_Print(" ",0,i);
+                LCDI2C_Print(P_user,13,pRow);
+            }
+        }
 }
 
 void Print_Setting_Menu(void)
@@ -189,8 +226,25 @@ void Print_Run_Menu(void)
 
 void limit_value(void)
 {
-    if (run_menu[0].value > 16) run_menu[0].value=16;
-    if (run_menu[0].value < 0) run_menu[0].value=0;
+    if (run_menu[0].value == 17) run_menu[0].value=16;
+    if (run_menu[0].value == 255) run_menu[0].value=0;
+    if (run_menu[2].value == 2) run_menu[2].value = 1;
+    if (run_menu[2].value == 255) run_menu[2].value = 0;
+}
+void send_UART_run_menu(void)
+{
+    sprintf(tx,"V:%d",run_menu[0].value);
+    ESP_LOGE(TAG_1,"%s",tx);
+}
+void return_run_to_0 (void)
+{
+    LCDI2C_Clear();
+    LCDI2C_Print("Processing...",4,1);
+    vTaskDelay(2000/portTICK_PERIOD_MS);
+
+    run_menu[2].value = 0;
+    sprintf(str,"%d",run_menu[2].value);
+
 }
 // void test_4_BT(void){
 //     for (int i = 0; i<4; i++){

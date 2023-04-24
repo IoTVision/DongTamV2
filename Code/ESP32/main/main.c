@@ -49,6 +49,7 @@ void app_main(void)
     strcpy(run_menu[1].text_on_screen, testmode);
     strcpy(run_menu[2].text_on_screen, run);
     LCD_init();
+    Print_defaut();
     // sort_parameter();
     HC595_ConfigPin();
     Button_ConfigPin();
@@ -63,7 +64,7 @@ void app_main(void)
     // LCDI2C_Print("50",15,0);
     while (1) {
         vTaskDelay(2000/portTICK_PERIOD_MS);
-        uart_write_bytes(UART_NUM_2,strcat(test,"500"),6);
+        // uart_write_bytes(UART_NUM_2,strcat(test,"500"),6);
     }
 }
 
