@@ -10,95 +10,46 @@
 #include "LCD_I2C.h"
 #include "Button.c"
 #include "GUI.h"
- static const char *TAG= "main";
-
+#include "Text_GUI.h"
+//  static const char *TAG= "main";
+LCDI2C lcdI2C;
 #define HC595_OE_MASK (1ULL<<GPIO_NUM_4)
 #define HC595_LATCH_MASK (1ULL<<GPIO_NUM_5)
 #define HC595_CLK_MASK (1ULL<<GPIO_NUM_18)
 #define HC595_DS_MASK (1ULL<<GPIO_NUM_23)
 
 
-HC595 hc595_pi;//74HC595 for Pressure Indicator
-
-// GUI_function parameter_code = {
-//     .ex_works_setting = 242,
-//     .max_range = 0,
-//     .max_range = 0,
-// };
-
-// parameter_UI param_1 = {
-//     .para_no = 1,
-//     .text_on_screen = "Parameter code",
-//     .fnc = &parameter_code,
-// };
-
-
-// GUI_function Delta_low = {
-//     .ex_works_setting = 700,
-//     .max_range = 250,
-//     .max_range = 4000,
-// };
-
-// parameter_UI DP_low = {
-//     .para_no = 2,
-//     .text_on_screen = "DP-Low",
-//     .fnc = &Delta_low,
-// };
-
-// GUI_function Delta_high = {
-//     .ex_works_setting = 1300,
-//     .max_range = 250,
-//     .max_range = 4000,
-// };
-
-// parameter_UI DP_high = {
-//     .para_no = 3,
-//     .text_on_screen = "DP-High",
-//     .fnc = &Delta_high,
-// };
-
+HC595 hc595_pi;//74HC595 for Pressure Indicato
 parameter_UI param[3];
-
-
-
-
-
+Run_menu run_menu[3];
+char test[6]="Hello";
 void HC595_ConfigPin();
 void Button_ConfigPin();
-void gan_chuoi(parameter_UI a, char *l);
-void sort_parameter();
+// void gan_chuoi(parameter_UI a, char *l);
+// void sort_parameter();
 
-uint16_t Sort_para[3][3];
+// uint16_t Sort_para[3][3];
 
 void app_main(void)
 {
-   
-
+    
     param[0].para_no = 1;
-// gan_chuoi(param[0],"Parameter code");
-    param[0].fnc.ex_works_setting = 242;
-    param[0].fnc.max_range = 0;
-    param[0].fnc.min_range = 0;
-    // ESP_LOGE(TAG,"para no %d",param[0].para_no);
-    // ESP_LOGE(TAG,"text on screen  %s",param[0].text_on_screen);
-    // ESP_LOGE(TAG,"ex works %d",param[0].fnc.ex_works_setting);
-    // ESP_LOGE(TAG,"max range %d",param[0].fnc.max_range);
-    // ESP_LOGE(TAG,"min range %d",param[0].fnc.min_range);
+    strcpy(param[0].text_on_screen ,param1);
+    param[0].param = 242;
 
     param[1].para_no = 2;
-    // gan_chuoi(param[0],"Parameter code");
-    param[1].fnc.ex_works_setting = 700;
-    param[1].fnc.max_range = 4000;
-    param[1].fnc.min_range = 250;
-
+    strcpy(param[1].text_on_screen ,param2);
+    param[1].param = 700;
 
     param[2].para_no = 3;
-    // gan_chuoi(param[0],"Parameter code");
-    param[2].fnc.ex_works_setting = 1300;
-    param[2].fnc.max_range = 4000;
-    param[2].fnc.min_range = 250;
+    strcpy(param[2].text_on_screen ,param3);
+    param[2].param = 1300;
     
-    sort_parameter();
+    strcpy(run_menu[0].text_on_screen, valve);
+    strcpy(run_menu[1].text_on_screen, testmode);
+    strcpy(run_menu[2].text_on_screen, run);
+    LCD_init();
+    // sort_parameter();
     HC595_ConfigPin();
     Button_ConfigPin();
     //PressureIndicator_Test();
@@ -106,8 +57,13 @@ void app_main(void)
     xTaskCreate(UARTToSTM32_event_task, "UARTToSTM32_event_task", 2048, NULL, 4, NULL);
     xTaskCreate(log_uart_event_task, "log_uart_event_task", 2048, NULL, 4, NULL);
     xTaskCreate(Scan_button, "Button_event_task", 2048, NULL, 4, NULL);
+
+
+    // LCDI2C_Print("SpiritBoi",0,0);
+    // LCDI2C_Print("50",15,0);
     while (1) {
         vTaskDelay(2000/portTICK_PERIOD_MS);
+        uart_write_bytes(UART_NUM_2,strcat(test,"500"),6);
     }
 }
 
@@ -150,13 +106,13 @@ void HC595_ConfigPin()
 //     }   
 // }
 
-void sort_parameter(void){
-    for (int i = 0; i < 3 ; i++){
-        Sort_para[0][i] = param[i].fnc.ex_works_setting;
-        Sort_para[1][i] = param[i].fnc.max_range;
-        Sort_para[2][i] = param[i].fnc.min_range;
-    }
-}
+// void sort_parameter(void){
+//     for (int i = 0; i < 3 ; i++){
+//         Sort_para[0][i] = param[i].fnc.ex_works_setting;
+//         Sort_para[1][i] = param[i].fnc.max_range;
+//         Sort_para[2][i] = param[i].fnc.min_range;
+//     }
+// }
 
 
 

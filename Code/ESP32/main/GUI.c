@@ -21,7 +21,7 @@ esp_err_t LCD_init()
     esp_err_t err = ESP_OK;
     err = LCDI2C_Config(&lcdI2C);
     LCDI2C_TurnOnBackLight();
-    LCDI2C_Print("SpiritBoi",0,0);
+    // LCDI2C_Print("SpiritBoi",0,0);
     return err;
 }
 
