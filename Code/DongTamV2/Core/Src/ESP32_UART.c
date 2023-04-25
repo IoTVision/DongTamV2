@@ -6,6 +6,26 @@
  */
 
 #include "ESP32_UART.h"
+#include "StringUtility.h"
+#include "UART_Utility.h"
 
-//HAL_StatusTypeDef
+#define MATCH_KEYWORD(KEYWORD) (StrUtil_SearchKey(UART_ESP_buf,KEYWORD)==STRING_OK ? 1 : 0)
+extern uint8_t UART_ESP_buf[15];
+
+typedef enum{
+	CMD_DS3231_SETTIME,
+	CMD_DS3231_GETTIME,
+	CMD_VALVE_CONTROL,
+	CMD_VALVE_STATE,
+	CMD_AMS5915_GET_VALUE,
+}ESP_CMD;
+
+
+void GetESP32Command()
+{
+	if(!UART_Util_CheckGetMessageComplete(true)) return;
+	StrUtil_TokenMessage((char*)UART_ESP_buf," ,");
+	memset(UART_ESP_buf,0,sizeof(UART_ESP_buf));
+
+}
 

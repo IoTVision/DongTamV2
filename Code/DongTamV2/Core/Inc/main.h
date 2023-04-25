@@ -32,6 +32,12 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "sdkconfig.h"
+#define FLAG_DS3231_SET_TIME (1<<0)
+#define FLAG_DS3231_GET_TIME (1<<1)
+#define FLAG_ESP32_RECEIVE_DATA (1<<1)
+#define FLAG_VALVE_CONTROL (1<<3)
+
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

@@ -24,6 +24,8 @@
 #include "74HC595.h"
 #include "PCF8563.h"
 #include "DS3231.h"
+#include "string.h"
+#include "UART_Utility.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,6 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,8 +56,11 @@ UART_HandleTypeDef huart3;
 HC595 hc595;
 PCF8563_Handle _RTC8563;
 PCF8563_Time t;
-DS3231_Time_t dsTime;
+
 uint8_t a=0;
+UART_Utility_t u1Util;
+uint8_t UART_ESP_buf[10];
+DS3231_Time_t dsTime;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,6 +85,10 @@ void HC595_ToggleBit(uint8_t ValNum)
 	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(1000);
 	  HC595_ClearBitOutput(ValNum);
 	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(2000);
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	UART_Util_GetMessage_IT_Callback(huart);
 }
 /* USER CODE END 0 */
 
@@ -117,8 +127,6 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 //  PCF8563_init();
-  DS3231_init();
-
 
   /* USER CODE END 2 */
 
@@ -126,8 +134,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  DS3231_GetTime(&dsTime);
-	  HAL_Delay(1000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -460,18 +467,13 @@ void PCF8563_init()
 	PCF8563_ReadTimeRegisters();
 	PCF8563_StartClock();
 }
-void DS3231_init()
+
+void Setup()
 {
 	DS3231_Init(&hi2c1);
-	dsTime.seconds= 25;
-	dsTime.minutes= 13;
-	dsTime.hour = 12;
-	dsTime.dayofmonth = 25;
-	dsTime.dayofweek = 2;
-	dsTime.year = 23;
-	dsTime.month = 4;
-	DS3231_SetTime(dsTime);
+	UART_Util_BeginToGetMessage(&u1Util, &huart1, UART_ESP_buf, "\n");
 }
+
 /* USER CODE END 4 */
 
 /**
