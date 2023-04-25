@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "74HC595.h"
+#include "PCF8563.h"
+#include "DS3231.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +51,10 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 HC595 hc595;
-
+PCF8563_Handle _RTC8563;
+PCF8563_Time t;
+DS3231_Time_t dsTime;
+uint8_t a=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,7 +66,9 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void HC595_Init();
+void PCF8563_init();
+void DS3231_init();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -109,11 +116,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
-  HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_7, HC595_DS);
-  HC595_AssignPin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
-  HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_12,HC595_OE);
-  HC595_Enable();
+//  PCF8563_init();
+  DS3231_init();
+
 
   /* USER CODE END 2 */
 
@@ -121,9 +126,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  for(uint8_t i=8;i<12;i++){
-		  HC595_ToggleBit(i);
-	  }
+	  DS3231_GetTime(&dsTime);
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -432,6 +436,42 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void HC595_Init()
+{
+	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
+	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_7, HC595_DS);
+	HC595_AssignPin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
+	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_12,HC595_OE);
+	HC595_Enable();
+}
+void PCF8563_init()
+{
+
+	PCF8563_Init(&_RTC8563, &hi2c1);
+	t.second = 25;
+	t.minute = 13;
+	t.hour = 12;
+	t.day = 25;
+	t.weekday = 2;
+	t.year = 23;
+	t.month = 4;
+	PCF8563_WriteTimeRegisters(&t);
+	PCF8563_StopClock();
+	PCF8563_ReadTimeRegisters();
+	PCF8563_StartClock();
+}
+void DS3231_init()
+{
+	DS3231_Init(&hi2c1);
+	dsTime.seconds= 25;
+	dsTime.minutes= 13;
+	dsTime.hour = 12;
+	dsTime.dayofmonth = 25;
+	dsTime.dayofweek = 2;
+	dsTime.year = 23;
+	dsTime.month = 4;
+	DS3231_SetTime(dsTime);
+}
 /* USER CODE END 4 */
 
 /**

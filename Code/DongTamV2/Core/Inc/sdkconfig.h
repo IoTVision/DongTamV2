@@ -14,6 +14,7 @@
 #define CONFIG_USE_74HC595
 #define CONFIG_USE_AMS5915
 #define CONFIG_USE_PCF8563
+#define CONFIG_USE_DS3231
 
 #if defined(STM32F1)
 #include "stm32f1xx_hal.h"
