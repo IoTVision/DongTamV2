@@ -66,7 +66,13 @@ static void MX_USART3_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HC595_ToggleBit(uint8_t ValNum)
+{
+	  HC595_SetBitOutput(ValNum);
+	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(1000);
+	  HC595_ClearBitOutput(ValNum);
+	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(2000);
+}
 /* USER CODE END 0 */
 
 /**
@@ -115,12 +121,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HC595_SetBitOutput(0);
-	  HC595_Send_Data(NULL, 2, 1);
-	  HAL_Delay(300);
-	  HC595_ClearBitOutput(0);
-	  HC595_Send_Data(NULL, 2, 1);
-	  HAL_Delay(2000);
+	  for(uint8_t i=8;i<12;i++){
+		  HC595_ToggleBit(i);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -428,6 +431,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 /* USER CODE END 4 */
 
 /**
