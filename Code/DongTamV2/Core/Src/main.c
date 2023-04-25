@@ -26,6 +26,7 @@
 #include "DS3231.h"
 #include "string.h"
 #include "UART_Utility.h"
+#include "AMS5915.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,9 +57,10 @@ UART_HandleTypeDef huart3;
 HC595 hc595;
 PCF8563_Handle _RTC8563;
 PCF8563_Time t;
+AMS5915 ams;
 
 uint8_t a=0;
-UART_Utility_t u1Util;
+UART_Utility_t espUtil,logUtil;
 uint8_t UART_ESP_buf[10];
 DS3231_Time_t dsTime;
 /* USER CODE END PV */
@@ -88,7 +90,8 @@ void HC595_ToggleBit(uint8_t ValNum)
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	UART_Util_GetMessage_IT_Callback(huart);
+	UART_Util_GetMessage_IT_Callback(&espUtil,huart);
+	UART_Util_GetMessage_IT_Callback(&logUtil,huart);
 }
 /* USER CODE END 0 */
 
@@ -471,7 +474,7 @@ void PCF8563_init()
 void Setup()
 {
 	DS3231_Init(&hi2c1);
-	UART_Util_BeginToGetMessage(&u1Util, &huart1, UART_ESP_buf, "\n");
+	UART_Util_BeginToGetMessage(&espUtil, &huart1, UART_ESP_buf, "\n");
 }
 
 /* USER CODE END 4 */

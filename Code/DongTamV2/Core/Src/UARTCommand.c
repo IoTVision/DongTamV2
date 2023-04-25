@@ -4,13 +4,12 @@
  *  Created on: Mar 27, 2023
  *      Author: SpiritBoi
  */
-
-#include "ESP32_UART.h"
 #include "StringUtility.h"
 #include "UART_Utility.h"
 
 #define MATCH_KEYWORD(KEYWORD) (StrUtil_SearchKey(UART_ESP_buf,KEYWORD)==STRING_OK ? 1 : 0)
 extern uint8_t UART_ESP_buf[15];
+extern UART_Utility_t espUtil;
 
 typedef enum{
 	CMD_DS3231_SETTIME,
@@ -23,8 +22,8 @@ typedef enum{
 
 void GetESP32Command()
 {
-	if(!UART_Util_CheckGetMessageComplete(true)) return;
-	StrUtil_TokenMessage((char*)UART_ESP_buf," ,");
+	if(!UART_Util_CheckGetMessageComplete(&espUtil,true)) return;
+	StrUtil_TokenMessage((char*)UART_ESP_buf," {},");
 	memset(UART_ESP_buf,0,sizeof(UART_ESP_buf));
 
 }
