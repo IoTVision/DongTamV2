@@ -59,10 +59,11 @@ PCF8563_Handle _RTC8563;
 PCF8563_Time t;
 AMS5915 ams;
 
-uint8_t a=0;
 UART_Utility_t espUtil,logUtil;
-uint8_t UART_ESP_buf[10];
+uint8_t UART_ESP32_buf[10],UART_logBuffer;
 DS3231_Time_t dsTime;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -475,6 +476,7 @@ void Setup()
 {
 	DS3231_Init(&hi2c1);
 	UART_Util_BeginToGetMessage(&espUtil, &huart1, UART_ESP_buf, "\n");
+	UART_Util_BeginToGetMessage(&logUtil, &huart3, UART_logBuffer, "\n");
 }
 
 /* USER CODE END 4 */
