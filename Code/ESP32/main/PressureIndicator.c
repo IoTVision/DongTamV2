@@ -6,7 +6,6 @@
 #define INDICATOR_MIN_BITMASK 0x0200
 #define INDICATOR_MAX_LEVEL 10
 
-
 void PI_SetLevel(uint8_t level){
     if(level > 10) return;
     uint16_t indicator = INDICATOR_MAX_BITMASK;
