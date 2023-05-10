@@ -22,11 +22,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "74HC595.h"
+#include "74HC165.h"
 #include "PCF8563.h"
 #include "DS3231.h"
 #include "string.h"
-#include "UART_Utility.h"
 #include "AMS5915.h"
+#include "Flag.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +42,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define MAX_MESSAGE 200
+#define FLAG_UART_ESP_RX_DONE (1<<0)
+#define FLAG_UART_LOG_RX_DONE (1<<1)
+#define FLAG_AMS_DONE (1<<2)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -52,47 +56,67 @@ SPI_HandleTypeDef hspi2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
 HC595 hc595;
-PCF8563_Handle _RTC8563;
-PCF8563_Time t;
+HC165 hc165;
+PCF8563_Handle pcfHandle;
+PCF8563_Time pcfTime;
 AMS5915 ams;
+cJSON *cjsCommon;
+FlagGroup_t f1;
 
-UART_Utility_t espUtil,logUtil;
-uint8_t UART_ESP32_buf[10],UART_logBuffer;
-DS3231_Time_t dsTime;
-
-
+uint8_t uartEsp32Buffer[500],uartLogBuffer[500],uartCommonBuffer[200];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void HC595_Init();
-void PCF8563_init();
-void DS3231_init();
+void Setup();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HC595_ToggleBit(uint8_t ValNum)
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	  HC595_SetBitOutput(ValNum);
-	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(1000);
-	  HC595_ClearBitOutput(ValNum);
-	  HC595_ShiftOut(NULL, 2, 1);HAL_Delay(2000);
+	if(hi2c->Instance == I2C1){
+		SETFLAG(f1,FLAG_AMS_DONE);
+	}
 }
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	if(huart->Instance == USART1){
+		HAL_UARTEx_ReceiveToIdle_DMA(huart, uartCommonBuffer, MAX_MESSAGE);
+		strcpy(uartEsp32Buffer,uartCommonBuffer,Size);
+		SETFLAG(f1,FLAG_UART_ESP_RX_DONE);
+	}
+	if(huart->Instance == USART3){
+		HAL_UARTEx_ReceiveToIdle_DMA(huart, uartCommonBuffer, MAX_MESSAGE);
+		strcpy(uartLogBuffer,uartCommonBuffer,Size);
+		SETFLAG(f1,FLAG_UART_LOG_RX_DONE);
+	}
+	memset(uartCommonBuffer,0,sizeof(uartCommonBuffer));
+}
+
+void JSON_LOG(char * monitor)
 {
-	UART_Util_GetMessage_IT_Callback(&espUtil,huart);
-	UART_Util_GetMessage_IT_Callback(&logUtil,huart);
+    cJSON *monitor_json = cJSON_Parse(monitor);
+    name = cJSON_GetObjectItemCaseSensitive(monitor_json, "w");
+    if (name != NULL)
+    {
+    	char s[100]={0};
+    	uint8_t size;
+    	size = sprintf(s,"%.2f",name->valuedouble);
+    	HAL_UART_Transmit(&huart1, (uint8_t*)s, size, HAL_MAX_DELAY);
+    }
 }
 /* USER CODE END 0 */
 
@@ -124,21 +148,25 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-//  PCF8563_init();
-
+  Setup();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if(CHECKFLAG(f1,FLAG_UART_ESP_RX_DONE|FLAG_UART_LOG_RX_DONE)){
+		  CLEARFLAG(f1,FLAG_UART_ESP_RX_DONE | FLAG_UART_LOG_RX_DONE_RX_DONE);
+		  cjsCommon = cJSON_CreateObject();
 
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -357,6 +385,25 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -447,6 +494,14 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void UartIdle_Init()
+{
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uartEsp32Buffer, MAX_MESSAGE);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, uartLogBuffer, MAX_MESSAGE);
+	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
+	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx,DMA_IT_HT);
+}
+
 void HC595_Init()
 {
 	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
@@ -455,28 +510,21 @@ void HC595_Init()
 	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_12,HC595_OE);
 	HC595_Enable();
 }
-void PCF8563_init()
-{
 
-	PCF8563_Init(&_RTC8563, &hi2c1);
-	t.second = 25;
-	t.minute = 13;
-	t.hour = 12;
-	t.day = 25;
-	t.weekday = 2;
-	t.year = 23;
-	t.month = 4;
-	PCF8563_WriteTimeRegisters(&t);
-	PCF8563_StopClock();
-	PCF8563_ReadTimeRegisters();
-	PCF8563_StartClock();
+void HC165_Init(){
+	HC165_AssignPin(&hc165, GPIOA, GPIO_PIN_11, HC165_PL);
+	HC165_AssignPin(&hc165, GPIOB, GPIO_PIN_3, HC165_DATA);
+	HC165_AssignPin(&hc165, GPIOA, GPIO_PIN_12, HC165_CE);
+	HC165_AssignPin(&hc165, GPIOB, GPIO_PIN_4, HC165_CP);
 }
 
 void Setup()
 {
-	DS3231_Init(&hi2c1);
-	UART_Util_BeginToGetMessage(&espUtil, &huart1, UART_ESP_buf, "\n");
-	UART_Util_BeginToGetMessage(&logUtil, &huart3, UART_logBuffer, "\n");
+	AMS5915_Init(&ams,&hi2c1);
+	PCF8563_Init(&pcfHandle, &hi2c1);
+	UartIdle_Init();
+	HC165_Init();
+	HC595_Init();
 }
 
 /* USER CODE END 4 */
