@@ -70,6 +70,8 @@ AMS5915 ams;
 cJSON *cjsCommon;
 FlagGroup_t fUART;
 double p;
+char TimeString[50];
+int Valve;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
 /* USER CODE END PV */
@@ -486,7 +488,15 @@ static void MX_GPIO_Init(void)
 
 void UnpackMessage()
 {
-
+	if(strstr(uartLogBuffer,"Pressure")) {
+		p = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Pressure"));
+	}
+	if(strstr(uartLogBuffer,"Van")) {
+		Valve = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Van"));
+	}
+	if(strstr(uartLogBuffer,"Time")) {
+		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Time")));
+	}
 }
 
 void GetUartJson()
@@ -494,14 +504,15 @@ void GetUartJson()
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartEsp32Buffer);
+		UnpackMessage();
+		memset(uartEsp32Buffer,0,uartEsp32RxSize);
+		cJSON_Delete(cjsCommon);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
 		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartLogBuffer);
-		cJSON *pressure;
-		pressure = cJSON_GetObjectItemCaseSensitive(cjsCommon, "pressure");
-		p = cJSON_GetNumberValue(pressure);
+		UnpackMessage();
 		memset(uartLogBuffer,0,uartLogRxSize);
 		cJSON_Delete(cjsCommon);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
