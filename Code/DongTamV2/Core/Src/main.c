@@ -28,6 +28,8 @@
 #include "string.h"
 #include "AMS5915.h"
 #include "Flag.h"
+#include "cJSON.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,9 +68,10 @@ PCF8563_Handle pcfHandle;
 PCF8563_Time pcfTime;
 AMS5915 ams;
 cJSON *cjsCommon;
-FlagGroup_t f1;
-
-uint8_t uartEsp32Buffer[500],uartLogBuffer[500],uartCommonBuffer[200];
+FlagGroup_t fUART;
+double p;
+char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
+uint16_t uartEsp32RxSize,uartLogRxSize;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,7 +84,8 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void Setup();
+void SetUp();
+void GetUartJson();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -89,34 +93,24 @@ void Setup();
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	if(hi2c->Instance == I2C1){
-		SETFLAG(f1,FLAG_AMS_DONE);
 	}
 }
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 	if(huart->Instance == USART1){
-		HAL_UARTEx_ReceiveToIdle_DMA(huart, uartCommonBuffer, MAX_MESSAGE);
-		strcpy(uartEsp32Buffer,uartCommonBuffer,Size);
-		SETFLAG(f1,FLAG_UART_ESP_RX_DONE);
+		HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t*)uartEsp32Buffer, MAX_MESSAGE);
+		uartEsp32RxSize = Size;
+		SETFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 	}
 	if(huart->Instance == USART3){
-		HAL_UARTEx_ReceiveToIdle_DMA(huart, uartCommonBuffer, MAX_MESSAGE);
-		strcpy(uartLogBuffer,uartCommonBuffer,Size);
-		SETFLAG(f1,FLAG_UART_LOG_RX_DONE);
+		HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t*)uartLogBuffer, MAX_MESSAGE);
+		uartLogRxSize = Size;
+		SETFLAG(fUART,FLAG_UART_LOG_RX_DONE);
 	}
-	memset(uartCommonBuffer,0,sizeof(uartCommonBuffer));
 }
 
 void JSON_LOG(char * monitor)
 {
-    cJSON *monitor_json = cJSON_Parse(monitor);
-    name = cJSON_GetObjectItemCaseSensitive(monitor_json, "w");
-    if (name != NULL)
-    {
-    	char s[100]={0};
-    	uint8_t size;
-    	size = sprintf(s,"%.2f",name->valuedouble);
-    	HAL_UART_Transmit(&huart1, (uint8_t*)s, size, HAL_MAX_DELAY);
-    }
+
 }
 /* USER CODE END 0 */
 
@@ -155,18 +149,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  Setup();
+  SetUp();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(CHECKFLAG(f1,FLAG_UART_ESP_RX_DONE|FLAG_UART_LOG_RX_DONE)){
-		  CLEARFLAG(f1,FLAG_UART_ESP_RX_DONE | FLAG_UART_LOG_RX_DONE_RX_DONE);
-		  cjsCommon = cJSON_CreateObject();
-
-	  }
+	  GetUartJson();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -494,15 +484,42 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void UartIdle_Init()
+void UnpackMessage()
 {
-	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uartEsp32Buffer, MAX_MESSAGE);
-	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, uartLogBuffer, MAX_MESSAGE);
-	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
-	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx,DMA_IT_HT);
+
 }
 
-void HC595_Init()
+void GetUartJson()
+{
+	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
+		cjsCommon = cJSON_CreateObject();
+		cjsCommon = cJSON_Parse(uartEsp32Buffer);
+		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
+	}
+	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
+		cjsCommon = cJSON_CreateObject();
+		cjsCommon = cJSON_Parse(uartLogBuffer);
+		cJSON *pressure;
+		pressure = cJSON_GetObjectItemCaseSensitive(cjsCommon, "pressure");
+		p = cJSON_GetNumberValue(pressure);
+		memset(uartLogBuffer,0,uartLogRxSize);
+		cJSON_Delete(cjsCommon);
+		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
+	}
+}
+
+
+
+void UartIdle_Init()
+{
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)uartEsp32Buffer, MAX_MESSAGE);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*)uartLogBuffer, MAX_MESSAGE);
+	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
+	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx,DMA_IT_HT);
+
+}
+
+void hc595_SetUp()
 {
 	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
 	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_7, HC595_DS);
@@ -511,20 +528,20 @@ void HC595_Init()
 	HC595_Enable();
 }
 
-void HC165_Init(){
+void hc165_SetUp(){
 	HC165_AssignPin(&hc165, GPIOA, GPIO_PIN_11, HC165_PL);
 	HC165_AssignPin(&hc165, GPIOB, GPIO_PIN_3, HC165_DATA);
 	HC165_AssignPin(&hc165, GPIOA, GPIO_PIN_12, HC165_CE);
 	HC165_AssignPin(&hc165, GPIOB, GPIO_PIN_4, HC165_CP);
 }
 
-void Setup()
+void SetUp()
 {
 	AMS5915_Init(&ams,&hi2c1);
 	PCF8563_Init(&pcfHandle, &hi2c1);
 	UartIdle_Init();
-	HC165_Init();
-	HC595_Init();
+	hc165_SetUp();
+	hc595_SetUp();
 }
 
 /* USER CODE END 4 */
