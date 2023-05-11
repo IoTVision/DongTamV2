@@ -48,6 +48,11 @@
 #define FLAG_UART_ESP_RX_DONE (1<<0)
 #define FLAG_UART_LOG_RX_DONE (1<<1)
 #define FLAG_AMS_DONE (1<<2)
+#define FLAG_SET_TIME (1<<3)
+#define FLAG_GET_TIME (1<<4)
+#define FLAG_SET_VAN (1<<5)
+#define FLAG_CLEAR_VAN (1<<6)
+#define FLAG_TRIG_VAN (1<<7)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -68,10 +73,10 @@ PCF8563_Handle pcfHandle;
 PCF8563_Time pcfTime;
 AMS5915 ams;
 cJSON *cjsCommon;
-FlagGroup_t fUART;
+FlagGroup_t fUART,f1;
 double p;
 char TimeString[50];
-int Valve;
+int SetVan,ClearVan;
 bool TrigVan = false;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
@@ -89,6 +94,7 @@ static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
 void GetUartJson();
+void HandleFlagCommand();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -160,6 +166,7 @@ int main(void)
   while (1)
   {
 	  GetUartJson();
+	  HandleFlagCommand();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -486,6 +493,36 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HandleFlagCommand()
+{
+	if(CHECKFLAG(f1,FLAG_SET_VAN)){
+		HC595_SetBitOutput(SetVan);
+		CLEARFLAG(f1,FLAG_SET_VAN);
+	}
+	if(CHECKFLAG(f1,FLAG_CLEAR_VAN)){
+		HC595_ClearBitOutput(ClearVan);
+		CLEARFLAG(f1,FLAG_CLEAR_VAN);
+	}
+	if(CHECKFLAG(f1,FLAG_TRIG_VAN)){
+		HC595_ShiftOut(NULL, 2, 1);
+		CLEARFLAG(f1,FLAG_TRIG_VAN);
+	}
+	if(CHECKFLAG(f1,FLAG_SET_TIME)){
+		unsigned int hour,minute,second,day,month,year;
+		sscanf(TimeString,"%u:%u:%u %u/%u/%u",&hour,&minute,&second,&day,&month,&year);
+		pcfTime.hour = hour;
+		pcfTime.minute = minute;
+		pcfTime.second = second;
+		pcfTime.day = day;
+		pcfTime.month = month;
+		pcfTime.year = year;
+		CLEARFLAG(f1,FLAG_SET_TIME);
+		memset(TimeString,0,strlen(TimeString));
+	}
+	if(CHECKFLAG(f1,FLAG_GET_TIME)){
+		CLEARFLAG(f1,FLAG_GET_TIME);
+	}
+}
 
 void UnpackMessage(cJSON *cjs)
 {
@@ -493,17 +530,28 @@ void UnpackMessage(cJSON *cjs)
 		p = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "Pressure"));
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Pressure");
 	}
-	if(cJSON_HasObjectItem(cjs,"Van")) {
-		Valve = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "Van"));
-		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Van");
+	if(cJSON_HasObjectItem(cjs,"SVan")) {
+		SetVan = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "SVan"));
+		SETFLAG(f1,FLAG_SET_VAN);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "SVan");
 	}
-	if(cJSON_HasObjectItem(cjs,"Time")) {
-		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "Time")));
-		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Time");
+	if(cJSON_HasObjectItem(cjs,"CVan")) {
+		ClearVan = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "CVan"));
+		SETFLAG(f1,FLAG_CLEAR_VAN);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "CVan");
 	}
 	if(cJSON_HasObjectItem(cjs,"TrigVan")){
-		TrigVan = cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan")));
+		if(cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan"))))
+		SETFLAG(f1,FLAG_TRIG_VAN);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "TrigVan");
+	}
+	if(cJSON_HasObjectItem(cjs,"STime")) {
+		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "STime")));
+		SETFLAG(f1,FLAG_SET_TIME);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "STime");
+	}
+	if(cJSON_HasObjectItem(cjs,"GTime")) {
+
 	}
 }
 
