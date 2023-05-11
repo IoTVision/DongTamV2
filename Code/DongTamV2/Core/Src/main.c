@@ -72,6 +72,7 @@ FlagGroup_t fUART;
 double p;
 char TimeString[50];
 int Valve;
+bool TrigVan = false;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
 /* USER CODE END PV */
@@ -486,16 +487,23 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void UnpackMessage()
+void UnpackMessage(cJSON *cjs)
 {
-	if(strstr(uartLogBuffer,"Pressure")) {
-		p = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Pressure"));
+	if(cJSON_HasObjectItem(cjs,"Pressure")) {
+		p = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "Pressure"));
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Pressure");
 	}
-	if(strstr(uartLogBuffer,"Van")) {
-		Valve = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Van"));
+	if(cJSON_HasObjectItem(cjs,"Van")) {
+		Valve = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "Van"));
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Van");
 	}
-	if(strstr(uartLogBuffer,"Time")) {
-		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjsCommon, "Time")));
+	if(cJSON_HasObjectItem(cjs,"Time")) {
+		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "Time")));
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Time");
+	}
+	if(cJSON_HasObjectItem(cjs,"TrigVan")){
+		TrigVan = cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan")));
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "TrigVan");
 	}
 }
 
@@ -504,7 +512,7 @@ void GetUartJson()
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartEsp32Buffer);
-		UnpackMessage();
+		UnpackMessage(cjsCommon);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		cJSON_Delete(cjsCommon);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
@@ -512,7 +520,7 @@ void GetUartJson()
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
 		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartLogBuffer);
-		UnpackMessage();
+		UnpackMessage(cjsCommon);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		cJSON_Delete(cjsCommon);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
