@@ -4,3 +4,6 @@
 [submodule "Code/DongTamV2/IoTVision_STM32Library"]
 	path = Code/DongTamV2/IoTVision_STM32Library
 	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
+[submodule "Code/DongTamV2/Lib"]
+	path = Code/DongTamV2/Lib
+	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
