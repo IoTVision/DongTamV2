@@ -532,6 +532,7 @@ void HandleFlagCommand()
 		pcfHandle.t = RTC_GetTimeFromString(TimeString);
 		PCF8563_WriteTimeRegisters(pcfHandle.t);
 		HAL_UART_Transmit(&huart3, (uint8_t*)"SetTimeOK", sizeof("SetTimeOK"), HAL_MAX_DELAY);
+		SETFLAG(f1,FLAG_GET_TIME);
 		memset(TimeString,0,strlen(TimeString));
 		CLEARFLAG(f1,FLAG_SET_TIME);
 	}
@@ -590,9 +591,8 @@ void UnpackMessage(cJSON *cjs)
 		SETFLAG(f1,FLAG_CLEAR_VAN);
 	}
 	if(cJSON_HasObjectItem(cjs,"TrigVan")){
-		if(cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan"))))
+		if(cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan")))) SETFLAG(f1,FLAG_TRIG_VAN);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "TrigVan");
-		SETFLAG(f1,FLAG_TRIG_VAN);
 	}
 	if(cJSON_HasObjectItem(cjs,"STime")) {
 		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "STime")));
