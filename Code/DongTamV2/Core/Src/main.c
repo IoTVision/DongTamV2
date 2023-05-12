@@ -47,10 +47,13 @@
 #define MAX_MESSAGE 200
 #define FLAG_UART_ESP_RX_DONE (1<<0)
 #define FLAG_UART_LOG_RX_DONE (1<<1)
+
 #define FLAG_JSON_PACK_TIME (1<<0)
 #define FLAG_JSON_PACK_PRESSURE (1<<1)
 #define FLAG_JSON_UNPACK_MESSAGE (1<<2)
 #define FLAG_JSON_NEW_MESSAGE (1<<3)
+#define FLAG_JSON_GET_VAN_VALUE (1<<4)
+
 #define FLAG_GET_PRESSURE (1<<0)
 #define FLAG_SET_TIME (1<<1)
 #define FLAG_GET_TIME (1<<2)
@@ -100,6 +103,8 @@ void GetUartJson();
 void HandleFlagCommand();
 void PackageMessage(cJSON *cjs);
 void UnpackMessage(cJSON *cjs);
+//void UpdateStatusVan();
+//HAL_StatusTypeDef ControlVanAndCheck();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -176,6 +181,9 @@ int main(void)
 	  HandleFlagCommand();
 	  PackageMessage(cjsCommon);
 	  UnpackMessage(cjsCommon);
+//	  if(TrigVan == TRUE){
+//		  HAL_StatusTypeDef ControlVan();
+//	  }
 //	  if(!f1 && !fJS && CHECKFLAG(fJS,FLAG_JSON_NEW_MESSAGE)){
 //		  cJSON_Delete(cjsCommon);
 //	  }
@@ -568,6 +576,16 @@ void PackageMessage(cJSON *cjs)
 		memset(TimeString,0,strlen(TimeString));
 		CLEARFLAG(fJS,FLAG_JSON_PACK_TIME);
 	}
+	if(CHECKFLAG(fJS,FLAG_JSON_GET_VAN_VALUE)){
+		cJSON_AddNumberToObject(cjs, "VanValue", hc595.data);
+		char s[50];
+		strcpy(s,"VanValue:");
+		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, "VanValue")));
+		strcat(s,"\n");
+		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "VanValue");
+		CLEARFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
+	}
 }
 
 
@@ -602,6 +620,10 @@ void UnpackMessage(cJSON *cjs)
 	if(cJSON_HasObjectItem(cjs,"GTime")) {
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "GTime");
 		SETFLAG(f1,FLAG_GET_TIME);
+	}
+	if(cJSON_HasObjectItem(cjs,"VanValue")) {
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "VanValue");
+		SETFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
 	}
 }
 
@@ -661,6 +683,20 @@ void SetUp()
 	hc165_SetUp();
 	hc595_SetUp();
 }
+
+//void UpdateStatusVan(){
+//	if(CHECKFLAG(f1, FLAG_SET_VAN)){
+//		hc595.data |= (0x01 << SetVan);
+//	}
+//	if(CHECKFLAG(f1,FLAG_CLEAR_VAN)){
+//		hc595.data &= ClearVan;
+//	}
+//}
+//HAL_StatusTypeDef ControlVanAndCheck(){
+//
+//
+//	return HAL_OK;
+//}
 
 /* USER CODE END 4 */
 
