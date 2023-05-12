@@ -47,12 +47,16 @@
 #define MAX_MESSAGE 200
 #define FLAG_UART_ESP_RX_DONE (1<<0)
 #define FLAG_UART_LOG_RX_DONE (1<<1)
-#define FLAG_AMS_DONE (1<<2)
-#define FLAG_SET_TIME (1<<3)
-#define FLAG_GET_TIME (1<<4)
-#define FLAG_SET_VAN (1<<5)
-#define FLAG_CLEAR_VAN (1<<6)
-#define FLAG_TRIG_VAN (1<<7)
+#define FLAG_JSON_PACK_TIME (1<<0)
+#define FLAG_JSON_PACK_PRESSURE (1<<1)
+#define FLAG_JSON_UNPACK_MESSAGE (1<<2)
+#define FLAG_JSON_NEW_MESSAGE (1<<3)
+#define FLAG_GET_PRESSURE (1<<0)
+#define FLAG_SET_TIME (1<<1)
+#define FLAG_GET_TIME (1<<2)
+#define FLAG_SET_VAN (1<<3)
+#define FLAG_CLEAR_VAN (1<<4)
+#define FLAG_TRIG_VAN (1<<5)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -70,12 +74,11 @@ DMA_HandleTypeDef hdma_usart3_rx;
 HC595 hc595;
 HC165 hc165;
 PCF8563_Handle pcfHandle;
-PCF8563_Time pcfTime;
 AMS5915 ams;
 cJSON *cjsCommon;
-FlagGroup_t fUART,f1;
+FlagGroup_t fUART,f1,fJS;
 double p;
-char TimeString[50];
+char TimeString[30];
 int SetVan,ClearVan;
 bool TrigVan = false;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
@@ -95,6 +98,8 @@ static void MX_USART3_UART_Init(void);
 void SetUp();
 void GetUartJson();
 void HandleFlagCommand();
+void PackageMessage(cJSON *cjs);
+void UnpackMessage(cJSON *cjs);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -136,7 +141,8 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -159,6 +165,7 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   SetUp();
+  cjsCommon = cJSON_CreateObject();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -167,6 +174,14 @@ int main(void)
   {
 	  GetUartJson();
 	  HandleFlagCommand();
+	  PackageMessage(cjsCommon);
+	  UnpackMessage(cjsCommon);
+//	  if(!f1 && !fJS && CHECKFLAG(fJS,FLAG_JSON_NEW_MESSAGE)){
+//		  cJSON_Delete(cjsCommon);
+//	  }
+//	AMS5915_ReadRaw(&ams);
+//	p = AMS5915_CalPressure(&ams);
+//	HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -495,6 +510,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HandleFlagCommand()
 {
+	if(CHECKFLAG(f1,FLAG_GET_PRESSURE)){
+		AMS5915_ReadRaw(&ams);
+		p = AMS5915_CalPressure(&ams);
+		SETFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
+		CLEARFLAG(f1,FLAG_GET_PRESSURE);
+	}
 	if(CHECKFLAG(f1,FLAG_SET_VAN)){
 		HC595_SetBitOutput(SetVan);
 		CLEARFLAG(f1,FLAG_SET_VAN);
@@ -508,69 +529,99 @@ void HandleFlagCommand()
 		CLEARFLAG(f1,FLAG_TRIG_VAN);
 	}
 	if(CHECKFLAG(f1,FLAG_SET_TIME)){
-		unsigned int hour,minute,second,day,month,year;
-		sscanf(TimeString,"%u:%u:%u %u/%u/%u",&hour,&minute,&second,&day,&month,&year);
-		pcfTime.hour = hour;
-		pcfTime.minute = minute;
-		pcfTime.second = second;
-		pcfTime.day = day;
-		pcfTime.month = month;
-		pcfTime.year = year;
-		CLEARFLAG(f1,FLAG_SET_TIME);
+		pcfHandle.t = RTC_GetTimeFromString(TimeString);
+		PCF8563_WriteTimeRegisters(pcfHandle.t);
+		HAL_UART_Transmit(&huart3, (uint8_t*)"SetTimeOK", sizeof("SetTimeOK"), HAL_MAX_DELAY);
 		memset(TimeString,0,strlen(TimeString));
+		CLEARFLAG(f1,FLAG_SET_TIME);
 	}
 	if(CHECKFLAG(f1,FLAG_GET_TIME)){
+		pcfHandle.t = PCF8563_ReadTimeRegisters();
+		RTC_PackTimeToString(&pcfHandle.t, TimeString);
+		SETFLAG(fJS,FLAG_JSON_PACK_TIME);
 		CLEARFLAG(f1,FLAG_GET_TIME);
 	}
 }
 
+void PackageMessage(cJSON *cjs)
+{
+	if(CHECKFLAG(fJS,FLAG_JSON_PACK_PRESSURE)){
+		cJSON_AddNumberToObject(cjs, "Pressure", p);
+		char s[50];
+		strcpy(s,"Pressure:");
+		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, "Pressure")));
+		strcat(s,"\n");
+		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Pressure");
+		p=0;
+		CLEARFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
+	}
+	if(CHECKFLAG(fJS,FLAG_JSON_PACK_TIME)){
+		cJSON_AddStringToObject(cjs, "Time", TimeString);
+		char s[50];
+		strcpy(s,"Time:");
+		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, "Time")));
+		strcat(s,"\n");
+		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Time");
+		memset(TimeString,0,strlen(TimeString));
+		CLEARFLAG(fJS,FLAG_JSON_PACK_TIME);
+	}
+}
+
+
+
 void UnpackMessage(cJSON *cjs)
 {
-	if(cJSON_HasObjectItem(cjs,"Pressure")) {
-		p = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "Pressure"));
-		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "Pressure");
+	if(!CHECKFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE)) return;
+	CLEARFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
+	if(cJSON_HasObjectItem(cjs,"GPressure")) {
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "GPressure");
+		SETFLAG(f1,FLAG_GET_PRESSURE);
 	}
 	if(cJSON_HasObjectItem(cjs,"SVan")) {
 		SetVan = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "SVan"));
-		SETFLAG(f1,FLAG_SET_VAN);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "SVan");
+		SETFLAG(f1,FLAG_SET_VAN);
 	}
 	if(cJSON_HasObjectItem(cjs,"CVan")) {
 		ClearVan = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(cjs, "CVan"));
-		SETFLAG(f1,FLAG_CLEAR_VAN);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "CVan");
+		SETFLAG(f1,FLAG_CLEAR_VAN);
 	}
 	if(cJSON_HasObjectItem(cjs,"TrigVan")){
 		if(cJSON_IsTrue((cJSON_GetObjectItemCaseSensitive(cjs, "TrigVan"))))
-		SETFLAG(f1,FLAG_TRIG_VAN);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "TrigVan");
+		SETFLAG(f1,FLAG_TRIG_VAN);
 	}
 	if(cJSON_HasObjectItem(cjs,"STime")) {
 		strcpy(TimeString,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "STime")));
-		SETFLAG(f1,FLAG_SET_TIME);
 		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "STime");
+		SETFLAG(f1,FLAG_SET_TIME);
 	}
 	if(cJSON_HasObjectItem(cjs,"GTime")) {
-
+		cJSON_DeleteItemFromObjectCaseSensitive(cjs, "GTime");
+		SETFLAG(f1,FLAG_GET_TIME);
 	}
+}
+
+void PerformTrigVanSequence()
+{
+
 }
 
 void GetUartJson()
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
-		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartEsp32Buffer);
-		UnpackMessage(cjsCommon);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
-		cJSON_Delete(cjsCommon);
+		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
-		cjsCommon = cJSON_CreateObject();
 		cjsCommon = cJSON_Parse(uartLogBuffer);
-		UnpackMessage(cjsCommon);
 		memset(uartLogBuffer,0,uartLogRxSize);
-		cJSON_Delete(cjsCommon);
+		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
 	}
 }
@@ -583,7 +634,6 @@ void UartIdle_Init()
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*)uartLogBuffer, MAX_MESSAGE);
 	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx,DMA_IT_HT);
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx,DMA_IT_HT);
-
 }
 
 void hc595_SetUp()
@@ -606,6 +656,7 @@ void SetUp()
 {
 	AMS5915_Init(&ams,&hi2c1);
 	PCF8563_Init(&pcfHandle, &hi2c1);
+	PCF8563_StartClock();
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
