@@ -1,0 +1,3 @@
+[submodule "IoTVision_STM32Library"]
+	path = IoTVision_STM32Library
+	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
