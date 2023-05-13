@@ -52,7 +52,8 @@
 #define FLAG_JSON_PACK_PRESSURE (1<<1)
 #define FLAG_JSON_UNPACK_MESSAGE (1<<2)
 #define FLAG_JSON_NEW_MESSAGE (1<<3)
-#define FLAG_JSON_GET_VAN_VALUE (1<<4)
+#define FLAG_JSON_PACK_VAN_VALUE (1<<4)
+#define FLAG_JSON_PRINT_PARAM (1<<5)
 
 #define FLAG_GET_PRESSURE (1<<0)
 #define FLAG_SET_TIME (1<<1)
@@ -442,17 +443,19 @@ static void MX_GPIO_Init(void)
 
 void JSON_LOG(cJSON *cjs, char *keyName)
 {
-	char s[30];
 	if(keyName){
+		char s[30];
 		strcpy(s,keyName);
 		strcat(s,":");
 		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, keyName)));
 		strcat(s,"\r\n");
+		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
 	}
 	else {
-		strcpy(s,cJSON_Print(cjs));
+		char *s = cJSON_Print(cjs);
+		strcat(s,"\r\n");
+		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
 	}
-	HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
 }
 
 void HandleFlagCommand()
@@ -465,12 +468,12 @@ void HandleFlagCommand()
 	}
 	if(CHECKFLAG(f1,FLAG_SET_VAN)){
 		HC595_SetBitOutput(SetVan);
-		SETFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
+		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 		CLEARFLAG(f1,FLAG_SET_VAN);
 	}
 	if(CHECKFLAG(f1,FLAG_CLEAR_VAN)){
 		HC595_ClearBitOutput(ClearVan);
-		SETFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
+		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 		CLEARFLAG(f1,FLAG_CLEAR_VAN);
 	}
 	if(CHECKFLAG(f1,FLAG_TRIG_VAN)){
@@ -495,31 +498,46 @@ void HandleFlagCommand()
 
 void PackageMessage(cJSON *cjs)
 {
-	if(CHECKFLAG(fJS,FLAG_JSON_PACK_PRESSURE)){
-		if(cJSON_HasObjectItem(cjs, "Pressure")){
-			cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "Pressure");
-			cJSON_SetNumberHelper(item, p);
-		} else cJSON_AddNumberToObject(cjs, "Pressure", p);
-		JSON_LOG(cjs,"Pressure");
+	FlagGroup_t fTemp =   FLAG_JSON_PRINT_PARAM
+							| FLAG_JSON_PACK_VAN_VALUE
+							| FLAG_JSON_PACK_TIME
+							| FLAG_JSON_PACK_PRESSURE;
+	if(!CHECKFLAG(fJS,FLAG_JSON_PRINT_PARAM)){
+		if(CHECKFLAG(fJS,FLAG_JSON_PACK_PRESSURE)){
+			if(cJSON_HasObjectItem(cjs, "Pressure")){
+				cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "Pressure");
+				cJSON_SetNumberHelper(item, p);
+			} else cJSON_AddNumberToObject(cjs, "Pressure", p);
+			JSON_LOG(cjs,"Pressure");
+			p=0;
+			CLEARFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
+		}
+		if(CHECKFLAG(fJS,FLAG_JSON_PACK_TIME)){
+			if(cJSON_HasObjectItem(cjs, "Time")){
+				cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "Time");
+				cJSON_SetValuestring(item, TimeString);
+			} else cJSON_AddStringToObject(cjs, "Time", TimeString);
+			JSON_LOG(cjs,"Time");
+			memset(TimeString,0,strlen(TimeString));
+			CLEARFLAG(fJS,FLAG_JSON_PACK_TIME);
+		}
+		if(CHECKFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE)){
+			if(cJSON_HasObjectItem(cjs, "VanValue")){
+				cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "VanValue");
+				cJSON_SetNumberHelper(item, hc595.data);
+			} else cJSON_AddNumberToObject(cjs, "VanValue", hc595.data);
+			JSON_LOG(cjs,"VanValue");
+			CLEARFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
+		}
+	}
+	else if(CHECKFLAG(fJS,fTemp)){
+		cJSON_AddNumberToObject(cjs, "VanValue", hc595.data);
+		cJSON_AddNumberToObject(cjs, "Pressure", p);
+		cJSON_AddStringToObject(cjs, "Time", TimeString);
+		JSON_LOG(cjs,NULL);
 		p=0;
-		CLEARFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
-	}
-	if(CHECKFLAG(fJS,FLAG_JSON_PACK_TIME)){
-		if(cJSON_HasObjectItem(cjs, "Time")){
-			cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "Time");
-			cJSON_SetValuestring(item, TimeString);
-		} else cJSON_AddStringToObject(cjs, "Time", TimeString);
-		JSON_LOG(cjs,"Time");
 		memset(TimeString,0,strlen(TimeString));
-		CLEARFLAG(fJS,FLAG_JSON_PACK_TIME);
-	}
-	if(CHECKFLAG(fJS,FLAG_JSON_GET_VAN_VALUE)){
-		if(cJSON_HasObjectItem(cjs, "VanValue")){
-			cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, "VanValue");
-			cJSON_SetNumberHelper(item, hc595.data);
-		} else cJSON_AddNumberToObject(cjs, "VanValue", hc595.data);
-		JSON_LOG(cjs,"VanValue");
-		CLEARFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
+		CLEARFLAG(fJS,fTemp);
 	}
 }
 
@@ -558,22 +576,16 @@ void UnpackMessage(cJSON *cjs)
 	}
 	if(cJSON_HasObjectItem(cjs,"VanValue")) {
 		cJSON_DeleteItemFromObject(cjs, "VanValue");
-		SETFLAG(fJS,FLAG_JSON_GET_VAN_VALUE);
+		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 	}
-	if(cJSON_HasObjectItem(cjs,"DelItem")) {
-		char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "DelItem"));
-		char *s1;
-		cJSON_DeleteItemFromObject(cjs, s);
-		if(!cJSON_HasObjectItem(cjs,s)){
-			s1 = "Delete item successful\r\n";
-			HAL_UART_Transmit(&huart3, (uint8_t*)s1, strlen(s1), HAL_MAX_DELAY);
-		}
-		else {
-			s1 = "Cannot delete item";
-			HAL_UART_Transmit(&huart3, (uint8_t*)s1, strlen(s1), HAL_MAX_DELAY);
-		}
-		cJSON_DeleteItemFromObject(cjs, "DelItem");
+	if(cJSON_HasObjectItem(cjs,"PrintParam")) {
+		cJSON_DeleteItemFromObject(cjs, "PrintParam");
+		SETFLAG(f1,FLAG_GET_PRESSURE);
+		SETFLAG(f1,FLAG_GET_TIME);
+		SETFLAG(fJS,FLAG_JSON_PRINT_PARAM);
+		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 	}
+
 }
 
 void TrigVan_RespondPressureAndState()
@@ -590,7 +602,6 @@ void GetUartJson()
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
-		cJSON_Delete(cjsCommon);
 		cjsCommon = cJSON_Parse(uartLogBuffer);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
@@ -633,19 +644,24 @@ void SetUp()
 	hc595_SetUp();
 }
 
-//void UpdateStatusVan(){
-//	if(CHECKFLAG(f1, FLAG_SET_VAN)){
-//		hc595.data |= (0x01 << SetVan);
-//	}
-//	if(CHECKFLAG(f1,FLAG_CLEAR_VAN)){
-//		hc595.data &= ClearVan;
-//	}
-//}
-//HAL_StatusTypeDef ControlVanAndCheck(){
-//
-//
-//	return HAL_OK;
-//}
+void NotUseCommand(cJSON *cjs){
+	if(cJSON_HasObjectItem(cjs,"DelItem")) {
+		char s[13]={0};
+		strcpy(s,cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cjs, "DelItem")));
+		char *s1;
+		if(cJSON_HasObjectItem(cjs,s)){
+			s1 = "Found item\r\n";HAL_UART_Transmit(&huart3, (uint8_t*)s1, strlen(s1), HAL_MAX_DELAY);
+			cJSON_DeleteItemFromObject(cjs, s);
+			if(!cJSON_HasObjectItem(cjs,s)) {
+				s1 = "Delete item successful\r\n";HAL_UART_Transmit(&huart3, (uint8_t*)s1, strlen(s1), HAL_MAX_DELAY);
+			}
+		}
+		else {
+			s1 = "Item not found\r\n";HAL_UART_Transmit(&huart3, (uint8_t*)s1, strlen(s1), HAL_MAX_DELAY);
+		}
+		cJSON_DeleteItemFromObject(cjs, "DelItem");
+	}
+}
 
 /* USER CODE END 4 */
 
