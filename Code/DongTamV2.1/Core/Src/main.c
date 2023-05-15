@@ -535,6 +535,9 @@ void PackageMessage(cJSON *cjs)
 		cJSON_AddNumberToObject(cjs, "Pressure", p);
 		cJSON_AddStringToObject(cjs, "Time", TimeString);
 		JSON_LOG(cjs,NULL);
+		cJSON_DeleteItemFromObject(cjs, "VanValue");
+		cJSON_DeleteItemFromObject(cjs, "Pressure");
+		cJSON_DeleteItemFromObject(cjs, "Time");
 		p=0;
 		memset(TimeString,0,strlen(TimeString));
 		CLEARFLAG(fJS,fTemp);
