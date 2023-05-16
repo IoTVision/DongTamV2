@@ -14,11 +14,11 @@ QueueHandle_t qUART_STM32_event,qLOG_event;
 #define RD_BUF_SIZE 10
 // static const char *TAG_UART= "UART";
 
-void UARTToSTM32_event_task(void *pvParameters)
+void taskUart(void *pvParameters)
 {
     uart_event_t event;
     for(;;) {
-        if(xQueueReceive(qUART_STM32_event, (void * )&event, (TickType_t)portMAX_DELAY)) {
+        if(xQueueReceive(qUART_STM32_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
             switch(event.type) {
                 case UART_DATA:
                     char *dtmp = (char *) malloc(event.size + 1);
@@ -27,39 +27,26 @@ void UARTToSTM32_event_task(void *pvParameters)
                     uart_write_bytes(UART_NUM_0, dtmp, strlen(dtmp));
                     free(dtmp);
                     break;
-                case UART_BREAK:
-                    break;
-                //Others
-                default:
-                    break;
+                case UART_BREAK: break;
+                default: break;
             }
         }
-    }
-}
-
-void log_uart_event_task(void *pvParameters){
-    uart_event_t event;
-    while(1){
-        if(xQueueReceive(qLOG_event, (void * )&event, (TickType_t)portMAX_DELAY)) {
+        if(xQueueReceive(qLOG_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
             switch(event.type) {
                 case UART_DATA:{
                     char *dtmp = (char *) malloc(event.size + 1);
                     uart_read_bytes(UART_NUM_0, dtmp, event.size, portMAX_DELAY);
                     dtmp[event.size] = '\0';
-                    uart_write_bytes(UART_NUM_2, dtmp, strlen(dtmp));
+                    uart_write_bytes(UART_NUM_0, dtmp, strlen(dtmp));
                     free(dtmp);
                 }
 				break;
-                case UART_BREAK:
-				break;
-                default:
-				break;
+                case UART_BREAK: break;
+                default: break;
             }
         }
     }
 }
-
-
 void UARTConfig()
 {
     uart_config_t uart_config = {

@@ -25,10 +25,6 @@ esp_err_t LCD_init()
     return err;
 }
 
-void PressureIndicator_Test()
-{
-    PI_Test();
-}
 
 void Button_Test()
 {
