@@ -6,6 +6,4 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-
-
 #endif
