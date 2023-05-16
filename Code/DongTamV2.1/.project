@@ -29,4 +29,22 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>STM32_FirmwareLibrary</name>
+			<type>2</type>
+			<location>E:/IoT_Lab/PROJECT/firmware/STM32/STM32_FirmwareLibrary</location>
+		</link>
+		<link>
+			<name>Src</name>
+			<type>2</type>
+			<location>E:/IoT_Lab/PROJECT/firmware/STM32/STM32_FirmwareLibrary/Src</location>
+		</link>
+	</linkedResources>
+	<variableList>
+		<variable>
+			<name>LIB</name>
+			<value>file:/E:/IoT_Lab/PROJECT/firmware/STM32/STM32_FirmwareLibrary</value>
+		</variable>
+	</variableList>
 </projectDescription>
