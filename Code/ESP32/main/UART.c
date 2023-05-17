@@ -6,17 +6,21 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include <string.h>
+#include "ShareVar.h"
 
 QueueHandle_t qUART_STM32_event,qLOG_event;
 
 #define UART_RX GPIO_NUM_16
 #define UART_TX GPIO_NUM_17
 #define RD_BUF_SIZE 10
-// static const char *TAG_UART= "UART";
+static const char *TAG_UART= "UART";
 
-void taskUart(void *pvParameters)
+#define QUEUE_RX qUartHandle
+
+void TaskUart(void *pvParameters)
 {
     uart_event_t event;
+    char *s;
     for(;;) {
         if(xQueueReceive(qUART_STM32_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
             switch(event.type) {
@@ -24,8 +28,7 @@ void taskUart(void *pvParameters)
                     char *dtmp = (char *) malloc(event.size + 1);
                     uart_read_bytes(UART_NUM_2, dtmp, event.size, portMAX_DELAY);
                     dtmp[event.size] = '\0';
-                    uart_write_bytes(UART_NUM_0, dtmp, strlen(dtmp));
-                    free(dtmp);
+                    xQueueSend(QUEUE_RX,(void*)&dtmp,2/portTICK_PERIOD_MS);
                     break;
                 case UART_BREAK: break;
                 default: break;
@@ -37,13 +40,15 @@ void taskUart(void *pvParameters)
                     char *dtmp = (char *) malloc(event.size + 1);
                     uart_read_bytes(UART_NUM_0, dtmp, event.size, portMAX_DELAY);
                     dtmp[event.size] = '\0';
-                    uart_write_bytes(UART_NUM_0, dtmp, strlen(dtmp));
-                    free(dtmp);
+                    xQueueSend(QUEUE_RX,(void*)&dtmp,2/portTICK_PERIOD_MS);
                 }
 				break;
                 case UART_BREAK: break;
                 default: break;
             }
+        }
+        if(xQueueReceive(qSTM32Tx, (void * )&s, (TickType_t)10/portTICK_PERIOD_MS)) {
+                uart_write_bytes(UART_NUM_2,s,strlen(s));
         }
     }
 }
@@ -61,7 +66,7 @@ void UARTConfig()
     ESP_ERROR_CHECK(uart_param_config(UART_NUM_2, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_TX, UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
-    uart_driver_install(UART_NUM_0, 200, 200, 20, &qLOG_event, 0);
+    uart_driver_install(UART_NUM_0, 200, 200, 5, &qLOG_event, 0);
     uart_param_config(UART_NUM_0, &uart_config);
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
