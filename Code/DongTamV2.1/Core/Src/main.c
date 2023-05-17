@@ -459,11 +459,12 @@ static void MX_GPIO_Init(void)
 void JSON_LOG(cJSON *cjs, char *keyName)
 {
 	if(keyName){
-		char s[30];
-		strcpy(s,keyName);
-		strcat(s,":");
+		char s[40]={0};
+		strcpy(s,"{\n\t\"");
+		strcat(s,keyName);
+		strcat(s,"\":\t");
 		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, keyName)));
-		strcat(s,"\r\n");
+		strcat(s,"\n}\n");
 		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
 	}
 	else {
@@ -482,12 +483,20 @@ void HandleFlagCommand()
 		CLEARFLAG(f1,FLAG_GET_PRESSURE);
 	}
 	if(CHECKFLAG(f1,FLAG_SET_VAN)){
-		HC595_SetBitOutput(SetVan);
+		if(SetVan < 16) HC595_SetBitOutput(SetVan);
+		else {
+			char *s = "Van num must be less than 16";
+			HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		}
 		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 		CLEARFLAG(f1,FLAG_SET_VAN);
 	}
 	if(CHECKFLAG(f1,FLAG_CLEAR_VAN)){
-		HC595_ClearBitOutput(ClearVan);
+		if(ClearVan < 16) HC595_ClearBitOutput(ClearVan);
+		else {
+			char *s = "Van num must be less than 16";
+			HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		}
 		SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 		CLEARFLAG(f1,FLAG_CLEAR_VAN);
 	}
@@ -525,6 +534,7 @@ void PackageMessage(cJSON *cjs)
 			} else cJSON_AddNumberToObject(cjs, "Pressure", p);
 			JSON_LOG(cjs,"Pressure");
 			p=0;
+			cJSON_DeleteItemFromObject(cjs, "Pressure");
 			CLEARFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
 		}
 		if(CHECKFLAG(fJS,FLAG_JSON_PACK_TIME)){
@@ -534,6 +544,7 @@ void PackageMessage(cJSON *cjs)
 			} else cJSON_AddStringToObject(cjs, "Time", TimeString);
 			JSON_LOG(cjs,"Time");
 			memset(TimeString,0,strlen(TimeString));
+			cJSON_DeleteItemFromObject(cjs, "Time");
 			CLEARFLAG(fJS,FLAG_JSON_PACK_TIME);
 		}
 		if(CHECKFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE)){
@@ -542,6 +553,7 @@ void PackageMessage(cJSON *cjs)
 				cJSON_SetNumberHelper(item, hc595.data);
 			} else cJSON_AddNumberToObject(cjs, "VanValue", hc595.data);
 			JSON_LOG(cjs,"VanValue");
+			cJSON_DeleteItemFromObject(cjs, "VanValue");
 			CLEARFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
 		}
 		if(CHECKFLAG(fJS,FLAG_JSON_READ_HC165)){
@@ -552,6 +564,7 @@ void PackageMessage(cJSON *cjs)
 				cJSON_SetValuestring(item, str);
 			} else cJSON_AddStringToObject(cjs, "HC165", str);
 			JSON_LOG(cjs,"HC165");
+			cJSON_DeleteItemFromObject(cjs, "HC165");
 			CLEARFLAG(fJS,FLAG_JSON_READ_HC165);
 		}
 	}
@@ -619,9 +632,37 @@ void UnpackMessage(cJSON *cjs)
 
 }
 
-void TrigVan_RespondPressureAndState()
-{
+void ProcedureVan(){
+	static uint32_t tDelayForHC165Read = 0;
+	static bool flagOnlyDoAfterShiftOut = false;
+	// turn on valve
+	if(CHECKFLAG(f1, FLAG_TRIG_VAN_PROCEDURE)){
+		HC595_ShiftOut(NULL, 2, 1);
+		//
+//		char *s = "Trig Van\n";
+//		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+		flagOnlyDoAfterShiftOut = true;
+		CLEARFLAG(f1, FLAG_TRIG_VAN_PROCEDURE);
+		tDelayForHC165Read = HAL_GetTick();
+	}
+	// delay 500ms
+	if((true == flagOnlyDoAfterShiftOut) && (HAL_GetTick() - tDelayForHC165Read >= 500)){
+//		tDelayForHC165Read = HAL_GetTick();
+		// read status valve
+		HC165_ReadState(&hc165_data, 2);
+		// turn off valve
+//		HC595_SetByteOutput(value, pos)
+		HC595_ClearBitOutput(SetVan);
+		HC595_ShiftOut(NULL, 2, 1);
+		// update to UART
+		SETFLAG(fJS, FLAG_JSON_READ_HC165);
 
+//		char s[20];
+//		sprintf(s,"ClearVan,Read:%lu\n",hc165_data);
+//		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
+
+		flagOnlyDoAfterShiftOut = false;
+	}
 }
 
 void GetUartJson()
@@ -703,38 +744,7 @@ void NotUseCommand(cJSON *cjs){
 //	hc595_data[0] = hc595_data[0] | (0x01 << SetVan);
 //}
 
-void ProcedureVan(){
-	static uint32_t tDelayForHC165Read = 0;
-	static bool flagOnlyDoAfterShiftOut = false;
-	// turn on valve
-	if(CHECKFLAG(f1, FLAG_TRIG_VAN_PROCEDURE)){
-		HC595_ShiftOut(NULL, 2, 1);
-		//
-//		char *s = "Trig Van\n";
-//		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-		flagOnlyDoAfterShiftOut = true;
-		CLEARFLAG(f1, FLAG_TRIG_VAN_PROCEDURE);
-		tDelayForHC165Read = HAL_GetTick();
-	}
-	// delay 500ms
-	if((true == flagOnlyDoAfterShiftOut) && (HAL_GetTick() - tDelayForHC165Read >= 500)){
-//		tDelayForHC165Read = HAL_GetTick();
-		// read status valve
-		HC165_ReadState(&hc165_data, 2);
-		// turn off valve
-//		HC595_SetByteOutput(value, pos)
-		HC595_ClearBitOutput(SetVan);
-		HC595_ShiftOut(NULL, 2, 1);
-		// update to UART
-		SETFLAG(fJS, FLAG_JSON_READ_HC165);
 
-//		char s[20];
-//		sprintf(s,"ClearVan,Read:%lu\n",hc165_data);
-//		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-
-		flagOnlyDoAfterShiftOut = false;
-	}
-}
 
 /* USER CODE END 4 */
 
