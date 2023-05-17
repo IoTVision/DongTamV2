@@ -657,7 +657,7 @@ void hc595_SetUp()
 	HC595_AssignPin(&hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
 	HC595_AssignPin(&hc595, GPIOA, GPIO_PIN_12,HC595_OE);
 	HC595_ClearByteOutput(0xffffffff, 0);
-	HC595_ShiftOut(NULL, 2, LSB_FIRST);
+	HC595_ShiftOut(NULL, 2, 1);
 	HC595_Enable();
 }
 
@@ -672,9 +672,11 @@ void SetUp()
 {
 	AMS5915_Init(&ams,&hi2c1);
 	PCF8563_Init(&pcfHandle, &hi2c1);
+	PCF8563_StartClock();
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
+
 }
 
 void NotUseCommand(cJSON *cjs){
@@ -706,7 +708,7 @@ void ProcedureVan(){
 	static bool flagOnlyDoAfterShiftOut = false;
 	// turn on valve
 	if(CHECKFLAG(f1, FLAG_TRIG_VAN_PROCEDURE)){
-		HC595_ShiftOut(NULL, 2, LSB_FIRST);
+		HC595_ShiftOut(NULL, 2, 1);
 		//
 //		char *s = "Trig Van\n";
 //		HAL_UART_Transmit(&huart3, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
@@ -722,7 +724,7 @@ void ProcedureVan(){
 		// turn off valve
 //		HC595_SetByteOutput(value, pos)
 		HC595_ClearBitOutput(SetVan);
-		HC595_ShiftOut(NULL, 2, LSB_FIRST);
+		HC595_ShiftOut(NULL, 2, 1);
 		// update to UART
 		SETFLAG(fJS, FLAG_JSON_READ_HC165);
 
