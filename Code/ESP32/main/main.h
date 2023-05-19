@@ -60,4 +60,7 @@ typedef enum EventCommand{
 #define JSON_KEY_CLEAR_VAN "CVan"
 #define JSON_KEY_TRIG_VAN "TrigVan"
 
+// reference in cJSON library
+#define cJSON_OFFSET_BYTES 5
+
 #endif

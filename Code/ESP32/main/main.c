@@ -30,25 +30,14 @@ void app_main(void)
         }
     }
 }
-
-void SendStringToLog(char *s)
-{
-    char *a = (char *) malloc(strlen(s));
-    if(a) {
-        strcpy(a,s);
-        xQueueSend(qLogTx,(void*)&a,2/portTICK_PERIOD_MS);
-    }
-    else ESP_LOGI("MAIN","Cannot malloc to send queue");
-}
-
 void SendStringToUART(QueueHandle_t q,char *s)
 {
-    char *a = (char *) malloc(strlen(s));
+    char *a = (char *) malloc(strlen(s) + cJSON_OFFSET_BYTES);
     if(a) {
         strcpy(a,s);
         xQueueSend(q,(void*)&a,2/portTICK_PERIOD_MS);
     }
-    else ESP_LOGI("MAIN","Error malloc to send queue");
+    else ESP_LOGI("MAIN","Cannot malloc to send queue");
 }
 
 
@@ -59,28 +48,28 @@ void UpdateParamFromParsedJsonItem(cJSON *cjs)
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_PRESSURE);
         brdParam.Pressure = cJSON_GetNumberValue(item);
         sprintf(s,"Pressure update:%.2f",brdParam.Pressure);
-        SendStringToLog(s);
+        SendStringToUART(qLogTx,s);
         cJSON_Delete(item); 
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_TIME)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_TIME);
         strcpy(brdParam.Time,cJSON_GetStringValue(item));
         sprintf(s,"Time update:%s",brdParam.Time);
-        SendStringToLog(s);
+        SendStringToUART(qLogTx,s);
         cJSON_Delete(item);       
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_VAN_VALUE)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_VAN_VALUE);
         brdParam.VanData = cJSON_GetNumberValue(item);
         sprintf(s,"VanValue update:%ld",brdParam.VanData);
-        SendStringToLog(s);
+        SendStringToUART(qLogTx,s);
         cJSON_Delete(item);        
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_VANSTATE)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_VANSTATE);
         strcpy(brdParam.VanState,cJSON_GetStringValue(item));
         sprintf(s,"VanState update:%s",brdParam.VanState);
-        SendStringToLog(s);
+        SendStringToUART(qLogTx,s);
         cJSON_Delete(item);        
     }
     
@@ -109,10 +98,7 @@ static inline void CheckEventAndPackJsonData(EventBits_t e,
             cJSON_AddStringToObject(cjs,jsonKey,"");
             break;
         }
-        // char s[100]={0};
-        // strcpy(s,cJSON_Print(cjs));
-        // SendStringToUART(qLogTx,s);
-        ESP_LOGI("CheckEventAndPackJsonData","%s",cJSON_Print(cjs));
+        SendStringToUART(qLogTx,cJSON_Print(cjs));
         cJSON_DeleteItemFromObjectCaseSensitive(cjs,jsonKey);
     }
 }
