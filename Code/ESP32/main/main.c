@@ -6,7 +6,18 @@
 #include "cJSON.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "RTC_Format.h"
 // static const char *TAG= "main";
+typedef struct BoardParameter{
+    char ID[12];
+    float Pressure;
+    RTC_t Time;
+    char VanState[16];
+    uint32_t VanData;
+    uint32_t SetVan;
+    uint32_t ClearVan;
+}BoardParameter;
+
 
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
@@ -47,30 +58,40 @@ void UpdateParamFromParsedJsonItem(cJSON *cjs)
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_PRESSURE)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_PRESSURE);
         brdParam.Pressure = cJSON_GetNumberValue(item);
-        sprintf(s,"Pressure update:%.2f",brdParam.Pressure);
+        sprintf(s,"Pressure update: %.2f",brdParam.Pressure);
         SendStringToUART(qLogTx,s);
-        cJSON_Delete(item); 
+        cJSON_DeleteItemFromObject(cjs,JSON_PARSE_KEY_PRESSURE); 
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_TIME)){
-        cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_TIME);
-        strcpy(brdParam.Time,cJSON_GetStringValue(item));
-        sprintf(s,"Time update:%s",brdParam.Time);
+        cJSON *item;
+        item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_TIME);
+        char T[20];
+        strcpy(T,cJSON_GetStringValue(item));
+        brdParam.Time = RTC_GetTimeFromString(T);
+        RTC_PackTimeToString(brdParam.Time,T);
+        ESP_LOGI("Time","%u/%u/%u %u:%u:%u",brdParam.Time.day,
+                                            brdParam.Time.month,
+                                            brdParam.Time.year, 
+                                            brdParam.Time.hour, 
+                                            brdParam.Time.minute, 
+                                            brdParam.Time.second);
+        sprintf(s,"Time update: %s",T);
         SendStringToUART(qLogTx,s);
-        cJSON_Delete(item);       
+        cJSON_DeleteItemFromObject(cjs,JSON_PARSE_KEY_TIME);
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_VAN_VALUE)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_VAN_VALUE);
         brdParam.VanData = cJSON_GetNumberValue(item);
-        sprintf(s,"VanValue update:%ld",brdParam.VanData);
+        sprintf(s,"VanValue update: %ld",brdParam.VanData);
         SendStringToUART(qLogTx,s);
-        cJSON_Delete(item);        
+        cJSON_DeleteItemFromObject(cjs,JSON_PARSE_KEY_VAN_VALUE);
     }
     if(cJSON_HasObjectItem(cjs,JSON_PARSE_KEY_VANSTATE)){
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JSON_PARSE_KEY_VANSTATE);
         strcpy(brdParam.VanState,cJSON_GetStringValue(item));
-        sprintf(s,"VanState update:%s",brdParam.VanState);
+        sprintf(s,"VanState update: %s",brdParam.VanState);
         SendStringToUART(qLogTx,s);
-        cJSON_Delete(item);        
+        cJSON_DeleteItemFromObject(cjs,JSON_PARSE_KEY_VANSTATE);
     }
     
 }
@@ -119,10 +140,12 @@ void SendCommandToSTM32(cJSON *cjs)
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_GET_VAN_VALUE, EVT_GET_VAN_VALUE,0,NULL);
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_GET_PRESSURE,  EVT_GET_PRESSURE,0,NULL);
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_GET_ALL_PARAM, EVT_GET_FULL_PARAM,0,NULL);
-    CheckEventAndPackJsonData(e,cjs,JSON_KEY_SET_TIME,      EVT_SET_TIME,JSON_TYPE_STRING,brdParam.Time);
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_CLEAR_VAN,     EVT_CLEAR_VAN,JSON_TYPE_NUMBER,&brdParam.ClearVan);
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_SET_VAN,       EVT_SET_VAN,JSON_TYPE_NUMBER,&brdParam.SetVan);
     CheckEventAndPackJsonData(e,cjs,JSON_KEY_TRIG_VAN,      EVT_TRIG_VAN,JSON_TYPE_BOOL,(void*)1);
+    char s[20];
+    RTC_PackTimeToString(brdParam.Time,s);
+    CheckEventAndPackJsonData(e,cjs,JSON_KEY_SET_TIME,      EVT_SET_TIME,JSON_TYPE_STRING,s);
 }
 
 EventBits_t CheckCommandList(char *s)
@@ -142,8 +165,7 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS)){
             if(strstr(s,"{") && strstr(s,"}")){ // is JSON format
-                // cjsMain = cJSON_Parse(s); 
-                SendStringToUART(qLogTx,"This string may be parse to JSON");
+                cjsMain = cJSON_Parse(s); 
             } 
             else if(CheckCommandList(s)) {
                 ESP_LOGI("UartHandleString","Detect command in list");

@@ -6,15 +6,9 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-typedef struct BoardParameter{
-    char ID[12];
-    float Pressure;
-    char Time[20];
-    char VanState[16];
-    uint32_t VanData;
-    uint32_t SetVan;
-    uint32_t ClearVan;
-}BoardParameter;
+
+
+
 
 typedef enum {
     JSON_TYPE_NUMBER = 1,
