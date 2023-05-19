@@ -13,7 +13,6 @@ QueueHandle_t qUART_STM32_event,qLOG_event;
 #define UART_RX GPIO_NUM_16
 #define UART_TX GPIO_NUM_17
 #define RD_BUF_SIZE 10
-static const char *TAG_UART= "UART";
 
 #define QUEUE_RX qUartHandle
 
@@ -49,6 +48,7 @@ void TaskUart(void *pvParameters)
         }
         if(xQueueReceive(qSTM32Tx, (void * )&s, (TickType_t)10/portTICK_PERIOD_MS)) {
                 uart_write_bytes(UART_NUM_2,s,strlen(s));
+                free(s);
         }
     }
 }
