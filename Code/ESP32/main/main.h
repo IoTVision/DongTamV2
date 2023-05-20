@@ -5,6 +5,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+// #include "RTC_Format.h"
 
 
 
@@ -37,11 +38,16 @@ typedef enum EventCommand{
 #define EVT_CLEAR_VAN (1<<CLEAR_VAN)
 #define EVT_TRIG_VAN (1<<TRIG_VAN)
 
-// Data respone back 
+// Use to found item match key value after parsing the receive string
 #define JSON_PARSE_KEY_PRESSURE "Pressure"
 #define JSON_PARSE_KEY_TIME "Time"
 #define JSON_PARSE_KEY_VANSTATE "HC165"
 #define JSON_PARSE_KEY_VAN_VALUE "VanValue"
+#define JSON_PARSE_KEY_SET_VAN "SVan"
+#define JSON_PARSE_KEY_CLEAR_VAN "CVan"
+#define JSON_PARSE_KEY_TRIG_VAN "TrigVan"
+#define JSON_PARSE_KEY_SET_TIME "STime"
+#define JSON_PARSE_KEY_GET_ALL_PARAM "PrintParam"
 
 
 // Command to request STM32

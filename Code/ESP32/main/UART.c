@@ -13,6 +13,8 @@ QueueHandle_t qUART_STM32_event,qLOG_event;
 #define UART_RX GPIO_NUM_16
 #define UART_TX GPIO_NUM_17
 #define RD_BUF_SIZE 10
+#define UART_QUEUE_EVENT_SIZE 10
+#define UART_BUFFER_EVENT_SIZE 500
 
 #define QUEUE_RX qUartHandle
 
@@ -62,11 +64,11 @@ void UARTConfig()
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT,
     };
-    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, 200, 200, 5, &qUART_STM32_event, 0));
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, UART_BUFFER_EVENT_SIZE, UART_BUFFER_EVENT_SIZE, UART_QUEUE_EVENT_SIZE, &qUART_STM32_event, 0));
     ESP_ERROR_CHECK(uart_param_config(UART_NUM_2, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_TX, UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
-    uart_driver_install(UART_NUM_0, 200, 200, 5, &qLOG_event, 0);
+    uart_driver_install(UART_NUM_0, UART_BUFFER_EVENT_SIZE, UART_BUFFER_EVENT_SIZE, UART_QUEUE_EVENT_SIZE, &qLOG_event, 0);
     uart_param_config(UART_NUM_0, &uart_config);
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
