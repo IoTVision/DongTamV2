@@ -5,18 +5,8 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "freertos/queue.h"
 // #include "RTC_Format.h"
-
-
-
-
-
-typedef enum {
-    JSON_TYPE_NUMBER = 1,
-    JSON_TYPE_STRING,
-    JSON_TYPE_BOOL,
-}JSON_TYPE;
-
 typedef enum EventCommand{
     GET_PRESSURE,
     GET_TIME,
@@ -63,4 +53,9 @@ typedef enum EventCommand{
 // reference in cJSON library
 #define cJSON_OFFSET_BYTES 5
 
+#define CHECKFLAG(FlagGroup,FlagBit) ((((FlagGroup) & (FlagBit)) == (FlagBit)) ? 1 : 0) 
+
+
+void SendStringToUART(QueueHandle_t q,char *s);
+void UartHandleString(void *pvParameter);
 #endif

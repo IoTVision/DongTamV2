@@ -1,10 +1,9 @@
-#ifndef GUI
-#define GUI
+
 #include "esp_err.h"
 #include "i2cdev.h"
 #include "LCD_I2C.h"
 #include "esp_check.h"
-#include "PressureIndicator.c"
+// #include "PressureIndicator.c"
 #include "74HC595.h"
 #include "GUI.h"
 LCDI2C lcdI2C;
@@ -30,4 +29,3 @@ void Button_Test()
 {
 
 }
-#endif

@@ -1,3 +1,4 @@
+
 #include "74HC595.h"
 #define INDICATOR_MAX_BITMASK 0x03ff
 #define INDICATOR_MIN_BITMASK 0x0200
@@ -19,7 +20,7 @@ void PI_SetLevel(uint8_t level){
     // HC595_Send_Data(data,2);
 }
 
-void PI_ConfigPin()
+void PI_Init()
 {
     // gpio_config_t cfg = {
     //     .intr_type = GPIO_INTR_DISABLE,
