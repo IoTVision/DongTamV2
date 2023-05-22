@@ -10,17 +10,6 @@
 #include "JsonHandle/JsonHandle.h"
 #include "ShareVar.h"
 // static const char *TAG= "main";
-
-// typedef struct BoardParameter{
-//     char ID[12];
-//     float Pressure;
-//     RTC_t Time;
-//     char VanState[16];
-//     uint32_t VanData;
-//     uint32_t SetVan;
-//     uint32_t ClearVan;
-// }BoardParameter;
-
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
 BoardParameter brdParam;

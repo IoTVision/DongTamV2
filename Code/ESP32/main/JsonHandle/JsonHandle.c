@@ -1,7 +1,10 @@
 #include "JsonHandle.h"
 
+#define MAX_NUM_VAN 16
+
 void UpdateGetTime(cJSON *item,char *logMessage)
 {
+    if(!cJSON_IsString(item)) return;
     char T[20];
     strcpy(T,cJSON_GetStringValue(item));
     brdParam.Time = RTC_GetTimeFromString(T);
@@ -11,6 +14,7 @@ void UpdateGetTime(cJSON *item,char *logMessage)
 
 void UpdateSetTime(cJSON *item,char *logMessage)
 {
+    if(!cJSON_IsString(item)) return;
     char T[20];
     strcpy(T,cJSON_GetStringValue(item));
     brdParam.Time = RTC_GetTimeFromString(T);
@@ -27,39 +31,55 @@ void UpdateTrigVan(cJSON *item,char *logMessage)
 
 void UpdatePressure(cJSON *item,char *logMessage)
 {
+    if(!cJSON_IsNumber(item)) return;
     brdParam.Pressure = cJSON_GetNumberValue(item);
-    sprintf(logMessage,"Pressure update: %.2f",brdParam.Pressure);
+    sprintf(logMessage,"Pressure update: %.4f",brdParam.Pressure);
 }
 
 void UpdateSetVan(cJSON *item,char *logMessage)
 {
-    brdParam.SetVan = cJSON_GetNumberValue(item);
+    if(!cJSON_IsNumber(item)) return;
+    uint32_t a = (uint32_t) cJSON_GetNumberValue(item);
+    if(a > MAX_NUM_VAN - 1) {
+        sprintf(logMessage,"Input van > MAX_NUM_VAN:%d",MAX_NUM_VAN);
+        return;
+    }
+    brdParam.SetVan = a;
     sprintf(logMessage,"SetVan update:\t%ld\n",brdParam.SetVan);
     xEventGroupSetBits(evg1,EVT_SET_VAN);
 }
 
 void UpdateClearVan(cJSON *item,char *logMessage)
 {
-    brdParam.ClearVan = cJSON_GetNumberValue(item);
+    if(!cJSON_IsNumber(item)) return;
+    uint32_t a = (uint32_t) cJSON_GetNumberValue(item);
+    if(a > MAX_NUM_VAN - 1) {
+        sprintf(logMessage,"Input van > MAX_NUM_VAN:%d",MAX_NUM_VAN);
+        return;
+    }
+    brdParam.ClearVan = a;
     sprintf(logMessage,"ClearVan update:\t%ld\n",brdParam.ClearVan);
     xEventGroupSetBits(evg1,EVT_CLEAR_VAN);
 }
 
 void UpdateVanValue(cJSON *item,char *logMessage)
 {
+    if(!cJSON_IsNumber(item)) return;
     brdParam.VanData = cJSON_GetNumberValue(item);
     sprintf(logMessage,"VanValue update:\t%ld\n",brdParam.VanData);
 }
 
 void UpdateVanState(cJSON *item,char *logMessage)
 {
+    if(!cJSON_IsString(item)) return;
     strcpy(brdParam.VanState,cJSON_GetStringValue(item));
     sprintf(logMessage,"VanState update:\t%s\n",brdParam.VanState);
 }
 
-void UpdatePrintParam(cJSON *item,char *logMessage)
+void SendPrintParamEvt(cJSON *item,char *logMessage)
 {
-
+    xEventGroupSetBits(evg1,EVT_GET_FULL_PARAM);
+    strcpy(logMessage,"Trig GET_FUL_PARAM evt");
 }
 
 void ObtainJsonItem(cJSON *cjs, char *JsonKey,void (*pParamUpdate)(cJSON *item,char *logMessage))
@@ -82,9 +102,9 @@ void UpdateParamFromParsedJsonItem(cJSON *cjs)
     ObtainJsonItem(cjs,JSON_PARSE_KEY_TIME,&UpdateGetTime);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_VAN_VALUE,&UpdateVanValue);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_VANSTATE,&UpdateVanState);
-    // PrintPram;
-    // Section end: Parse Item to get value from STM32
+    // End section
     // Section: Parse item to set value to STM32
+    ObtainJsonItem(cjs,JSON_PARSE_KEY_GET_ALL_PARAM,&SendPrintParamEvt);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_SET_VAN,&UpdateSetVan);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_CLEAR_VAN,&UpdateClearVan);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_TRIG_VAN,&UpdateTrigVan);
@@ -144,7 +164,7 @@ void CheckEvent_PackJsonData_Send( cJSON *cjs,
                                 char* (*pJsPrint)(cJSON * object, char *jsonKey))
 {
     if(CHECKFLAG(e,event)){
-        SendStringToUART(qLogTx,pJsPrint(cjs,jsonKey));
+        SendStringToUART(qSTM32Tx,pJsPrint(cjs,jsonKey));
         cJSON_DeleteItemFromObjectCaseSensitive(cjs,jsonKey);
     }
 }
