@@ -48,28 +48,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define MAX_MESSAGE 200
-#define FLAG_UART_ESP_RX_DONE (1<<0)
-#define FLAG_UART_LOG_RX_DONE (1<<1)
 
-#define FLAG_JSON_PACK_TIME (1<<0)
-#define FLAG_JSON_PACK_PRESSURE (1<<1)
-#define FLAG_JSON_UNPACK_MESSAGE (1<<2)
-#define FLAG_JSON_NEW_MESSAGE (1<<3)
-#define FLAG_JSON_PACK_VAN_VALUE (1<<4)
-#define FLAG_JSON_PRINT_PARAM (1<<5)
-#define FLAG_JSON_READ_HC165 (1 << 6)
-
-#define FLAG_GET_PRESSURE (1<<0)
-#define FLAG_SET_TIME (1<<1)
-#define FLAG_GET_TIME (1<<2)
-#define FLAG_SET_VAN (1<<3)
-#define FLAG_CLEAR_VAN (1<<4)
-#define FLAG_TRIG_VAN (1<<5)
-#define FLAG_TRIG_VAN_PROCEDURE (1<<6)
-#define FLAG_AFTER_TRIG_VAN_ON (1<<7)
-
-#define MAX_NUM_VAN 16
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -84,12 +63,9 @@ DMA_HandleTypeDef hdma_usart3_rx;
 
 ///* USER CODE BEGIN PV */
 
-uint32_t hc165_data = 0;
 cJSON *cjsCommon;
 FlagGroup_t fUART,f1 = 0,fJS;
-char TimeString[30];
 int SetVan,ClearVan;
-bool TrigVan = false;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
 BoarParam brdParam;
@@ -178,11 +154,11 @@ int main(void)
   {
 	  GetUartJson();
 	  UnpackMessage(cjsCommon);
+	  PackageMessage(cjsCommon);
 	  ProcedureVan();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  PackageMessage(cjsCommon);
   }
   /* USER CODE END 3 */
 }
@@ -438,192 +414,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void SendJsonStringToUart(cJSON *cjs, char *keyName, UART_HandleTypeDef *huartx)
-{
-	if(keyName){
-		char s[40]={0};
-		strcpy(s,"{\n\t\"");
-		strcat(s,keyName);
-		strcat(s,"\":\t");
-		strcat(s,cJSON_Print(cJSON_GetObjectItemCaseSensitive(cjs, keyName)));
-		strcat(s,"\n}\n");
-		HAL_UART_Transmit(huartx, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-	}
-	else {
-		char *s = cJSON_Print(cjs);
-		strcat(s,"\r\n");
-		HAL_UART_Transmit(huartx, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-	}
-}
 
-
-
-
-
-
-
-
-void PackJsonPressure(cJSON *object, cJSON *item, void* pvParam)
-{
-	float *p = (float*)pvParam;
-	if(item != NULL) cJSON_SetNumberHelper(item,*p);
-	else cJSON_AddNumberToObject(object,"Pressure",*p);
-}
-
-void PackJsonVanValue(cJSON *object, cJSON *item, void* pvParam)
-{
-	uint32_t *data = (uint32_t*)pvParam;
-	if(item != NULL)  cJSON_SetNumberHelper(item,*data);
-	else cJSON_AddNumberToObject(object,"VanValue",*data);
-}
-
-void PackJsonTime(cJSON *object, cJSON *item, void* pvParam)
-{
-	RTC_t *t = (RTC_t*)pvParam;
-	char TimeString[20] = {0};
-	RTC_PackTimeToString(t, TimeString);
-	if(item != NULL) cJSON_SetValuestring(item,TimeString);
-	else cJSON_AddStringToObject(object,"Time",TimeString);
-}
-
-void PackJsonVanState(cJSON *object, cJSON *item, void* pvParam)
-{
-	uint32_t* data = (uint32_t*)pvParam;
-	char s[33] = {0};
-	itoa(*data, s, 2);
-	if(item != NULL) cJSON_SetValuestring(item,s);
-	else cJSON_AddStringToObject(object,"HC165",s);
-	memset(data,0,strlen(s));
-}
-
-void PackJsonItem(cJSON *cjs, char* jsonKey, FlagGroup_t *f ,uint32_t FlagBit,void(*pSetJsonValue)(cJSON *object,cJSON *item,void* pvParam), void* inputData)
-{
-	if(CHECKFLAG(*f,FlagBit)){
-		if(cJSON_HasObjectItem(cjs, jsonKey)){
-			cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs, jsonKey);
-			pSetJsonValue(cjs,item,(void*)inputData);
-		} else pSetJsonValue(cjs,NULL,(void*)inputData);
-		SendJsonStringToUart(cjs, jsonKey, uartTarget);
-		cJSON_DeleteItemFromObject(cjs,jsonKey);
-		CLEARFLAG(*f,FlagBit);
-	}
-}
-
-void PackageMessage(cJSON *cjs)
-{
-	FlagGroup_t fTemp =   FLAG_JSON_PRINT_PARAM
-						| FLAG_JSON_PACK_VAN_VALUE
-						| FLAG_JSON_PACK_TIME
-						| FLAG_JSON_PACK_PRESSURE;
-	if(!CHECKFLAG(fJS,FLAG_JSON_PRINT_PARAM)){
-		PackJsonItem(cjs,"Pressure",&fJS,FLAG_JSON_PACK_PRESSURE,&PackJsonPressure,&brdParam.pressure);
-		PackJsonItem(cjs,"Time",&fJS,FLAG_JSON_PACK_TIME,&PackJsonTime,&brdParam.pcf.t);
-		PackJsonItem(cjs,"VanValue",&fJS,FLAG_JSON_PACK_VAN_VALUE,&PackJsonVanValue,&brdParam.hc595.data);
-		PackJsonItem(cjs,"HC165",&fJS,FLAG_JSON_READ_HC165,&PackJsonVanState,&brdParam.VanState);
-	}
-	else if(CHECKFLAG(fJS,fTemp)){
-		cJSON_AddNumberToObject(cjs, "VanValue", brdParam.hc595.data);
-		cJSON_AddNumberToObject(cjs, "Pressure", brdParam.pressure);
-		cJSON_AddStringToObject(cjs, "Time", TimeString);
-//		JSON_LOG(cjs,NULL);
-		cJSON_DeleteItemFromObject(cjs, "VanValue");
-		cJSON_DeleteItemFromObject(cjs, "Pressure");
-		cJSON_DeleteItemFromObject(cjs, "Time");
-		memset(TimeString,0,strlen(TimeString));
-		CLEARFLAG(fJS,fTemp);
-	}
-}
-
-
-
-
-
-
-
-void SetVanHandle(cJSON *object)
-{
-	uint8_t SetVan;
-	cJSON *item = cJSON_GetObjectItemCaseSensitive(object, "SVan");
-	if(!cJSON_IsNumber(item)) return;
-	SetVan = (uint8_t)cJSON_GetNumberValue(item);
-	if(SetVan < MAX_NUM_VAN) HC595_SetBitOutput(SetVan);
-	else {
-		char *s = NULL;
-		sprintf(s,"Van num must be less than %d",MAX_NUM_VAN);
-		HAL_UART_Transmit(uartTarget, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-	}
-	SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
-}
-void ClearVanHandle(cJSON *object)
-{
-	uint8_t ClearVan;
-	cJSON *item = cJSON_GetObjectItemCaseSensitive(object, "CVan");
-	if(!cJSON_IsNumber(item)) return;
-	ClearVan = (uint8_t)cJSON_GetNumberValue(item);
-	if(ClearVan < MAX_NUM_VAN) HC595_ClearBitOutput(ClearVan);
-	else {
-		char *s = NULL;
-		sprintf(s,"Van num must be less than %d",MAX_NUM_VAN);
-		HAL_UART_Transmit(uartTarget, (uint8_t*)s, strlen(s), HAL_MAX_DELAY);
-	}
-	SETFLAG(fJS,FLAG_JSON_PACK_VAN_VALUE);
-}
-
-void TrigVanHandle(cJSON *object)
-{
-	cJSON *item = cJSON_GetObjectItemCaseSensitive(object, "TrigVan");
-	if(!cJSON_IsTrue(item)) return;
-	SETFLAG(f1, FLAG_TRIG_VAN_PROCEDURE);
-}
-
-void SetTimeHandle(cJSON *object)
-{
-	cJSON *item = cJSON_GetObjectItemCaseSensitive(object, "STime");
-	if(!cJSON_IsString(item)) return;
-	brdParam.pcf.t = RTC_GetTimeFromString(cJSON_GetStringValue(item));
-	PCF8563_WriteTimeRegisters(brdParam.pcf.t);
-	SETFLAG(fJS,FLAG_JSON_PACK_TIME); // to read back time value for double check
-}
-
-void GetTimeHandle(cJSON *object)
-{
-	brdParam.pcf.t = PCF8563_ReadTimeRegisters();
-	SETFLAG(fJS,FLAG_JSON_PACK_TIME);
-}
-void GetAsm5915Pressure(cJSON *object)
-{
-	AMS5915_ReadRaw(&brdParam.ams);
-	brdParam.pressure = AMS5915_CalPressure(&brdParam.ams);
-	SETFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
-}
-
-void CheckItem_GetValue_SetFlag(cJSON *cjs,char* jsonKey,FlagGroup_t *f, uint32_t FlagBit,void (*pGetValue)(cJSON *object))
-{
-	if(cJSON_HasObjectItem(cjs,jsonKey)) {
-		if(pGetValue) pGetValue(cjs);
-		cJSON_DeleteItemFromObject(cjs, jsonKey);
-		SETFLAG(*f,FlagBit);
-	}
-}
-
-void UnpackMessage(cJSON *cjs)
-{
-	if(!CHECKFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE)) return;
-	CLEARFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
-	CheckItem_GetValue_SetFlag(cjs, "VanValue",&fJS,FLAG_JSON_PACK_VAN_VALUE,NULL);
-	CheckItem_GetValue_SetFlag(cjs, "PrintParam",&f1,FLAG_GET_PRESSURE
-												| FLAG_GET_TIME
-												| FLAG_JSON_PRINT_PARAM
-												| FLAG_JSON_PACK_VAN_VALUE,NULL);
-
-	CheckItem_GetValue_SetFlag(cjs, "GPressure", &f1, FLAG_GET_PRESSURE,&GetAsm5915Pressure);
-	CheckItem_GetValue_SetFlag(cjs, "GTime",&f1,FLAG_GET_TIME,&GetTimeHandle);
-	CheckItem_GetValue_SetFlag(cjs, "STime",&f1,FLAG_SET_TIME,&SetTimeHandle);
-	CheckItem_GetValue_SetFlag(cjs, "SVan",&f1,FLAG_SET_VAN,&SetVanHandle);
-	CheckItem_GetValue_SetFlag(cjs, "CVan",&f1,FLAG_CLEAR_VAN,&ClearVanHandle);
-	//No need to set any flag to trigger, SetTrigVanFlag automatically set itself if true
-	CheckItem_GetValue_SetFlag(cjs, "TrigVan",&f1,0,&TrigVanHandle);
-}
 
 void ProcedureVan(){
 	static uint32_t delayAfterVanOn = 0;
@@ -649,18 +440,18 @@ void ProcedureVan(){
 void GetUartJson()
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
+		uartTarget = &huart1;
 		cjsCommon = cJSON_Parse(uartEsp32Buffer);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
-		uartTarget = &huart1;
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
+		uartTarget = &huart3;
 		cjsCommon = cJSON_Parse(uartLogBuffer);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
-		uartTarget = &huart3;
 	}
 }
 
