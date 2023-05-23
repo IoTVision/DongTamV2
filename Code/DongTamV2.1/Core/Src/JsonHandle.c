@@ -78,6 +78,7 @@ void PackJsonItem(cJSON *cjs, char* jsonKey, FlagGroup_t *f ,uint32_t FlagBit,vo
 	}
 }
 
+
 void PackageMessage(cJSON *cjs)
 {
 	FlagGroup_t fTemp =   FLAG_JSON_PRINT_PARAM

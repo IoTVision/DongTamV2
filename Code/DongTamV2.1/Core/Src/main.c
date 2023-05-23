@@ -81,7 +81,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
-void GetUartJson();
+void GetUartMessage();
 void PackageMessage(cJSON *cjs);
 void UnpackMessage(cJSON *cjs);
 void ProcedureVan();
@@ -152,7 +152,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  GetUartJson();
+	  GetUartMessage();
 	  UnpackMessage(cjsCommon);
 	  PackageMessage(cjsCommon);
 	  ProcedureVan();
@@ -427,7 +427,7 @@ void ProcedureVan(){
 			// Delay 500ms, read van state then turn off
 		}
 		else if(CHECKFLAG(f1,FLAG_AFTER_TRIG_VAN_ON) && (HAL_GetTick() - delayAfterVanOn >= 500)){
-			HC165_ReadState(&brdParam.VanState, 2);
+			brdParam.VanState = HC165_ReadState(2);
 			HC595_ClearByteOutput(brdParam.hc595.data);
 			HC595_ShiftOut(NULL, 2, 1);
 			SETFLAG(fJS, FLAG_JSON_READ_HC165);
@@ -438,14 +438,13 @@ void ProcedureVan(){
 }
 
 
-void GetUartJson()
+void GetUartMessage()
 {
-#define CHECK_JSON_FORMAT(STRING) ((strstr((STRING),"{") && strstr((STRING),"}")) ? 1 : 0)
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		uartTarget = &huart1;
 		char *s = uartEsp32Buffer;
 		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartEsp32Buffer);}
-		else HAL_UART_Transmit(uartTarget, (uint8_t*)uartEsp32Buffer, strlen(uartEsp32Buffer), HAL_MAX_DELAY);
+		else HAL_UART_Transmit(uartTarget, (uint8_t*)"OK", strlen("OK"), HAL_MAX_DELAY);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
@@ -483,7 +482,7 @@ void hc595_SetUp()
 
 	HC595_ClearByteOutput(0xffffffff);
 	HC595_ShiftOut(NULL, 2, 1);
-	HC595_Enable();
+	HC595_EnableOutput();
 }
 
 void hc165_SetUp()
@@ -502,7 +501,7 @@ void SetUp()
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
-
+	HAL_UART_Transmit(&huart1, (uint8_t*)"Hello ESP32\n", strlen("Hello ESP32\n"), HAL_MAX_DELAY);
 }
 
 /* USER CODE END 4 */
