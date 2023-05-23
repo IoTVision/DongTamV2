@@ -437,18 +437,24 @@ void ProcedureVan(){
 	}
 }
 
+
 void GetUartJson()
 {
+#define CHECK_JSON_FORMAT(STRING) ((strstr((STRING),"{") && strstr((STRING),"}")) ? 1 : 0)
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		uartTarget = &huart1;
-		cjsCommon = cJSON_Parse(uartEsp32Buffer);
+		char *s = uartEsp32Buffer;
+		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartEsp32Buffer);}
+		else HAL_UART_Transmit(uartTarget, (uint8_t*)uartEsp32Buffer, strlen(uartEsp32Buffer), HAL_MAX_DELAY);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
 		uartTarget = &huart3;
-		cjsCommon = cJSON_Parse(uartLogBuffer);
+		char *s = uartLogBuffer;
+		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartLogBuffer);}
+		else HAL_UART_Transmit(uartTarget, (uint8_t*)uartLogBuffer, strlen(uartLogBuffer), HAL_MAX_DELAY);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
