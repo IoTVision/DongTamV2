@@ -16,6 +16,7 @@ typedef struct BoarParam{
 	cJSON *cjsCommon;
 	PCF8563_Handle pcf;
 	float pressure;
+	uint32_t VanState;
 }BoarParam;
 
 
