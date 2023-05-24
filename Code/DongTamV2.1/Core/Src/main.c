@@ -70,6 +70,7 @@ char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
 BoarParam brdParam;
 UART_HandleTypeDef *uartTarget;
+float p;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -144,6 +145,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(1000);
   SetUp();
   cjsCommon = cJSON_CreateObject();
   /* USER CODE END 2 */
@@ -441,6 +443,7 @@ void ProcedureVan(){
 void GetUartMessage()
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
+		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
 		uartTarget = &huart1;
 		char *s = uartEsp32Buffer;
 		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartEsp32Buffer);}
@@ -448,8 +451,10 @@ void GetUartMessage()
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
+		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 0);
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
+		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
 		uartTarget = &huart3;
 		char *s = uartLogBuffer;
 		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartLogBuffer);}
@@ -457,6 +462,7 @@ void GetUartMessage()
 		memset(uartLogBuffer,0,uartLogRxSize);
 		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
+		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 0);
 	}
 }
 
