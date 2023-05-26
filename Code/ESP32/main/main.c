@@ -9,6 +9,7 @@
 #include "RTC_Format.h"
 #include "JsonHandle/JsonHandle.h"
 #include "ShareVar.h"
+#include "GUI/GUI.h"
 // static const char *TAG= "main";
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
@@ -49,6 +50,7 @@ void UartHandleString(void *pvParameter)
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS)){
             if(strstr(s,"{") && strstr(s,"}")){ // is JSON format
                 cjsMain = cJSON_Parse(s); 
+                
             } 
             else if(CheckLogCommandList(s)) {
                 ESP_LOGI("UartHandleString","Detect command in list");
@@ -68,15 +70,7 @@ void TaskCommon(void *pvParameter)
     }
 }
 
-void PressureIndicator_Init()
-{
-    // PI_ConfigPin();
-    // for(uint8_t i=0;i<10;i++)PI_TestShowLevel_Decrease();
-    // for(uint8_t i=0;i<10;i++)PI_TestShowLevel_Increase();
-    // PI_SetLevel(0);
-}
-
-void Setup()
+void InitProcess()
 {
     cjsMain = cJSON_CreateObject();
     qLogTx = xQueueCreate(3,sizeof(char *));
@@ -84,10 +78,19 @@ void Setup()
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
     evg1 = xEventGroupCreate();
     UARTConfig();
-    PressureIndicator_Init();
+    GuiSetup();
+}
+
+
+
+void Setup()
+{
+    InitProcess();
+    ESP_LOGI("Notify","pass InitProcess");
     xTaskCreate(TaskCommon, "TaskCommon", 2048, NULL, 1, &taskCommon);
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
     xTaskCreate(UartHandleString,"UartHandleString",2048,NULL,2,NULL);
+    xTaskCreate(GUITask, "GUITask", 2048, NULL, 1, NULL);
 }
 
 

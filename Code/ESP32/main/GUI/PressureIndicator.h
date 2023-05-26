@@ -1,0 +1,19 @@
+#ifndef PI_H_
+#define PI_H_
+
+#include "74HC595.h"
+#include "freertos/FreeRTOS.h"
+#define INDICATOR_MAX_BITMASK 0x03ff
+#define INDICATOR_MIN_BITMASK 0x0200
+#define INDICATOR_MAX_LEVEL 10
+
+#define HC595_OE_MASK (1ULL<<GPIO_NUM_4)
+#define HC595_LATCH_MASK (1ULL<<GPIO_NUM_5)
+#define HC595_CLK_MASK (1ULL<<GPIO_NUM_18)
+#define HC595_DS_MASK (1ULL<<GPIO_NUM_23)
+
+void PI_SetLevel(uint8_t level);
+void PI_Init();
+void PI_TestShowLevel_Increase();
+void PI_TestShowLevel_Decrease();
+#endif

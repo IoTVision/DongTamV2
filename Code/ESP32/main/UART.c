@@ -28,7 +28,7 @@ void TaskUart(void *pvParameters)
                 case UART_DATA:
                     char *dtmp = (char *) malloc(event.size + 1);
                     uart_read_bytes(UART_NUM_2, dtmp, event.size, portMAX_DELAY);
-                    dtmp[event.size] = '\0';
+                    dtmp[event.size] = '\0';         
                     xQueueSend(QUEUE_RX,(void*)&dtmp,2/portTICK_PERIOD_MS);
                     break;
                 case UART_BREAK: break;
