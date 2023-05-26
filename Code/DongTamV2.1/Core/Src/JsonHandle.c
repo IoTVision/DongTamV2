@@ -158,7 +158,6 @@ void GetTimeHandle(cJSON *object)
 }
 void GetAsm5915Pressure(cJSON *object)
 {
-	AMS5915_ReadRaw(&brdParam.ams);
 	brdParam.pressure = AMS5915_CalPressure(&brdParam.ams);
 	SETFLAG(fJS,FLAG_JSON_PACK_PRESSURE);
 }
