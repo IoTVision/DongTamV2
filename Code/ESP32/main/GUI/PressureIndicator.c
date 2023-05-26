@@ -8,6 +8,7 @@ void PI_SetLevel(uint8_t level){
     indicator &=INDICATOR_MAX_BITMASK;
     HC595_SetByteOutput(indicator);
     HC595_ShiftOut(NULL,2,1);
+    HC595_ClearByteOutput(INDICATOR_MAX_BITMASK);
 }
 
 
@@ -32,7 +33,11 @@ void PI_Init()
     HC595_EnableOutput();
     HC595_ClearByteOutput(0xffffffff);
     HC595_ShiftOut(NULL,2,1); 
-    for(uint8_t i=1;i<11;i++){
+    for(uint8_t i=1;i<10;i++){
+        PI_SetLevel(i);
+        vTaskDelay(50/portTICK_PERIOD_MS);
+    }
+    for(uint8_t i=11;i>0;i--){
         PI_SetLevel(i);
         vTaskDelay(50/portTICK_PERIOD_MS);
     }

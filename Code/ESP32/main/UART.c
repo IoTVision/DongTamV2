@@ -1,23 +1,5 @@
-
-#include "driver/uart.h"
-#include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "esp_log.h"
-#include <stdio.h>
-#include <string.h>
-#include "ShareVar.h"
-
+#include "UART.h"
 QueueHandle_t qUART_STM32_event,qLOG_event;
-
-#define UART_RX GPIO_NUM_16
-#define UART_TX GPIO_NUM_17
-#define RD_BUF_SIZE 10
-#define UART_QUEUE_EVENT_SIZE 10
-#define UART_BUFFER_EVENT_SIZE 500
-
-#define QUEUE_RX qUartHandle
-
 void TaskUart(void *pvParameters)
 {
     uart_event_t event;

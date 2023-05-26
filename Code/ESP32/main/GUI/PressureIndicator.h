@@ -14,6 +14,4 @@
 
 void PI_SetLevel(uint8_t level);
 void PI_Init();
-void PI_TestShowLevel_Increase();
-void PI_TestShowLevel_Decrease();
 #endif

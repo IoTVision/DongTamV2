@@ -56,5 +56,4 @@ typedef enum EventCommand{
 void UpdateParamFromParsedJsonItem(cJSON *cjs);
 void ObtainJsonItem(cJSON *cjs, char *JsonKey,void (*pParamUpdate)(cJSON *item,char *logMessage));
 void SendCommandToSTM32(cJSON *cjs);
-EventBits_t CheckLogCommandList(char *s);
 #endif
