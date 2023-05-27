@@ -27,7 +27,9 @@ void TaskUartHandleBigSize(void *pvParameters){
                 ESP_LOGI("TaskUartHandleBigSize","%s",s);
             }  
         }
-        if(!*QueueAreWaiting){
+        EventBits_t e = xEventGroupGetBits(evgUART);
+        // Check event to avoid send queue (only send queue once) after this task had been deleted
+        if(!*QueueAreWaiting && !CHECKFLAG(e,EVT_UART_DELETE_TASK_BIG_SIZE)){
             ESP_LOGI("TaskUartHandleBigSize","All queue item had been received, about to free task");
                 ESP_LOGI("TaskUartHandleBigSize ","Send:%p",s);
             xQueueSend(QUEUE_RX,(void*)&s,2/portTICK_PERIOD_MS);

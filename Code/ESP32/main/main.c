@@ -147,9 +147,9 @@ void InitProcess()
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
     evg1 = xEventGroupCreate();
     UARTConfig();
-    GuiSetup();
-    GuiTest();
-    ESP_ERROR_CHECK(TestFlashNVS()); 
+    // GuiSetup();
+    // GuiTest();
+    // ESP_ERROR_CHECK(TestFlashNVS()); f
 }
 
 void SendStringToUART(QueueHandle_t q,char *s)
