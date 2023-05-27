@@ -54,8 +54,8 @@ void UartHandleString(void *pvParameter)
             }
             else {
                 ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-                ESP_LOGI("UartHandleString","content %s",s);
-                // SendStringToUART(qLogTx,s);
+                // ESP_LOGI("UartHandleString","content %s",s);
+                SendStringToUART(qLogTx,s);
             }
             ESP_LOGI("UartHandleString","Receive:%p",s);
             free(s);

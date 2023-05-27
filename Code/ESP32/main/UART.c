@@ -34,6 +34,7 @@ void TaskUartHandleBigSize(void *pvParameters){
                 ESP_LOGI("TaskUartHandleBigSize ","Send:%p",s);
             xQueueSend(QUEUE_RX,(void*)&s,2/portTICK_PERIOD_MS);
             xEventGroupSetBits(evgUART,EVT_UART_DELETE_TASK_BIG_SIZE);
+            vTaskDelete(TaskHandleBigSize);
         }
     }
 }
@@ -115,11 +116,11 @@ void TaskUart(void *pvParameters)
         if(CHECKFLAG(e,EVT_UART_TASK_BIG_SIZE)){
             xTaskCreate(TaskUartHandleBigSize,"TaskUartHandleBigSize",2048,(void*)&countQueueBigSize,3,&TaskHandleBigSize);
         }
-        if(CHECKFLAG(e,EVT_UART_DELETE_TASK_BIG_SIZE)){
-            ESP_LOGI("TaskUart","begin to free task");
-            vTaskDelete(TaskHandleBigSize);
-            ESP_LOGI("TaskUart","done");
-        }
+        // if(CHECKFLAG(e,EVT_UART_DELETE_TASK_BIG_SIZE)){
+        //     ESP_LOGI("TaskUart","begin to free task");
+        //     vTaskDelete(TaskHandleBigSize);
+        //     ESP_LOGI("TaskUart","done");
+        // }
     }
 }
 void UARTConfig()
