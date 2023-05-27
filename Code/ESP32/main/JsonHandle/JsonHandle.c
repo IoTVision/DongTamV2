@@ -31,9 +31,25 @@ void UpdateTrigVan(cJSON *item,char *logMessage)
 
 void UpdatePressure(cJSON *item,char *logMessage)
 {
-    if(!cJSON_IsNumber(item)) return;
-    brdParam.Pressure = cJSON_GetNumberValue(item);
-    sprintf(logMessage,"Pressure update: %.4f",brdParam.Pressure);
+    if(!cJSON_IsNumber(item) && !cJSON_IsArray(item)) return;
+    if(cJSON_IsNumber(item)){
+        brdParam.Pressure[0] = cJSON_GetNumberValue(item);
+        sprintf(logMessage,"Pressure update: %.2f\n",brdParam.Pressure[0]);
+    }
+    else if(cJSON_IsArray(item)){
+        size_t arraySize = cJSON_GetArraySize(item);
+        for(uint8_t i=0;i<arraySize;i++){
+            if(i>PRESSURE_BUFFER){
+                ESP_LOGE("PArray","item have more than PRESSURE_BUFFER");
+                break;
+            }
+            brdParam.Pressure[i] = (float)cJSON_GetNumberValue(cJSON_GetArrayItem(item,i));
+        }
+        sprintf(logMessage,"Pressure array update\n");
+        for(uint8_t i=0;i<PRESSURE_BUFFER;i++){
+            ESP_LOGI("PArray","P[%u]%.2f",i,brdParam.Pressure[i]);
+        }
+    }
 }
 
 void UpdateSetVan(cJSON *item,char *logMessage)
@@ -82,10 +98,13 @@ void SendPrintParamEvt(cJSON *item,char *logMessage)
     strcpy(logMessage,"Trig GET_FUL_PARAM evt");
 }
 
+
+
 void ObtainJsonItem(cJSON *cjs, char *JsonKey,void (*pParamUpdate)(cJSON *item,char *logMessage))
 {
     char s[35];
     if(cJSON_HasObjectItem(cjs,JsonKey)){
+        ESP_LOGI("JSON Parse","%s",JsonKey);
         cJSON *item = cJSON_GetObjectItemCaseSensitive(cjs,JsonKey);
         pParamUpdate(item,s);
         SendStringToUART(qLogTx,s);
@@ -99,6 +118,7 @@ void UpdateParamFromParsedJsonItem(cJSON *cjs)
 {
     // Section: Parse Item to get value from STM32
     ObtainJsonItem(cjs,JSON_PARSE_KEY_PRESSURE,&UpdatePressure);
+    ObtainJsonItem(cjs,JSON_PARSE_KEY_PRESSURE_ARRAY,&UpdatePressure);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_TIME,&UpdateGetTime);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_VAN_VALUE,&UpdateVanValue);
     ObtainJsonItem(cjs,JSON_PARSE_KEY_VANSTATE,&UpdateVanState);
@@ -150,8 +170,8 @@ char* PrintJsonTrigVan(cJSON *object, char *jsonKey)
 
 char* PrintJsonGetPressure(cJSON *object, char *jsonKey)
 {
-    if(!cJSON_HasObjectItem(object,jsonKey)) cJSON_AddNumberToObject(object,jsonKey,brdParam.Pressure);   
-    else cJSON_SetNumberValue(cJSON_GetObjectItem(object,jsonKey),brdParam.Pressure);
+    if(!cJSON_HasObjectItem(object,jsonKey)) cJSON_AddNumberToObject(object,jsonKey,brdParam.Pressure[0]);   
+    else cJSON_SetNumberValue(cJSON_GetObjectItem(object,jsonKey),brdParam.Pressure[0]);
     return cJSON_Print(object);
 }
 

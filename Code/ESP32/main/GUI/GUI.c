@@ -66,9 +66,13 @@ void GuiSetup(){
     ButtonInit();
     LCD_init();
     PressureIndicator_Init();
-    TestLedStatusErr(5,50);
+}
+
+void GuiTest()
+{
+    // TestLedStatusErr(5,50);
     // TestFullButton();
-    TestGuiFull();
+    // TestGuiFull();
 }
 
 void TestGuiFull()

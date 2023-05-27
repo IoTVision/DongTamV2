@@ -4,6 +4,7 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "freertos/event_groups.h"
 #include "esp_log.h"
 #include <stdio.h>
 #include <string.h>
@@ -15,6 +16,8 @@
 #define RD_BUF_SIZE 10
 #define UART_QUEUE_EVENT_SIZE 10
 #define UART_BUFFER_EVENT_SIZE 500
+
+
 
 #define QUEUE_RX qUartHandle
 

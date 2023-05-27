@@ -33,5 +33,6 @@ typedef struct {
 
 void GUITask(void *pvParameter);
 void GuiSetup();
+void GuiTest();
 
 #endif

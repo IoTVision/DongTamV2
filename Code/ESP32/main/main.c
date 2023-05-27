@@ -42,16 +42,24 @@ void UartHandleString(void *pvParameter)
 {
     char *s;
     while(1){
-        if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS)){
+        if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
+        {
             if(strstr(s,"{") && strstr(s,"}")){ // is JSON format
-                cjsMain = cJSON_Parse(s); 
-                
+                // while(!strstr(s,"}")) vTaskDelay(10/portTICK_PERIOD_MS);
+                // cjsMain = cJSON_Parse(s); 
+                ESP_LOGI("UartHandleString","Detect {}, size: %d",strlen(s));
             } 
             else if(CheckLogCommandList(s)) {
                 ESP_LOGI("UartHandleString","Detect command in list");
             }
-            else SendStringToUART(qLogTx,s);
+            else {
+                ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
+                ESP_LOGI("UartHandleString","content %s",s);
+                // SendStringToUART(qLogTx,s);
+            }
+            ESP_LOGI("UartHandleString","Receive:%p",s);
             free(s);
+            ESP_LOGI("UartHandleString","free s");
         }
     }
 }
@@ -64,6 +72,8 @@ EventBits_t CheckLogCommandList(char *s)
     if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_PRESSURE,EVT_GET_PRESSURE))return EVT_GET_PRESSURE; 
     if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_VAN_VALUE,EVT_GET_VAN_VALUE))return EVT_GET_VAN_VALUE;
     if(COMPARE_STRING_SET_EVENT(JSON_KEY_TRIG_VAN,EVT_TRIG_VAN))return EVT_TRIG_VAN; 
+    if(COMPARE_STRING_SET_EVENT(NVS_SAVE_VAN_VALUE,EVT_NVS_SAVE_VAN))return EVT_NVS_SAVE_VAN; 
+    if(COMPARE_STRING_SET_EVENT(NVS_GET_VAN_VALUE,EVT_NVS_GET_VAN))return EVT_NVS_GET_VAN;
     return 0; 
 #undef COMPARE_STRING_SET_EVENT
 }
@@ -77,23 +87,10 @@ void TaskCommon(void *pvParameter)
     }
 }
 
-
-void Setup()
-{
-    InitProcess();
-    ESP_LOGI("Notify","pass InitProcess");
-    ESP_ERROR_CHECK(TestFlashNVS()); 
-    xTaskCreate(TaskCommon, "TaskCommon", 2048, NULL, 1, &taskCommon);
-    xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
-    xTaskCreate(UartHandleString,"UartHandleString",2048,NULL,2,NULL);
-    xTaskCreate(GUITask, "GUITask", 2048, NULL, 1, NULL);
-}
-
 esp_err_t TestFlashNVS()
 {
     esp_err_t err;
     size_t reqSize;
-    double p = 0.014523;
     err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -116,7 +113,7 @@ esp_err_t TestFlashNVS()
         err = nvs_get_str(nvsBrdStorage,"TestFlash",NULL,&reqSize);
         char *s = malloc(reqSize);
         err = nvs_get_str(nvsBrdStorage,"TestFlash",s,&reqSize);
-        SendStringToUART(qLogTx,s);
+        ESP_LOGI("NVSTest","%s",s);
 
         double p1;
         size_t sz;
@@ -124,15 +121,12 @@ esp_err_t TestFlashNVS()
         err = nvs_get_blob(nvsBrdStorage,"Pressure",NULL,&sz);
         err = nvs_get_blob(nvsBrdStorage,"Pressure",&p1,&sz);
         sprintf(s1,"%.6f",p1);
-        SendStringToUART(qLogTx,s1);
+        ESP_LOGI("NVSTest","%s",s1);
     }
     nvs_close(nvsBrdStorage);
 
     return err;
 }
-
-
-
 
 void InitProcess()
 {
@@ -154,8 +148,9 @@ void InitProcess()
     evg1 = xEventGroupCreate();
     UARTConfig();
     GuiSetup();
+    GuiTest();
+    ESP_ERROR_CHECK(TestFlashNVS()); 
 }
-
 
 void SendStringToUART(QueueHandle_t q,char *s)
 {
@@ -167,6 +162,17 @@ void SendStringToUART(QueueHandle_t q,char *s)
     else ESP_LOGI("MAIN","Cannot malloc to send queue");
 }
 
+
+void Setup()
+{
+    InitProcess();
+    ESP_LOGI("Notify","pass InitProcess");
+    
+    xTaskCreate(TaskCommon, "TaskCommon", 2048, NULL, 1, &taskCommon);
+    xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
+    xTaskCreate(UartHandleString,"UartHandleString",2048,NULL,2,NULL);
+    xTaskCreate(GUITask, "GUITask", 2048, NULL, 1, NULL);
+}
 
 
 
