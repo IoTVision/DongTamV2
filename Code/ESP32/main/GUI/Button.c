@@ -14,8 +14,8 @@
 static const char *TAG_1= "Button";
 
 // extern uint16_t Sort_para[3][3];
-extern parameter_UI param[3];
-extern Run_menu run_menu[3];
+parameter_UI param[3];
+Run_menu run_menu[3];
 
 #define BT1 GPIO_NUM_35
 #define BT2 GPIO_NUM_34

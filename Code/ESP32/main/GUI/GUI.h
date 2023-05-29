@@ -10,6 +10,7 @@
 #include "GUI.h"
 #include "freertos/event_groups.h"
 #include "main.h"
+#include "esp_log.h"
 
 // typedef struct {
 //     uint16_t ex_works_setting;
@@ -32,7 +33,8 @@ typedef struct {
 }Run_menu;
 
 void GUITask(void *pvParameter);
-void GuiSetup();
-void GuiTest();
+void TaskScanButton(void *pvParameter);
+void GuiInit();
+void GuiTestFull();
 
 #endif

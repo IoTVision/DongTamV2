@@ -3,9 +3,7 @@
 
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
-
-// #define LED_ERROR_MASK 14
-// #define LED_STATUS_MASK 15
+TaskHandle_t taskGUIHandle;
 
 #define LED_ERROR_MASK 10
 #define LED_STATUS_MASK 11
@@ -25,59 +23,103 @@ LCDI2C lcdI2C;
 #define BT3_MASK (1ULL<<GPIO_NUM_34)
 #define BT4_MASK (1ULL<<GPIO_NUM_35)
 
-void TestLedStatusErr(uint8_t blinkNum,uint16_t delay);
-esp_err_t LCD_init();
-esp_err_t ButtonInit();
 void LedErrorWrite(bool ledState);
 void LedStatusWrite(bool ledState);
 void ReadGuiButton(gpio_num_t gpio, EventBits_t e);
-void PressureIndicator_Init();
-void TestReadSingleButton(gpio_num_t gpio, EventBits_t e,char* logMessage);
-void TestFullButton();
-void TestGuiFull();
-
 void GUITask(void *pvParameter)
 {
+    EventBits_t e;
     while(1){
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
+            ESP_LOGI("GUITask","Receive notify %lu",e);
+        }
+    }
+}
+
+void TaskScanButton(void *pvParameter){
+    while(1){
         ReadGuiButton(BTN_MODE,EVT_BTN_MODE);
         ReadGuiButton(BTN_UP,EVT_BTN_UP);
         ReadGuiButton(BTN_DOWN_RIGHT,EVT_BTN_DOWN_RIGHT);
         ReadGuiButton(BTN_SET,EVT_BTN_SET);
-        
+        vTaskDelay(10/portTICK_PERIOD_MS);
     }
 }
 
+void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
+
+#define BTN_HOLD_DELAY_MAX 1000
+#define BTN_HOLD_DELAY_MIN 100
+#define BTN_HOLD_DELAY_DECREASE_STEP 300
+#define DELAY_COUNT_LOOP_THRESHOLD 2
+#define RESET_DELAY 2
+    //Delay each loop when user keep holding button
+    static uint16_t Delay = BTN_HOLD_DELAY_MAX;
+    /* if this number is bigger than certain threshold, 
+    Delay will be decrease to speed up sending notify to GUITask
+    Each time call xTaskNotify, DelayCountLoop increase by 1
+    */
+    static uint16_t DelayCountLoop = 0;
+    if(e == RESET_DELAY){
+        DelayCountLoop = 0;
+        Delay = BTN_HOLD_DELAY_MAX;
+    }
+    //if user keep holding button, check button is UP or DOWN-RIGHT to handle, the rest just delay
+    if((gpio == BTN_UP) || (gpio == BTN_DOWN_RIGHT)) {
+        xTaskNotify(taskGUIHandle,e,eSetValueWithoutOverwrite);
+        DelayCountLoop+=1;
+    }
+    else {
+        // button SET and MODE are nothing to hanle, just delay and return
+        vTaskDelay(50/portTICK_PERIOD_MS);
+        return;
+    }
+    if(DelayCountLoop >= DELAY_COUNT_LOOP_THRESHOLD && Delay > BTN_HOLD_DELAY_MIN){
+        DelayCountLoop=0;
+        Delay-=BTN_HOLD_DELAY_DECREASE_STEP;
+        if(Delay < 50) Delay = 50;
+    }
+    vTaskDelay(Delay/portTICK_PERIOD_MS);
+}
 
 void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
 {
     if(!gpio_get_level(gpio)){
         vTaskDelay(100/portTICK_PERIOD_MS);
-        while (!gpio_get_level(gpio))
-        {
-            vTaskDelay(50/portTICK_PERIOD_MS);
+        while (!gpio_get_level(gpio)){
+            // do things while holding button, i.e count UP and DOWN continously
+            BtnHandleWhenHolding(gpio,e);
         }
-        xEventGroupSetBits(evgGUI,e);
+        //Send notify to GUITask without overwrite value
+        xTaskNotify(taskGUIHandle,e,eSetValueWithoutOverwrite);
+        // Send RESET_DELAY to reset Delay and DelayCountLoop, have extra delay 50ms
+        BtnHandleWhenHolding(0,2);
     }
 }
 
-void GuiSetup(){
-    evgGUI = xEventGroupCreate();
-    ButtonInit();
-    LCD_init();
-    PressureIndicator_Init();
+
+void LedErrorWrite(bool ledState)
+{
+    if(ledState) HC595_SetBitOutput(LED_ERROR_MASK);
+    else HC595_ClearBitOutput(LED_ERROR_MASK);
 }
 
-void GuiTest()
+void LedStatusWrite(bool ledState)
 {
-    // TestLedStatusErr(5,50);
-    // TestFullButton();
-    // TestGuiFull();
+    if(ledState) HC595_SetBitOutput(LED_STATUS_MASK);
+    else HC595_ClearBitOutput(LED_STATUS_MASK);
 }
 
-void TestGuiFull()
+
+/**
+ * @brief Test section
+ * 
+ */
+
+void TestGUI()
 {
-    LCDI2C_Print("Full Test",0,0);
+    LCDI2C_Print("GUI test",0,0);
+    LCDI2C_Print("Press 4 button",0,1);
     while(1){
         ReadGuiButton(BTN_MODE,EVT_BTN_MODE);
         ReadGuiButton(BTN_UP,EVT_BTN_UP);
@@ -135,27 +177,24 @@ void TestGuiFull()
     }
 }
 
-
-void LedErrorWrite(bool ledState)
+void TestReadSingleButton(gpio_num_t gpio, EventBits_t e,char* logMessage)
 {
-    if(ledState) HC595_SetBitOutput(LED_ERROR_MASK);
-    else HC595_ClearBitOutput(LED_ERROR_MASK);
+    if(!gpio_get_level(gpio)){
+        vTaskDelay(100/portTICK_PERIOD_MS);
+        LCDI2C_Print(logMessage,0,2);
+        ESP_LOGI("GUI","%s",logMessage);
+        while (!gpio_get_level(gpio))
+        {
+            vTaskDelay(50/portTICK_PERIOD_MS);
+        }
+        xEventGroupSetBits(evgGUI,e);
+    }
 }
 
-void LedStatusWrite(bool ledState)
+void TestButton()
 {
-    if(ledState) HC595_SetBitOutput(LED_STATUS_MASK);
-    else HC595_ClearBitOutput(LED_STATUS_MASK);
-}
-
-
-/**
- * @brief Test section
- * 
- */
-
-void TestFullButton()
-{
+    LCDI2C_Print("Test Button",0,0);
+    vTaskDelay(2000/portTICK_PERIOD_MS);
     LCDI2C_Print("Press button",0,0);
     LCDI2C_Print("from left to right",0,1);
     while (1)
@@ -212,26 +251,25 @@ void TestLedStatusErr(uint8_t blinkNum,uint16_t delay)
     }
 }
 
-void TestReadSingleButton(gpio_num_t gpio, EventBits_t e,char* logMessage)
+
+
+void GuiTestFull()
 {
-    if(!gpio_get_level(gpio)){
-        vTaskDelay(100/portTICK_PERIOD_MS);
-        LCDI2C_Print(logMessage,0,2);
-        ESP_LOGI("GUI","%s",logMessage);
-        while (!gpio_get_level(gpio))
-        {
-            vTaskDelay(50/portTICK_PERIOD_MS);
-        }
-        xEventGroupSetBits(evgGUI,e);
-    }
+    TestLedStatusErr(5,35);
+    TestButton();
+    TestGUI();
 }
 
+/*
+    End Test section
+*/
 
 
 /**
  * @brief Init section
  * 
  */
+
 void PressureIndicator_Init()
 {
     ESP_LOGI("LedBar","init");
@@ -244,11 +282,12 @@ esp_err_t LCD_init()
     esp_err_t err = ESP_OK;
     err = LCDI2C_Config(&lcdI2C);
     LCDI2C_TurnOnBackLight();
-    LCDI2C_Print("SpiritBoi",0,0);
+    // LCDI2C_Print("SpiritBoi",0,0);
     return err;
 }
 
 esp_err_t ButtonInit()
+
 {
     gpio_config_t cfg = {
     .mode = GPIO_MODE_INPUT,
@@ -259,3 +298,14 @@ esp_err_t ButtonInit()
     };
     return gpio_config(&cfg);
 }
+
+void GuiInit(){
+    evgGUI = xEventGroupCreate();
+    ButtonInit();
+    LCD_init();
+    PressureIndicator_Init();
+}
+
+/*
+    End Init section
+*/

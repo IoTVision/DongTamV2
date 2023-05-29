@@ -6,6 +6,7 @@
 #include "freertos/event_groups.h"
 #include "cJSON.h"
 #include "RTC_Format.h"
+#include "GUI/GUI.h"
 
 #define PRESSURE_BUFFER 10
 
@@ -27,6 +28,11 @@
 #define EVT_UART_TASK_BIG_SIZE (1<<0)
 #define EVT_UART_DELETE_TASK_BIG_SIZE (1<<1)
 #define EVT_UART_OVERSIZE_HW_FIFO (1<<2)
+
+#define EVT_GUI_SIMU_BTN_MODE (1 << 0)
+#define EVT_GUI_SIMU_BTN_SET (1 << 1)
+#define EVT_GUI_SIMU_BTN_UP (1 << 2)
+#define EVT_GUI_SIMU_BTN_DR (1 << 3)
 
 
 typedef enum EventCommand{
@@ -61,4 +67,7 @@ extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
 extern cJSON *cjsMain;
 extern EventGroupHandle_t evg1,evgJson;
 extern BoardParameter brdParam;
+extern parameter_UI param[3];
+extern Run_menu run_menu[3];
+extern TaskHandle_t taskGUIHandle;
 #endif

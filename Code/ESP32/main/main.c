@@ -12,7 +12,8 @@
 #include "GUI/GUI.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-// static const char *TAG= "main";
+#include "GUI/GUI_Simulation.h"
+#include "GUI/Button.c"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
 BoardParameter brdParam;
@@ -40,26 +41,26 @@ void app_main(void)
 
 void UartHandleString(void *pvParameter)
 {
-    char *s;
+    char *s=NULL;
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
             if(strstr(s,"{") && strstr(s,"}")){ // is JSON format
-                // while(!strstr(s,"}")) vTaskDelay(10/portTICK_PERIOD_MS);
-                // cjsMain = cJSON_Parse(s); 
-                ESP_LOGI("UartHandleString","Detect {}, size: %d",strlen(s));
+                char *parseResult;
+                cjsMain = cJSON_ParseWithOpts(s,(const char **)&parseResult,true);
+                ESP_LOGI("UartHandleString","Parse Result: %s",parseResult);
+                ESP_LOGI("UartHandleString","Detect {}, size s: %d",strlen(s));
+                
             } 
             else if(CheckLogCommandList(s)) {
                 ESP_LOGI("UartHandleString","Detect command in list");
             }
             else {
                 ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-                // ESP_LOGI("UartHandleString","content %s",s);
                 SendStringToUART(qLogTx,s);
             }
-            ESP_LOGI("UartHandleString","Receive:%p",s);
+            // ESP_LOGI("UartHandleString","Receive:%p",s);
             free(s);
-            ESP_LOGI("UartHandleString","free s");
         }
     }
 }
@@ -68,12 +69,16 @@ EventBits_t CheckLogCommandList(char *s)
 {
 #define COMPARE_STRING_SET_EVENT(STRING_COMPARE,EVENT) (strcmp(s,(STRING_COMPARE)) == 0 ? (xEventGroupSetBits(evg1,(EVENT))) : 0)
     if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_TIME,EVT_GET_TIME)) return EVT_GET_TIME; 
-    if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_ALL_PARAM,EVT_GET_FULL_PARAM))return EVT_GET_FULL_PARAM; 
-    if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_PRESSURE,EVT_GET_PRESSURE))return EVT_GET_PRESSURE; 
-    if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_VAN_VALUE,EVT_GET_VAN_VALUE))return EVT_GET_VAN_VALUE;
-    if(COMPARE_STRING_SET_EVENT(JSON_KEY_TRIG_VAN,EVT_TRIG_VAN))return EVT_TRIG_VAN; 
-    if(COMPARE_STRING_SET_EVENT(NVS_SAVE_VAN_VALUE,EVT_NVS_SAVE_VAN))return EVT_NVS_SAVE_VAN; 
-    if(COMPARE_STRING_SET_EVENT(NVS_GET_VAN_VALUE,EVT_NVS_GET_VAN))return EVT_NVS_GET_VAN;
+    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_ALL_PARAM,EVT_GET_FULL_PARAM))return EVT_GET_FULL_PARAM; 
+    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_PRESSURE,EVT_GET_PRESSURE))return EVT_GET_PRESSURE; 
+    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_VAN_VALUE,EVT_GET_VAN_VALUE))return EVT_GET_VAN_VALUE;
+    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_TRIG_VAN,EVT_TRIG_VAN))return EVT_TRIG_VAN; 
+    else if(COMPARE_STRING_SET_EVENT(NVS_SAVE_VAN_VALUE,EVT_NVS_SAVE_VAN))return EVT_NVS_SAVE_VAN; 
+    else if(COMPARE_STRING_SET_EVENT(NVS_GET_VAN_VALUE,EVT_NVS_GET_VAN))return EVT_NVS_GET_VAN;
+    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_MODE,EVT_GUI_SIMU_BTN_MODE)) return EVT_GUI_SIMU_BTN_MODE;
+    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_SET,EVT_GUI_SIMU_BTN_SET)) return EVT_GUI_SIMU_BTN_SET;
+    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_DOWN_RIGHT,EVT_GUI_SIMU_BTN_DR)) return EVT_GUI_SIMU_BTN_DR;
+    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_UP,EVT_GUI_SIMU_BTN_UP)) return EVT_GUI_SIMU_BTN_UP;
     return 0; 
 #undef COMPARE_STRING_SET_EVENT
 }
@@ -102,7 +107,7 @@ esp_err_t TestFlashNVS()
     }
     nvs_close(nvsBrdStorage);
     ESP_LOGI("NVS","Write TestFlash and close");
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(100/portTICK_PERIOD_MS);
 
     ESP_LOGI("NVS","Begin to read flash");
     err = nvs_open("Board", NVS_READONLY, &nvsBrdStorage);
@@ -143,13 +148,13 @@ void InitProcess()
 
     cjsMain = cJSON_CreateObject();
     qLogTx = xQueueCreate(3,sizeof(char *));
-    qUartHandle = xQueueCreate(10,sizeof(char *));
+    qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
     evg1 = xEventGroupCreate();
     UARTConfig();
-    // GuiSetup();
-    // GuiTest();
-    // ESP_ERROR_CHECK(TestFlashNVS()); f
+    GuiInit();
+    // GuiTestFull();
+    ESP_ERROR_CHECK(TestFlashNVS()); 
 }
 
 void SendStringToUART(QueueHandle_t q,char *s)
@@ -170,8 +175,10 @@ void Setup()
     
     xTaskCreate(TaskCommon, "TaskCommon", 2048, NULL, 1, &taskCommon);
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
-    xTaskCreate(UartHandleString,"UartHandleString",2048,NULL,2,NULL);
-    xTaskCreate(GUITask, "GUITask", 2048, NULL, 1, NULL);
+    xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
+    xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, &taskGUIHandle);
+    xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
+    // xTaskCreate(Scan_button, "Scan_button", 2048, NULL, 1, NULL);
 }
 
 

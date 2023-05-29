@@ -16,22 +16,20 @@ void TaskUartHandleBigSize(void *pvParameters){
         while(1);
     }
     ESP_LOGI("TaskUartHandleBigSize","QueueAreWaiting:%u",*QueueAreWaiting);
-    char *s = (char *)calloc(sizeof(char),((*QueueAreWaiting)*120 + 20));
+    char *s = (char *)calloc(sizeof(char),((*QueueAreWaiting)*120 + 70));
     char *a = NULL;
     while(1){
         if(xQueueReceive(qUART_BigSize,&a,10/portTICK_PERIOD_MS)){
             strcat(s,a);
             free(a);
-            *QueueAreWaiting-=1;
-            if(!*QueueAreWaiting){
-                ESP_LOGI("TaskUartHandleBigSize","%s",s);
-            }  
+            *QueueAreWaiting-=1;  
+            if(!*QueueAreWaiting) strcat(s,"\0");
         }
         EventBits_t e = xEventGroupGetBits(evgUART);
         // Check event to avoid send queue (only send queue once) after this task had been deleted
         if(!*QueueAreWaiting && !CHECKFLAG(e,EVT_UART_DELETE_TASK_BIG_SIZE)){
             ESP_LOGI("TaskUartHandleBigSize","All queue item had been received, about to free task");
-                ESP_LOGI("TaskUartHandleBigSize ","Send:%p",s);
+            // ESP_LOGI("TaskUartHandleBigSize ","Send:%p",s);
             xQueueSend(QUEUE_RX,(void*)&s,2/portTICK_PERIOD_MS);
             xEventGroupSetBits(evgUART,EVT_UART_DELETE_TASK_BIG_SIZE);
             vTaskDelete(TaskHandleBigSize);
@@ -69,7 +67,6 @@ void TaskUart(void *pvParameters)
                         // if event EVT_UART_OVERSIZE_HW_FIFO is not trigger
                         if(!CHECKFLAG(e,EVT_UART_OVERSIZE_HW_FIFO)){
                             //send data to QUEUE_RX
-                            ESP_LOGI("TaskUart","Send:%p",dtmp);
                             xQueueSend(QUEUE_RX,(void*)&dtmp,2/portTICK_PERIOD_MS); 
                         } 
                         else { // if data is over 120 bytes
@@ -116,11 +113,6 @@ void TaskUart(void *pvParameters)
         if(CHECKFLAG(e,EVT_UART_TASK_BIG_SIZE)){
             xTaskCreate(TaskUartHandleBigSize,"TaskUartHandleBigSize",2048,(void*)&countQueueBigSize,3,&TaskHandleBigSize);
         }
-        // if(CHECKFLAG(e,EVT_UART_DELETE_TASK_BIG_SIZE)){
-        //     ESP_LOGI("TaskUart","begin to free task");
-        //     vTaskDelete(TaskHandleBigSize);
-        //     ESP_LOGI("TaskUart","done");
-        // }
     }
 }
 void UARTConfig()
