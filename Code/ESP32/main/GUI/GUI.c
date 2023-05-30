@@ -1,44 +1,62 @@
 
 #include "GUI.h"
+#include "GUI_Navigation.h"
 
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
 TaskHandle_t taskGUIHandle;
+GUI_Info guiInfo = {
+    .dpHigh = 1300,
+    .dpLow = 700,
+    .dpAlarm = 2300,
+    .cycleIntervalTime = 6,
+    .pulseTime = 60,
+    .intervalTime = 10,
+    .totalVan = 0,
+};
 
-#define LED_ERROR_MASK 10
-#define LED_STATUS_MASK 11
+void GUI_LoadDefault()
+{
+    
+}
 
-#define EVT_BTN_MODE (1<<0)
-#define EVT_BTN_SET (1<<1)
-#define EVT_BTN_UP (1<<2)
-#define EVT_BTN_DOWN_RIGHT (1<<3)
+void GUI_ShowPointer()
+{
+    LCDI2C_Print(">",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
+}
 
-#define BTN_MODE GPIO_NUM_36
-#define BTN_SET GPIO_NUM_39
-#define BTN_UP GPIO_NUM_34
-#define BTN_DOWN_RIGHT GPIO_NUM_35
+void GUI_ClearPointer()
+{
+    LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
+}
 
-#define BT1_MASK (1ULL<<GPIO_NUM_36)
-#define BT2_MASK (1ULL<<GPIO_NUM_39)
-#define BT3_MASK (1ULL<<GPIO_NUM_34)
-#define BT4_MASK (1ULL<<GPIO_NUM_35)
+void PrintNavigation()
+{
+    ESP_LOGI("GUI_NAV","page: %u",GUINAV_GetPage());
+    ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParam());
+    ESP_LOGI("GUI_NAV","pNow: %u",GUINAV_GetCurrentSelected());
+    ESP_LOGI("GUI_NAV","value: %u",GUINAV_GetValue());
+    ESP_LOGI("GUI_NAV","x: %u",GUINAV_GetPointerPosX());
+    ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
+}
 
-void LedErrorWrite(bool ledState);
-void LedStatusWrite(bool ledState);
-void ReadGuiButton(gpio_num_t gpio, EventBits_t e);
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
     while(1){
         if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
             ESP_LOGI("GUITask","Receive notify %lu",e);
+            GUI_ClearPointer();
+            GUINAV_GetEvent(e);
+            GUI_ShowPointer();
+            PrintNavigation();
         }
     }
 }
 
 void TaskScanButton(void *pvParameter){
     while(1){
-        ReadGuiButton(BTN_MODE,EVT_BTN_MODE);
+        ReadGuiButton(BTN_MENU,EVT_BTN_MENU);
         ReadGuiButton(BTN_UP,EVT_BTN_UP);
         ReadGuiButton(BTN_DOWN_RIGHT,EVT_BTN_DOWN_RIGHT);
         ReadGuiButton(BTN_SET,EVT_BTN_SET);
@@ -64,19 +82,22 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
         DelayCountLoop = 0;
         Delay = BTN_HOLD_DELAY_MAX;
     }
-    //if user keep holding button, check button is UP or DOWN-RIGHT to handle, the rest just delay
-    if((gpio == BTN_UP) || (gpio == BTN_DOWN_RIGHT)) {
+    /*if user keep holding down button, check button is UP or DOWN-RIGHT and if only currently selected is value 
+    to make delay shorter, the rest is just delay
+    */
+    if(((gpio == BTN_UP) || (gpio == BTN_DOWN_RIGHT)) && (GUINAV_GetCurrentSelected() == IS_VALUE)) {
         xTaskNotify(taskGUIHandle,e,eSetValueWithoutOverwrite);
         DelayCountLoop+=1;
     }
     else {
-        // button SET and MODE are nothing to hanle, just delay and return
+        // button SET and MENU are nothing to hanle, just delay and return
         vTaskDelay(50/portTICK_PERIOD_MS);
         return;
     }
     if(DelayCountLoop >= DELAY_COUNT_LOOP_THRESHOLD && Delay > BTN_HOLD_DELAY_MIN){
         DelayCountLoop=0;
         Delay-=BTN_HOLD_DELAY_DECREASE_STEP;
+        // Saturate low delay speed
         if(Delay < 50) Delay = 50;
     }
     vTaskDelay(Delay/portTICK_PERIOD_MS);
@@ -96,7 +117,6 @@ void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
         BtnHandleWhenHolding(0,2);
     }
 }
-
 
 void LedErrorWrite(bool ledState)
 {
@@ -121,17 +141,17 @@ void TestGUI()
     LCDI2C_Print("GUI test",0,0);
     LCDI2C_Print("Press 4 button",0,1);
     while(1){
-        ReadGuiButton(BTN_MODE,EVT_BTN_MODE);
+        ReadGuiButton(BTN_MENU,EVT_BTN_MENU);
         ReadGuiButton(BTN_UP,EVT_BTN_UP);
         ReadGuiButton(BTN_DOWN_RIGHT,EVT_BTN_DOWN_RIGHT);
         ReadGuiButton(BTN_SET,EVT_BTN_SET);
         EventBits_t BitsToWaitFor = (EVT_BTN_DOWN_RIGHT 
-                                    |EVT_BTN_MODE 
+                                    |EVT_BTN_MENU 
                                     |EVT_BTN_SET 
                                     |EVT_BTN_UP);
         EventBits_t e = xEventGroupWaitBits(evgGUI, BitsToWaitFor,pdTRUE,pdFALSE,0);
-        if(e & EVT_BTN_MODE){
-            LCDI2C_Print("MODE      ",0,1);
+        if(e & EVT_BTN_MENU){
+            LCDI2C_Print("MENU      ",0,1);
             PI_SetLevel(3);
         }
         if(e & EVT_BTN_SET){
@@ -199,12 +219,12 @@ void TestButton()
     LCDI2C_Print("from left to right",0,1);
     while (1)
     {
-        TestReadSingleButton(BTN_MODE,EVT_BTN_MODE,"MODE OK");
+        TestReadSingleButton(BTN_MENU,EVT_BTN_MENU,"MENU OK");
         TestReadSingleButton(BTN_SET,EVT_BTN_SET,"SET OK ");
         TestReadSingleButton(BTN_DOWN_RIGHT,EVT_BTN_DOWN_RIGHT,"DR OK  ");
         TestReadSingleButton(BTN_UP,EVT_BTN_UP,"UP OK  ");
         EventBits_t BitsToWaitFor = (EVT_BTN_DOWN_RIGHT 
-                                    |EVT_BTN_MODE 
+                                    |EVT_BTN_MENU 
                                     |EVT_BTN_SET 
                                     |EVT_BTN_UP);
         EventBits_t e = xEventGroupWaitBits(evgGUI, BitsToWaitFor,pdTRUE,pdTRUE,0);
@@ -251,13 +271,11 @@ void TestLedStatusErr(uint8_t blinkNum,uint16_t delay)
     }
 }
 
-
-
 void GuiTestFull()
 {
     TestLedStatusErr(5,35);
-    TestButton();
-    TestGUI();
+    // TestButton();
+    // TestGUI();
 }
 
 /*
@@ -304,6 +322,7 @@ void GuiInit(){
     ButtonInit();
     LCD_init();
     PressureIndicator_Init();
+    GUI_ShowPointer();
 }
 
 /*

@@ -153,7 +153,7 @@ void InitProcess()
     evg1 = xEventGroupCreate();
     UARTConfig();
     GuiInit();
-    // GuiTestFull();
+    GuiTestFull();
     ESP_ERROR_CHECK(TestFlashNVS()); 
 }
 
@@ -178,7 +178,6 @@ void Setup()
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, &taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
-    // xTaskCreate(Scan_button, "Scan_button", 2048, NULL, 1, NULL);
 }
 
 

@@ -65,9 +65,7 @@ typedef struct BoardParameter{
 extern LCDI2C lcdI2C;
 extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
 extern cJSON *cjsMain;
-extern EventGroupHandle_t evg1,evgJson;
+extern EventGroupHandle_t evg1,evgJson,evgGUI;
 extern BoardParameter brdParam;
-extern parameter_UI param[3];
-extern Run_menu run_menu[3];
 extern TaskHandle_t taskGUIHandle;
 #endif
