@@ -12,13 +12,6 @@
 #include "main.h"
 #include "esp_log.h"
 
-// typedef struct {
-//     uint16_t ex_works_setting;
-//     uint16_t max_range;
-//     uint16_t min_range;
-//     uint8_t unit;
-// }GUI_function;
-
 #define LED_ERROR_MASK 10
 #define LED_STATUS_MASK 11
 
@@ -56,6 +49,11 @@ typedef struct {
     char* text_on_screen;
     uint16_t Value;    
 }Param_t;
+
+#define PARAM_CODE_TEXT      "Param code:"
+#define DP_LOW_TEXT          "DP-Low    :"
+#define DP_HIGH_TEXT         "DP-High   :"
+#define DP_ALARM_TEXT        "DP-Alarm  :"
 
 #define PARAM_CODE_TEXT      "Param code:"
 #define DP_LOW_TEXT          "DP-Low    :"

@@ -12,8 +12,6 @@
 #include "GUI/GUI.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "GUI/GUI_Simulation.h"
-#include "GUI/Button.c"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
 BoardParameter brdParam;
@@ -94,37 +92,43 @@ void TaskCommon(void *pvParameter)
 
 esp_err_t TestFlashNVS()
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
     size_t reqSize;
-    err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
-    if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-    } 
-    else {
-        // err = nvs_set_str(nvsBrdStorage,"TestFlash","SpiritBoi");
-        // err = nvs_set_blob(nvsBrdStorage,"Pressure",(void*)&p,sizeof(p));
-        err = nvs_commit(nvsBrdStorage);
-    }
-    nvs_close(nvsBrdStorage);
-    ESP_LOGI("NVS","Write TestFlash and close");
-    vTaskDelay(100/portTICK_PERIOD_MS);
-
+    // err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
+    // if (err != ESP_OK) {
+    //     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    // } 
+    // else {
+    //     // err = nvs_set_str(nvsBrdStorage,"TestFlash","SpiritBoi");
+    //     // err = nvs_set_blob(nvsBrdStorage,"Pressure",(void*)&p,sizeof(p));
+    //     // err = nvs_commit(nvsBrdStorage);
+    // }
+    // nvs_close(nvsBrdStorage);
+    // ESP_LOGI("NVS","Write TestFlash and close");
+    // vTaskDelay(100/portTICK_PERIOD_MS);
+    
     ESP_LOGI("NVS","Begin to read flash");
     err = nvs_open("Board", NVS_READONLY, &nvsBrdStorage);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } 
     else {
+
+
         err = nvs_get_str(nvsBrdStorage,"TestFlash",NULL,&reqSize);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
         char *s = malloc(reqSize);
         err = nvs_get_str(nvsBrdStorage,"TestFlash",s,&reqSize);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
         ESP_LOGI("NVSTest","%s",s);
 
         double p1;
         size_t sz;
         char s1[15] = {0};
         err = nvs_get_blob(nvsBrdStorage,"Pressure",NULL,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
         err = nvs_get_blob(nvsBrdStorage,"Pressure",&p1,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
         sprintf(s1,"%.6f",p1);
         ESP_LOGI("NVSTest","%s",s1);
     }

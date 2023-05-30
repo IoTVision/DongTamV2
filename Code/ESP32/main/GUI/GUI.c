@@ -40,6 +40,13 @@ void PrintNavigation()
     ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
 }
 
+void GUI_PrintParamOnScreen()
+{
+    uint8_t pNow = GUINAV_GetCurrentSelected();
+    if(pNow != IS_KEYWORD) {vTaskDelay(10/portTICK_PERIOD_MS); return;}
+    uint8_t pY = GUINAV_GetPointerPosY();
+}
+
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
