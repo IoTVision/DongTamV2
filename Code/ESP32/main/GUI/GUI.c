@@ -5,6 +5,8 @@
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
 TaskHandle_t taskGUIHandle;
+Param_t param[LCD_ROWS];
+
 GUI_Info guiInfo = {
     .dpHigh = 1300,
     .dpLow = 700,
@@ -15,48 +17,19 @@ GUI_Info guiInfo = {
     .totalVan = 0,
 };
 
-void GUI_LoadDefault()
-{
-    
-}
-
-void GUI_ShowPointer()
-{
-    LCDI2C_Print(">",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
-}
-
-void GUI_ClearPointer()
-{
-    LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
-}
-
-void PrintNavigation()
-{
-    ESP_LOGI("GUI_NAV","page: %u",GUINAV_GetPage());
-    ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParam());
-    ESP_LOGI("GUI_NAV","pNow: %u",GUINAV_GetCurrentSelected());
-    ESP_LOGI("GUI_NAV","value: %u",GUINAV_GetValue());
-    ESP_LOGI("GUI_NAV","x: %u",GUINAV_GetPointerPosX());
-    ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
-}
-
-void GUI_PrintParamOnScreen()
-{
-    uint8_t pNow = GUINAV_GetCurrentSelected();
-    if(pNow != IS_KEYWORD) {vTaskDelay(10/portTICK_PERIOD_MS); return;}
-    uint8_t pY = GUINAV_GetPointerPosY();
-}
+void PrintNavigation();
 
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
     while(1){
         if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
-            ESP_LOGI("GUITask","Receive notify %lu",e);
+            ESP_LOGI("GUITask","Notify");
             GUI_ClearPointer();
             GUINAV_GetEvent(e);
             GUI_ShowPointer();
-            PrintNavigation();
+            // PrintNavigation();
+            GUI_Manage();
         }
     }
 }
@@ -70,6 +43,68 @@ void TaskScanButton(void *pvParameter){
         vTaskDelay(10/portTICK_PERIOD_MS);
     }
 }
+
+void GUI_Manage()
+{
+    uint8_t pNow = GUINAV_GetCurrentSelected();
+    uint8_t pY = GUINAV_GetPointerPosY();
+    uint8_t pX = GUINAV_GetPointerPosX();
+    if(pNow == IS_KEYWORD){
+    }
+    else if (pNow == IS_VALUE){
+        uint16_t valLowLimit = param[pY].lowLimit;
+        uint16_t valHighLimit = param[pY].highLimit;
+        uint16_t scale =  param[pY].scaleValue;
+        uint16_t value = param[pY].Value;// save previous value to clear value slot before print new value to slot
+        uint16_t temp = value;
+        uint8_t lengthPrevValue = 1;
+        if(value < 10) lengthPrevValue = 1;
+        else if(value < 100) lengthPrevValue = 2; // 2 digit to clear
+        else if(value < 1000) lengthPrevValue = 3; // 3 digit to clear
+        else if(value < 10000) lengthPrevValue = 4; // 4 digit to clear
+        else if(value < 100000) lengthPrevValue = 5; // 5 digit to clear
+        EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE|EVT_SAVE_VALUE_TO_FLASH ;
+        EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
+        if(CHECKFLAG(e,EVT_INCREASE_VALUE)) temp +=scale;
+        else if(CHECKFLAG(e,EVT_DECREASE_VALUE)) temp -=scale;
+        else if(CHECKFLAG(e,EVT_SAVE_VALUE_TO_FLASH)) ESP_LOGW("GUIManage","Save value to flash");
+        // if value is above limit, set it to limit and set eventbit in evgGUI
+        if(temp >= valHighLimit){
+            value = valHighLimit;
+            xEventGroupSetBits(evgGUI,EVT_VALUE_ABOVE_THRESHOLD);
+            // ESP_LOGI("GUI_Manage","high limit");
+        } 
+        else if(temp <= valLowLimit){
+            value = valLowLimit;
+            xEventGroupSetBits(evgGUI,EVT_VALUE_BELOW_THRESHOLD);
+            // ESP_LOGI("GUI_Manage","low limit");
+        }
+        else {
+            value = temp;
+            //if none of conditions above is passed, it mean value is not saturated anymore, so check and clear bit control threshold
+            if(CHECKFLAG(e,EVT_VALUE_ABOVE_THRESHOLD)) xEventGroupClearBits(evgGUI,EVT_VALUE_ABOVE_THRESHOLD);
+            else if(CHECKFLAG(e,EVT_VALUE_BELOW_THRESHOLD)) xEventGroupClearBits(evgGUI,EVT_VALUE_BELOW_THRESHOLD);
+            // ESP_LOGI("GUI_Manage","not limit");
+        }
+        char s[8]={0};
+        uint8_t i=0;
+        do{
+            strcat(s," ");
+            i++;
+        } while(i < lengthPrevValue);
+        LCDI2C_Print(s,pX+POINTER_SLOT,pY);
+        sprintf(s,"%u",value);
+        LCDI2C_Print(s,pX+POINTER_SLOT,pY);
+        param[pY].Value = value;
+    }
+
+}
+
+
+/**
+ * @brief Single function section
+ *  
+ */
 
 void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
 
@@ -93,6 +128,7 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
     to make delay shorter, the rest is just delay
     */
     if(((gpio == BTN_UP) || (gpio == BTN_DOWN_RIGHT)) && (GUINAV_GetCurrentSelected() == IS_VALUE)) {
+        vTaskDelay(Delay/portTICK_PERIOD_MS);
         xTaskNotify(taskGUIHandle,e,eSetValueWithoutOverwrite);
         DelayCountLoop+=1;
     }
@@ -107,7 +143,7 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
         // Saturate low delay speed
         if(Delay < 50) Delay = 50;
     }
-    vTaskDelay(Delay/portTICK_PERIOD_MS);
+    
 }
 
 void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
@@ -136,6 +172,107 @@ void LedStatusWrite(bool ledState)
     if(ledState) HC595_SetBitOutput(LED_STATUS_MASK);
     else HC595_ClearBitOutput(LED_STATUS_MASK);
 }
+
+void GUI_ShowPointer()
+{
+    LCDI2C_Print(">",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
+}
+
+void GUI_ClearPointer()
+{
+    LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
+}
+
+
+static inline void AssignParam(Param_t *param, char*textScreen,uint16_t value, uint16_t lowLimit, uint16_t highLimit, uint16_t scale, char* unit){
+    param->text_on_screen = textScreen;
+    param->Value = value;
+    param->lowLimit = lowLimit;
+    param->highLimit = highLimit;
+    param->unit = unit;
+    param->scaleValue = scale;
+}
+
+void GUI_GetParam(Param_t *param, uint8_t paramNO)
+{
+    switch (paramNO)
+    {
+    case NO_PARAM_CODE:
+        AssignParam(param,TEXT_PARAM_CODE,0,0,0,0,NULL);
+        break;
+    case NO_DP_HIGH:
+        AssignParam(param,TEXT_DP_HIGH,guiInfo.dpHigh,250,4000,50,"Pa");
+        break;
+    case NO_DP_LOW:
+        AssignParam(param,TEXT_DP_LOW,guiInfo.dpLow,250,4000,50,"Pa");
+        break;
+    case NO_DP_ALARM:
+        AssignParam(param,TEXT_DP_ALARM,guiInfo.dpAlarm,300,5000,100,"Pa");
+        break;
+    case NO_CYCLE_TIME:
+        AssignParam(param,TEXT_DP_ALARM,guiInfo.dpAlarm,2,100,1,"s");
+        break;
+    case NO_INTERVAL_TIME:
+        AssignParam(param,TEXT_INTERVAL_TIME,guiInfo.intervalTime,4,500,1,"s");
+        break;
+    case NO_PULSE_TIME:
+        AssignParam(param,TEXT_PULSE_TIME,guiInfo.pulseTime,30,300,30,"ms");
+        break;
+    case NO_TOTAL_VAN:
+        AssignParam(param,TEXT_TOTAL_VAN,guiInfo.totalVan,0,15,1,NULL);
+        break;
+    default:
+        param->text_on_screen = "Not available";
+        param->Value = 0;
+        param->highLimit = 0;
+        param->lowLimit = 0;
+        param->scaleValue = 0;
+        param->unit = NULL;
+        break;
+    }
+}
+
+void GUI_PrintParam(char *keyword, uint16_t value, uint8_t row)
+{
+    LCDI2C_Print(keyword,POINTER_SLOT,row);
+    char StringValue[10];
+    sprintf(StringValue,"%u",value);
+    // pointer slot for pointer to text and slot for point to value
+    LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
+}
+
+void GUI_LoadPageSetting()
+{
+    uint8_t paramNum = GUINAV_GetParamNum();
+    // each parameter will be placed in each rows of LCD
+    for(uint8_t i=0;i<LCD_ROWS;i++){
+        GUI_GetParam((param+i),paramNum+i);
+        GUI_PrintParam((param+i)->text_on_screen,(param +i)->Value,i);
+    }
+}
+/*
+    End Single function section
+*/
+
+
+/**
+ * @brief Debug section
+ * 
+ */
+
+
+void PrintNavigation()
+{
+    ESP_LOGI("GUI_NAV","page: %u",GUINAV_GetPage());
+    ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParamNum());
+    ESP_LOGI("GUI_NAV","pNow: %u",GUINAV_GetCurrentSelected());
+    ESP_LOGI("GUI_NAV","x: %u",GUINAV_GetPointerPosX());
+    ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
+}
+/*
+    End Debug section
+*/
+
 
 
 /**
@@ -295,6 +432,8 @@ void GuiTestFull()
  * 
  */
 
+
+
 void PressureIndicator_Init()
 {
     ESP_LOGI("LedBar","init");
@@ -330,6 +469,7 @@ void GuiInit(){
     LCD_init();
     PressureIndicator_Init();
     GUI_ShowPointer();
+    GUI_LoadPageSetting();
 }
 
 /*

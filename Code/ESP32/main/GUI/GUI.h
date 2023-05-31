@@ -24,6 +24,8 @@
 #define EVT_GET_VALUE_FROM_FLASH (1<<5)
 #define EVT_VALUE_ABOVE_THRESHOLD (1<<6)
 #define EVT_VALUE_BELOW_THRESHOLD (1<<7)
+#define EVT_INCREASE_VALUE (1<<8)
+#define EVT_DECREASE_VALUE (1<<9)
 
 #define BTN_MENU GPIO_NUM_36
 #define BTN_SET GPIO_NUM_39
@@ -47,19 +49,23 @@ typedef struct GUI_Info {
 
 typedef struct {
     char* text_on_screen;
+    char* unit;
     uint16_t Value;    
+    uint16_t lowLimit;
+    uint16_t highLimit;
+    uint16_t scaleValue; // multiply with GUI_NAV.value to get actual result
 }Param_t;
 
-#define PARAM_CODE_TEXT      "Param code:"
-#define DP_LOW_TEXT          "DP-Low    :"
-#define DP_HIGH_TEXT         "DP-High   :"
-#define DP_ALARM_TEXT        "DP-Alarm  :"
+#define TEXT_PARAM_CODE      "Param code:"
+#define TEXT_DP_LOW          "DP-Low    :"
+#define TEXT_DP_HIGH         "DP-High   :"
+#define TEXT_DP_ALARM        "DP-Alarm  :"
 
-#define PARAM_CODE_TEXT      "Param code:"
-#define DP_LOW_TEXT          "DP-Low    :"
-#define DP_HIGH_TEXT         "DP-High   :"
-#define DP_ALARM_TEXT        "DP-High   :"
-#define LENGTH_OF_PARAM      strlen(PARAM_CODE_TEXT)
+#define TEXT_CYCLE_TIME      "Cycle Time:"
+#define TEXT_INTERVAL_TIME   "Inter Time:"
+#define TEXT_PULSE_TIME      "Pulse Time:"
+#define TEXT_TOTAL_VAN       "Total Van :"
+#define LENGTH_OF_PARAM      strlen(TEXT_PARAM_CODE)
 
 #define LCD_COLS 20
 #define LCD_ROWS 4
@@ -71,5 +77,6 @@ void GUITask(void *pvParameter);
 void TaskScanButton(void *pvParameter);
 void GuiInit();
 void GuiTestFull();
-
+void GUI_ClearPointer();
+void GUI_ShowPointer();
 #endif

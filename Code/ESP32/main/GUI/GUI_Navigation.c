@@ -3,14 +3,14 @@
 GUI_NAV guiNav = {
     .pX = 0,
     .pY = 0,
-    .page = PAGE_DEFAULT,
+    .page = PAGE_SETTING,
     .param = NO_PARAM_CODE,
     .pNow = IS_KEYWORD,
 };
 
 static inline void NextPage(){
     guiNav.page++;
-    if(guiNav.page == PAGE_END) guiNav.page = PAGE_DEFAULT;
+    if(guiNav.page == PAGE_END) guiNav.page = PAGE_START + 1;
 }
 static inline void PointToNextParam(){
     guiNav.param++;
@@ -39,11 +39,13 @@ static inline void SaveValueToFlash(){xEventGroupSetBits(evgGUI,EVT_SAVE_VALUE_T
 static inline void GetValueFromFlash(){xEventGroupSetBits(evgGUI,EVT_GET_VALUE_FROM_FLASH);}
 static inline void IncreaseValue(){
     EventBits_t e = xEventGroupGetBits(evgGUI);
-    if(e != EVT_VALUE_ABOVE_THRESHOLD) guiNav.value++;
+    // if not happen event above threshold and event increase value is not set, bit EVT_INCREASE_VALUE will be set
+    if(!CHECKFLAG(e,EVT_VALUE_ABOVE_THRESHOLD | EVT_INCREASE_VALUE)) xEventGroupSetBits(evgGUI,EVT_INCREASE_VALUE);
 }
 static inline void DecreaseValue(){
     EventBits_t e = xEventGroupGetBits(evgGUI);
-    if(e != EVT_VALUE_BELOW_THRESHOLD) guiNav.value--;
+    // if not happen event below threshold and event decrease value is not set, bit EVT_DECREASE_VALUE will be set
+    if(!CHECKFLAG(e,EVT_VALUE_BELOW_THRESHOLD | EVT_DECREASE_VALUE)) xEventGroupSetBits(evgGUI,EVT_DECREASE_VALUE);
 }
 static inline void DoNothing(){return;}
 
@@ -74,9 +76,9 @@ void GUINAV_GetEvent(EventBits_t e)
  * 
  * @return uint8_t IS_KEYWORD or IS_VALUE
  */
+
 uint8_t GUINAV_GetCurrentSelected(){return guiNav.pNow;}
-uint8_t GUINAV_GetValue(){return guiNav.value;}
 uint8_t GUINAV_GetPage(){return guiNav.page;}
-uint8_t GUINAV_GetParam(){return guiNav.param;}
+uint8_t GUINAV_GetParamNum(){return guiNav.param;}
 uint8_t GUINAV_GetPointerPosX(){return guiNav.pX;}
 uint8_t GUINAV_GetPointerPosY(){return guiNav.pY;}

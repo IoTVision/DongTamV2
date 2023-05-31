@@ -7,7 +7,7 @@
 Parameter should be padding left by 2 column for ">" pointer character 
 because this ">" will be shown at column 1
 */ 
-#define PARAM_PADDING_LEFT 1 
+#define POINTER_SLOT 1 
 
 
 /*
@@ -29,6 +29,7 @@ typedef enum {
     NO_PULSE_TIME,
     NO_INTERVAL_TIME,
     NO_CYCLE_TIME,
+    NO_TOTAL_VAN,
     NO_PARAM_END, // Not assign in actual code, use to set GUI_NAV.param to the start without hardcode
 }ParamNum; 
 
@@ -39,13 +40,13 @@ typedef enum {
 }PointerNow; 
 
 typedef enum {
-    PAGE_DEFAULT = 1,
-    PAGE_1,
+    PAGE_START,
+    PAGE_SETTING,
+    PAGE_RUN,
     PAGE_END,
 }Page; 
 
 typedef struct GUI_NAV{
-    uint8_t value;
     uint8_t pX;
     uint8_t pY;
     Page page;
@@ -54,11 +55,13 @@ typedef struct GUI_NAV{
 }GUI_NAV;
 
 uint8_t GUINAV_GetPage();
-uint8_t GUINAV_GetParam();
-uint8_t GUINAV_GetValue();
+uint8_t GUINAV_GetParamNum();
 uint8_t GUINAV_GetPointerPosX();
 uint8_t GUINAV_GetPointerPosY();
 uint8_t GUINAV_GetCurrentSelected();
 void GUINAV_GetEvent(EventBits_t e);
+void GUI_LoadPageSetting();
+void GUI_Manage();
+
 
 #endif
