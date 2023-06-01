@@ -26,6 +26,9 @@
 #define EVT_VALUE_BELOW_THRESHOLD (1<<7)
 #define EVT_INCREASE_VALUE (1<<8)
 #define EVT_DECREASE_VALUE (1<<9)
+#define EVT_PARAM_SCOLL_UP (1<<10)
+#define EVT_PARAM_SCOLL_DOWN (1<<1)
+
 
 #define BTN_MENU GPIO_NUM_36
 #define BTN_SET GPIO_NUM_39
@@ -67,6 +70,8 @@ typedef struct {
 #define TEXT_TOTAL_VAN       "Total Van :"
 #define LENGTH_OF_PARAM      strlen(TEXT_PARAM_CODE)
 
+
+
 #define LCD_COLS 20
 #define LCD_ROWS 4
 
@@ -79,4 +84,7 @@ void GuiInit();
 void GuiTestFull();
 void GUI_ClearPointer();
 void GUI_ShowPointer();
+void GUI_GetParam(Param_t *param, uint8_t paramNO);
+void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
+void GUI_LoadPage();
 #endif

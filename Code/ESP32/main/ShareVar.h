@@ -7,8 +7,12 @@
 #include "cJSON.h"
 #include "RTC_Format.h"
 #include "GUI/GUI.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 #define PRESSURE_BUFFER 10
+
+#define USE_SCROLL_SCREEN 
 
 #define EVT_GET_PRESSURE (1<<GET_PRESSURE)
 #define EVT_GET_TIME (1<<GET_TIME)

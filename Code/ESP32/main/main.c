@@ -10,14 +10,12 @@
 #include "JsonHandle/JsonHandle.h"
 #include "ShareVar.h"
 #include "GUI/GUI.h"
-#include "nvs_flash.h"
-#include "nvs.h"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
 BoardParameter brdParam;
 EventGroupHandle_t evg1,evgJson;
 TaskHandle_t taskCommon,taskUartHandleString;
-nvs_handle_t nvsBrdStorage;
+
 
 void Setup();
 EventBits_t CheckLogCommandList(char *s);
@@ -94,6 +92,7 @@ esp_err_t TestFlashNVS()
 {
     esp_err_t err = ESP_OK;
     size_t reqSize;
+    nvs_handle_t nvsBrdStorage;
     // err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
     // if (err != ESP_OK) {
     //     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -113,8 +112,6 @@ esp_err_t TestFlashNVS()
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } 
     else {
-
-
         err = nvs_get_str(nvsBrdStorage,"TestFlash",NULL,&reqSize);
         if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
         char *s = malloc(reqSize);
