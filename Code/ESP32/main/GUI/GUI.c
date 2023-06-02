@@ -15,6 +15,13 @@ GUI_Info guiInfo = {
     .pulseTime = 60,
     .intervalTime = 10,
     .totalVan = 0,
+    .odcDownTimeCycle = 6,
+    .odcHigh = 1000,
+    .odcLow = 250,
+    .odcCleanMode = 3,
+    .serviceRunHoursAlarm = 3000,
+    .dpMode = true,
+    .operateHours = 0,
 };
 
 void PrintNavigation();
@@ -67,7 +74,8 @@ void GUI_Manage()
         uint16_t scale =  param[pY].scaleValue;
         uint32_t value = param[pY].Value;// save previous value to clear value slot before print new value to slot
         uint8_t lenPrevVal = CountLengthPreviousValue(value);
-        lenPrevVal += strlen(param[pY].unit);
+        char unit[4];
+        if(param[pY].unit) {strcpy(unit,param[pY].unit);lenPrevVal += strlen(unit);}
         EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
         EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
         if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=scale;
@@ -81,8 +89,8 @@ void GUI_Manage()
             i++;
         } while(i < lenPrevVal);
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-        if(!param->unit) sprintf(s,"%lu",value);
-        else sprintf(s,"%lu%s",value,param->unit);
+        if(!param[pY].unit) sprintf(s,"%lu",value);
+        else sprintf(s,"%lu%s",value,param[pY].unit);
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
         param[pY].Value = value;
         GUI_SetGuiInfoValue(&guiInfo,paramNO,value);
@@ -114,7 +122,14 @@ esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,Param_t param)
         LCDI2C_Clear();
         vTaskDelay(20/portTICK_PERIOD_MS);
         LCDI2C_Print("Save data",0,0);
-        LCDI2C_Print(param.text_on_screen,0,1);
+        //remove ":" character
+        char *pch;
+        // because param.text_on_screen is pointer pointed to const string cannot be changed, so  
+        char str[20];
+        strcpy(str,param.text_on_screen);
+        pch = strstr(str,":");
+        if(pch) strcpy(pch," ");
+        LCDI2C_Print(str,0,1);
         vTaskDelay(2000/portTICK_PERIOD_MS);
         GUI_LoadPage();
     }
@@ -243,7 +258,7 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
     }
     else {
         // button SET and MENU are nothing to hanle, just delay and return
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        vTaskDelay(100/portTICK_PERIOD_MS);
         return;
     }
     if(DelayCountLoop >= DELAY_COUNT_LOOP_THRESHOLD && Delay > BTN_HOLD_DELAY_MIN){
@@ -329,6 +344,27 @@ void GUI_GetParam(Param_t *param, uint8_t paramNO)
     case NO_TOTAL_VAN:
         AssignParam(param,TEXT_TOTAL_VAN,guiInfo.totalVan,0,15,1,NULL);
         break;
+    case NO_ODC_DOWN_TIME_CY:
+        AssignParam(param,TEXT_ODC_DOWN_CYC,guiInfo.odcDownTimeCycle,0,32,1,NULL);
+        break;
+    case NO_ODC_HIGH:
+        AssignParam(param,TEXT_ODC_HIGH,guiInfo.odcHigh,250,4000,100,"Pa");
+        break;
+    case NO_ODC_LOW:
+        AssignParam(param,TEXT_ODC_LOW,guiInfo.odcLow,250,4000,100,"Pa");
+        break;
+    case NO_OPERATE_HOURS:
+        AssignParam(param,TEXT_OPERATE_H,guiInfo.operateHours,0,25000,1000,"H");
+        break;
+    case NO_ODC_CLEANING_MODE:
+        AssignParam(param,TEXT_CLEAN_MODE,guiInfo.odcCleanMode,1,5,1,NULL);
+        break;
+    case NO_SER_RUN_HOURS_ALARM:
+        AssignParam(param,TEXT_SER_H_ALARM,guiInfo.serviceRunHoursAlarm,0,25000,1000,"H");
+        break;
+    case NO_DP_MODE:
+        AssignParam(param,TEXT_DP_MODE,guiInfo.dpMode,0,25000,1000,NULL);
+        break;
     default:
         param->text_on_screen = NULL;
         param->Value = 0;
@@ -380,7 +416,7 @@ void GUI_PrintParam(char *keyword, uint16_t value, char* unit, uint8_t row)
     else LCDI2C_Print(keyword,POINTER_SLOT,row);
     char StringValue[10];
     if(!unit) sprintf(StringValue,"%u",value);
-    sprintf(StringValue,"%u%s",value,unit);
+    else sprintf(StringValue,"%u%s",value,unit);
     // pointer slot for pointer to text and slot for point to value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
 }
