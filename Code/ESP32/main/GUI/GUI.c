@@ -142,7 +142,7 @@ void GUI_ScrollUpDown(uint8_t paramNO)
     EventBits_t e = xEventGroupGetBits(evgGUI);
     if((CHECKFLAG(e,EVT_PARAM_SCOLL_DOWN))){
         for(int8_t i = (LCD_ROWS -1) ;i > - 1;i--) {
-            if((paramNO -(LCD_ROWS - 1 - i)) <= NO_PARAM_START) break;
+            if((paramNO -(LCD_ROWS - 1 - i)) <= SETTING_NO_PARAM_START) break;
             ESP_LOGI("DOWN","%d",i);
             GUI_GetParam(param+i,paramNO -(LCD_ROWS - 1 - i));
         }
@@ -153,7 +153,7 @@ void GUI_ScrollUpDown(uint8_t paramNO)
     }// if current pointer pointed to the first row and param is not the first param
     else if((CHECKFLAG(e,EVT_PARAM_SCOLL_UP))){
         for(int8_t i = 0; i < LCD_ROWS ;i++) {
-            if(i >= NO_PARAM_END) break;
+            if(i >= SETTING_NO_PARAM_END) break;
             GUI_GetParam(param+i,paramNO + i);
         }
         GUI_LoadPage();

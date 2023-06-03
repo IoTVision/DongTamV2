@@ -33,7 +33,7 @@ static inline void PointToNextParam(){
     if(guiNav.pY == LCD_ROWS) guiNav.pY = 0;
     #elif defined(USE_SCROLL_SCREEN) 
     // if param reach the end of the list, keep the same value
-    if(paramNO == NO_PARAM_END) paramNO = NO_PARAM_END - 1;
+    if(paramNO == SETTING_NO_PARAM_END) paramNO = SETTING_NO_PARAM_END - 1;
     // not roll back pointer, keep it at the latest row
     if(pY > LCD_ROWS - 1) {
         pY = LCD_ROWS - 1;
@@ -57,7 +57,7 @@ static inline void PointToPrevParam(){
     if(guiNav.pY > (LCD_ROWS+1)) guiNav.pY = LCD_ROWS - 1;
     #elif defined(USE_SCROLL_SCREEN) 
     // if param reach the start of the list, keep the same value
-    if(paramNO == NO_PARAM_START) paramNO = NO_PARAM_START + 1;
+    if(paramNO == SETTING_NO_PARAM_START) paramNO = SETTING_NO_PARAM_START + 1;
     // not roll back pointer, keep it at the 0 row
     if(pY < 0) {
         pY = 0;

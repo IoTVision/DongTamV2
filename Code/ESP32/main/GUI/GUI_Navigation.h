@@ -40,25 +40,7 @@ typedef enum {
     SETTING_NO_PARAM_END, // Not assign in actual code, use to set GUI_NAV.param to the start without hardcode
 }ParamSetting; 
 
-typedef enum {
-    NO_PARAM_START, // Not assign in actual code, use to set GUI_NAV.param to the start without hardcode
-    NO_PARAM_CODE,
-    NO_DP_LOW,
-    NO_DP_HIGH,
-    NO_DP_ALARM,
-    NO_PULSE_TIME,
-    NO_INTERVAL_TIME,
-    NO_CYCLE_TIME,
-    NO_TOTAL_VAN,
-    NO_ODC_DOWN_TIME_CY,
-    NO_ODC_HIGH,
-    NO_ODC_LOW,
-    NO_OPERATE_HOURS,
-    NO_ODC_CLEANING_MODE,
-    NO_SER_RUN_HOURS_ALARM,
-    NO_DP_MODE,
-    NO_PARAM_END, // Not assign in actual code, use to set GUI_NAV.param to the start without hardcode
-}ParamSetting; 
+
 
 // current position of pointer
 typedef enum {
