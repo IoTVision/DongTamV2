@@ -25,13 +25,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-#include "74HC595.h"
-#include "74HC165.h"
-#include "PCF8563.h"
-#include "AMS5915.h"
-#include "string.h"
-#include "Flag.h"
-#include "ShareVar.h"
+#include "BoardParameter.h"
 #include "MessageHandle.h"
 
 /* USER CODE END Includes */
@@ -54,6 +48,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
@@ -68,6 +64,7 @@ uint16_t uartEsp32RxSize,uartLogRxSize;
 UART_HandleTypeDef *uartTarget;
 char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
 MesgValRX mesgRxRet;
+uint16_t timerArray[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,6 +74,7 @@ static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
 int8_t GetUartMessage(char *outputStr);
@@ -102,6 +100,25 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 		SETFLAG(fUART,FLAG_UART_LOG_RX_DONE);
 	}
 }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim->Instance == TIM2){
+		VanProcedure state = Brd_GetVanProcState();
+		switch(state){
+		case BRD_PULSE_TIME:
+			timerArray[0]++;
+			break;
+		case BRD_INTERVAL_TIME:
+			timerArray[1]++;
+			break;
+		case BRD_CYCLE_INTERVAL_TIME:
+			timerArray[2]++;
+			break;
+		}
+	}
+}
+
 
 
 
@@ -139,25 +156,28 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   SetUp();
   HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
+  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  if(!GetUartMessage(mesgRX)){
-//		  mesgRxRet = MesgRxHandle(mesgRX,mesgTX);
-//		  if((HAL_StatusTypeDef)mesgRxRet != HAL_OK) {
-//			  HAL_UART_Transmit(uartTarget,(uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
-//			  char *s = "Invalid message, do nothing\n";
-//			  HAL_UART_Transmit(uartTarget,(uint8_t*) s, strlen(s), HAL_MAX_DELAY);
-//		  }
-//		  else HAL_UART_Transmit(uartTarget, (uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
-//	  }
-//	  ProcedureVan();
+	  if(!GetUartMessage(mesgRX)){
+		  mesgRxRet = MessageRxHandle(mesgRX,mesgTX);
+		  if((HAL_StatusTypeDef)mesgRxRet != HAL_OK) {
+			  HAL_UART_Transmit(uartTarget,(uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
+			  char *s = "Invalid message, do nothing\n";
+			  HAL_UART_Transmit(uartTarget,(uint8_t*) s, strlen(s), HAL_MAX_DELAY);
+		  }
+		  else HAL_UART_Transmit(uartTarget, (uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
+	  }
+	  ProcedureTriggerVan();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -232,6 +252,51 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 8-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10000-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
 
 }
 

@@ -1,4 +1,7 @@
 #include "MessageHandle.h"
+#include "RTC_Format.h"
+#include "BoardParameter.h"
+
 const char* strRxKey[] = {
 	// Receive message
 	"DoNothing",
@@ -7,6 +10,7 @@ const char* strRxKey[] = {
 	"SetPulseTime",
 	"SetCycleTime",
 	"SetTotalVan",
+	"SetCycleIntervalTime",
 	"SetIntervalTime",
 	"TrigVan",
 	"SetTime",
@@ -17,13 +21,17 @@ const char* strTxKey[] = {
 	// Transmit message
 	"DoNothing",
 	"Van: ",
+	"VanState",
 	"Time: ",
 	"Pressure: ",
 	"TotalVan: ",
 	"PulseTime: ",
 	"IntervalTime: ",
+	"CycleIntervalTime",
 	"CycleTime: ",
 };
+
+HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
 
 HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 {
@@ -40,10 +48,14 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	case TX_VAN:
 		sprintf(sTemp,"%u",Brd_GetVanOn());
 		break;
+	case TX_VANSTATE:
+		sprintf(sTemp,"%lu",Brd_GetVanState());
+		break;
 	case TX_TIME:
 		RTC_PackTimeToString(Brd_GetRTC(),sTemp);
 		break;
 	case TX_PRESSURE:
+		Brd_GetPressure();
 		sprintf(sTemp,"%.2f",Brd_GetPressure());
 		break;
 	case TX_TOTAL_VAN:
@@ -54,6 +66,9 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 		break;
 	case TX_INTERVAL_TIME:
 		sprintf(sTemp,"%u",Brd_GetIntervalTime());
+		break;
+	case TX_CYC_INTV_TIME:
+		sprintf(sTemp,"%u",Brd_GetCycleIntervalTime());
 		break;
 	case TX_CYCLE_TIME:
 		sprintf(sTemp,"%u",Brd_GetCycleTime());
@@ -67,7 +82,7 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	return HAL_OK;
 }
 
-HAL_StatusTypeDef MesgRxHandle(char *inputStr, char* outputStr)
+HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 {
 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
 	for(uint8_t i=0;i < indexKey;i++){
@@ -127,7 +142,14 @@ HAL_StatusTypeDef Mesg_SetTime(void *pvParameter)
 	return HAL_OK;
 }
 
-HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
+HAL_StatusTypeDef Mesg_SetCycleIntervalTime(void *pvParameter)
+{
+	uint32_t *val = (uint32_t*)pvParameter;
+	if(Brd_SetCycleIntervalTime(*val) == -1) return HAL_ERROR;
+	return HAL_OK;
+}
+
+ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
 	uint32_t val;
@@ -156,11 +178,6 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			pValRet = pVal((void *)&val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
-		case TOTAL_VAN:
-			pVal = &Mesg_TotalVan;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_TOTAL_VAN,outputStr);
-			break;
 		case PULSE_TIME:
 			pVal = &Mesg_PulseTime;
 			pValRet = pVal((void *)&val);
@@ -171,10 +188,23 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			pValRet = pVal((void *)&val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_CYCLE_TIME,outputStr);
 			break;
+		case TOTAL_VAN:
+			pVal = &Mesg_TotalVan;
+			pValRet = pVal((void *)&val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_TOTAL_VAN,outputStr);
+			break;
+		case CYC_INTV_TIME:
+			pVal = &Mesg_SetCycleIntervalTime;
+			pValRet = pVal((void *)&val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			break;
 		case INTERVAL_TIME:
 			pVal = &Mesg_IntervalTime;
 			pValRet = pVal((void *)&val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
+			break;
+		case TRIG_VAN:
+			if(!Brd_FlagCheckBit(BRD_TRIG_VAN)) Brd_FlagSetBit(BRD_TRIG_VAN);
 			break;
 		case SET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
@@ -183,8 +213,6 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 		case GET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
 			return HAL_OK;
-		case TRIG_VAN:
-			break;
 		default:
 			return HAL_OK;
 			break;

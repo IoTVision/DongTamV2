@@ -7,13 +7,103 @@
 
 
 #include "BoardParameter.h"
+#include "MessageHandle.h"
 
 BoardParameter brdParam;
+
+
+VanProcedure vanProcState;
+
+
+void VanOn(char *outputStr,uint8_t currentVanOn)
+{
+	HC595_SetBitOutput(currentVanOn);
+	HC595_ShiftOut(NULL, 2, 1);
+	MessageTxHandle(TX_PRESSURE, outputStr);
+	vanProcState = BRD_PULSE_TIME;
+}
+
+void VanOff(char *outputStr,uint8_t currentVanOn)
+{
+	HC595_ClearBitOutput(currentVanOn);
+	MessageTxHandle(TX_VANSTATE, outputStr);
+	HC595_ShiftOut(NULL, 2, 1);
+	vanProcState = BRD_INTERVAL_TIME;
+}
+
+uint8_t CheckVanInUsed(uint8_t *totalVanOn)
+{
+	if(*currentVanOn > 0){
+		for(uint8_t i=0;i<16;i++){
+			if((*totalVanOn & 0x01) > 0) {
+				return i;
+			}
+			else *totalVanOn >>=1;
+		}
+	}
+	else if (!*(totalVanOn)) vanProcState = BRD_CYCLE_TIME;
+	return 0;
+}
+
+uint8_t CheckCycleTime(uint8_t *cycTime)
+{
+	if(*cycTime > 0) {
+		(*cycTime) -= 1;
+		vanProcState = BRD_CYCLE_INTERVAL_TIME;
+	}
+	else if(!cycleTime){
+		vanProcState = PROC_END;
+	}
+}
+
+void CheckTimer_SetBit(uint16_t *tArr,VanProcedure nextState, uint16_t (*pBrdVal)())
+{
+	if(*tArr*10 >= pBrdVal()){
+		*tArr = 0;
+		Brd_SetVanProcState(nextState);
+	}
+}
+
+void ProcedureTriggerVan(char *outputStr)
+{
+	static uint32_t delayAfterVanOn = 0;
+	uint16_t pulseTime = Brd_GetPulseTime();
+	static uint16_t cycleTime = Brd_GetCycleTime();
+	static uint16_t currentVanOn = 0;
+	static uint16_t totalVanOn = Brd_GetVanOn();
+	switch(vanProcState){
+	case PROC_START:
+		break;
+	case BRD_VAN_ON:
+		VanOn(outputStr,currentVanOn);
+		break;
+	case BRD_PULSE_TIME:
+		CheckTimer_SetBit(timerArray[0],BRD_VAN_OFF,&Brd_GetPulseTime());
+		break;
+	case BRD_VAN_OFF:
+		VanOff(outputStr,currentVanOn);
+		break;
+	case BRD_INTERVAL_TIME:
+		currentVanOn = CheckVanInUsed(&totalVanOn);
+		if(currentVanOn)
+		CheckTimer_SetBit(timerArray[1],BRD_VAN_ON,&Brd_GetIntervalTime());
+		break;
+	case BRD_CYCLE_TIME:
+		CheckCycleTime(cycleTime);
+		break;
+	case BRD_CYCLE_INTERVAL_TIME:
+		CheckTimer_SetBit(timerArray[2],BRD_VAN_ON,&Brd_GetPulseTime());
+	}
+}
+
+uint32_t Brd_GetVanState(){return HC165_ReadState(2);}
+
 
 uint16_t Brd_GetTotalVan(){return brdParam.totalVan;}
 uint16_t Brd_GetVanOn(){return brdParam.currentVanOn;}
 uint16_t Brd_GetIntervalTime(){return brdParam.intervalTime;}
 uint16_t Brd_GetPulseTime(){return brdParam.pulseTime;}
+uint16_t Brd_GetCycleIntervalTime(){return brdParam.cycIntvTime;}
 RTC_t Brd_GetRTC()
 {
 	brdParam.RTCtime = PCF8563_ReadTimeRegisters();
@@ -30,7 +120,9 @@ int8_t Brd_SetTotalVan(uint8_t val)
 {
     if(val > 0 && val <= 16){
         brdParam.totalVan = val;
+        // reset all current valve
         brdParam.currentVanOn = 0;
+        // fill all output bit from zero to total van
         for(uint8_t i = 0; i < val; i++){
         	brdParam.currentVanOn |=  (1 << (val-1));
         }
@@ -93,35 +185,54 @@ int16_t Brd_SetCycleTime(uint16_t val)
     return 0;
 }
 
+int16_t Brd_SetCycleIntervalTime(uint16_t val)
+{
+    if(val > 2 && val <= 100){
+        brdParam.cycIntTime = val;
+    }
+    else return -1;
+    return 0;
+}
+
+int8_t Brd_FlagSetBit(BoardFlagBit f)
+{
+	if(f > FLAG_START && f < FLAG_END){
+		SETFLAG(brdParam.f,f);
+	} else return -1;
+	return 0;
+}
+
+int8_t Brd_FlagClearBit(BoardFlagBit f)
+{
+	if(f > FLAG_START && f < FLAG_END){
+		CLEARFLAG(brdParam.f,f);
+	} else return -1;
+	return 0;
+}
+
+int8_t Brd_FlagCheckBit(BoardFlagBit f)
+{
+	if(f > FLAG_START && f < FLAG_END){
+		return CHECKFLAG(brdParam.f,f);
+	} else return -1;
+	return 0;
+}
+
+
+uint8_t Brd_GetTimerArray(uint8_t element){return brdParam.timerArray[element];}
+int8_t Brd_SetTimerArray(uint8_t element, uint8_t val)
+{
+	if(element >= sizeof(brdParam.timerArray)) return -1;
+	brdParam.timerArray[element] = val;
+}
+
+VanProcedure Brd_GetVanProcState(){return vanProState;}
+VanProcedure Brd_SetVanProcState(VanProcedure state){vanProState = state;}
 HC595* Brd_GetAddress_HC595(){return &brdParam.hc595;}
 HC165* Brd_GetAddress_HC165(){return &brdParam.hc165;}
 PCF8563_Handle* Brd_GetAddress_PCF8563(){return &brdParam.pcf;}
 AMS5915* Brd_GetAddress_AMS5915(){return &brdParam.ams;}
 
 
-//void ProcedureVan(){
-//	static uint32_t delayAfterVanOn = 0;
-//	uint16_t pulseTime = Brd_GetPulseTime();
-//	// turn on valve
-//	if(CHECKFLAG(f1, FLAG_TRIG_VAN_PROCEDURE)){
-//		if(!CHECKFLAG(f1,FLAG_AFTER_TRIG_VAN_ON)){
-////			brdParam.pressure = AMS5915_CalPressure(&brdParam.ams);
-////			HC595_SetByteOutput(brdParam.hc595.data);
-//			HC595_ShiftOut(NULL, 2, 1);
-//			SETFLAG(f1,FLAG_AFTER_TRIG_VAN_ON);
-//			delayAfterVanOn = HAL_GetTick();
-//			// Delay 500ms, read van state then turn off
-//		}
-//		else if(CHECKFLAG(f1,FLAG_AFTER_TRIG_VAN_ON | FLAG_GET_PRESSURE_MAX_DONE) &&
-//				(HAL_GetTick() - delayAfterVanOn >= pulseTime)){
-////			brdParam.VanState = HC165_ReadState(2);
-////			HC595_ClearByteOutput(brdParam.hc595.data);
-//			HC595_ShiftOut(NULL, 2, 1);
-//			CLEARFLAG(f1,FLAG_AFTER_TRIG_VAN_ON);
-//			CLEARFLAG(f1, FLAG_TRIG_VAN_PROCEDURE);
-//		}
-//
-//	}
-//}
-//
-//
+
+

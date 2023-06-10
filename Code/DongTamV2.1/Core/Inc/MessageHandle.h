@@ -10,8 +10,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "RTC_Format.h"
-#include "BoardParameter.h"
+#include "main.h"
 
 typedef enum MesgValRX{
 	SET_VAN = 1,
@@ -19,6 +18,7 @@ typedef enum MesgValRX{
 	PULSE_TIME,
 	CYCLE_TIME,
 	TOTAL_VAN,
+	CYC_INTV_TIME,
 	INTERVAL_TIME,
 	TRIG_VAN,
 	SET_TIME,
@@ -28,11 +28,13 @@ typedef enum MesgValRX{
 
 typedef enum MesgValTX{
 	TX_VAN = 1,
+	TX_VANSTATE,
 	TX_TIME,
 	TX_PRESSURE,
 	TX_TOTAL_VAN,
 	TX_PULSE_TIME,
 	TX_INTERVAL_TIME,
+	TX_CYC_INTV_TIME,
 	TX_CYCLE_TIME,
 }MesgValTX;
 
@@ -46,11 +48,8 @@ typedef enum MesgValTX{
 
 typedef HAL_StatusTypeDef (*pValueHandle)(void *pvParameter);
 
-HAL_StatusTypeDef MesgRxHandle(char *inputStr, char* outputStr);
-
-HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
+HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr);
 HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
-
 
 
 #endif /* INC_MESSAGEHANDLE_H_ */

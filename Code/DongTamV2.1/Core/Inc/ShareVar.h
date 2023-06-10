@@ -10,7 +10,7 @@
 
 #define FLAG_UART_ESP_RX_DONE (1<<0)
 #define FLAG_UART_LOG_RX_DONE (1<<1)
-#define FLAG_TRIG_VAN (1<<5)
+
 #define FLAG_TRIG_VAN_PROCEDURE (1<<6)
 #define FLAG_AFTER_TRIG_VAN_ON (1<<7)
 #define FLAG_GET_PRESSURE_MAX_DONE (1 << 9)
