@@ -21,13 +21,13 @@ const char* strTxKey[] = {
 	// Transmit message
 	"DoNothing",
 	"Van: ",
-	"VanState",
+	"VanState: ",
 	"Time: ",
 	"Pressure: ",
 	"TotalVan: ",
 	"PulseTime: ",
 	"IntervalTime: ",
-	"CycleIntervalTime",
+	"CycleIntervalTime: ",
 	"CycleTime: ",
 };
 
@@ -149,7 +149,7 @@ HAL_StatusTypeDef Mesg_SetCycleIntervalTime(void *pvParameter)
 	return HAL_OK;
 }
 
- HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
+HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
 	uint32_t val;
