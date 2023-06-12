@@ -105,12 +105,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2){
 		VanProcedure state = Brd_GetVanProcState();
+		uint32_t tArray;
 		switch(state){
 		case BRD_PULSE_TIME:
-			timerArray[0]++;
+			tArray = Brd_GetTimerArray(0);
+			tArray++;
+			Brd_SetTimerArray(0, tArray);
 			break;
 		case BRD_INTERVAL_TIME:
-			timerArray[1]++;
+			tArray = Brd_GetTimerArray(1);
+			tArray++;
+			Brd_SetTimerArray(1, tArray);
 			break;
 		case BRD_CYCLE_INTERVAL_TIME:
 			timerArray[2]++;

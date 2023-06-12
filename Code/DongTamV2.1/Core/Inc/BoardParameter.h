@@ -16,6 +16,10 @@
 #include "ShareVar.h"
 #include "Flag.h"
 
+#define MAX_MESSAGE 50
+#define MAX_NUM_VAN 16
+#define TIMER_PERIOD_MS 10
+
 typedef struct BoardParameter
 {
 	HC595 hc595;
@@ -24,15 +28,14 @@ typedef struct BoardParameter
 	PCF8563_Handle pcf;
     uint16_t intervalTime;
     uint16_t cycIntvTime;
-    uint16_t cycleTime;
     uint16_t pulseTime;
     uint16_t currentVanOn;
     float pressure;
     uint8_t totalVan;
-    uint8_t timerArray[3];
+    uint8_t timerArray[3];// 1 for pulse time, 2 for interval time
     RTC_t RTCtime;
-    FlagGroup_t f;
 }BoardParameter;
+
 
 
 
@@ -42,7 +45,6 @@ typedef enum {
 	BRD_PULSE_TIME,
 	BRD_VAN_OFF,
 	BRD_INTERVAL_TIME,
-	BRD_CYCLE_TIME,
 	BRD_CYCLE_INTERVAL_TIME,
 	PROC_END,
 }VanProcedure;
@@ -53,7 +55,7 @@ uint16_t Brd_GetVanOn();
 uint16_t Brd_GetIntervalTime();
 uint16_t Brd_GetPulseTime();
 RTC_t Brd_GetRTC();
-uint16_t Brd_GetCycleTime();
+uint16_t Brd_GetCycleIntervalTime();
 uint8_t Brd_GetTimerArray(uint8_t element);
 
 int8_t Brd_SetTotalVan(uint8_t val);
@@ -65,6 +67,7 @@ int16_t Brd_SetPulseTime(uint16_t val);
 int8_t Brd_SetRTC(RTC_t t);
 int16_t Brd_SetCycleTime(uint16_t val);
 int8_t Brd_SetTimerArray(uint8_t element, uint8_t val);
+int16_t Brd_SetCycleIntervalTime(uint16_t val);
 
 HC595* Brd_GetAddress_HC595();
 HC165* Brd_GetAddress_HC165();
@@ -72,11 +75,8 @@ PCF8563_Handle* Brd_GetAddress_PCF8563();
 AMS5915* Brd_GetAddress_AMS5915();
 
 void ProcedureTriggerVan();
-int8_t Brd_FlagCheckBit(BoardFlagBit f);
-int8_t Brd_FlagClearBit(BoardFlagBit f);
-int8_t Brd_FlagSetBit(BoardFlagBit f);
 
 VanProcedure Brd_GetVanProcState();
-VanProcedure Brd_SetVanProcState(VanProcedure state);
+void Brd_SetVanProcState(VanProcedure state);
 
 #endif /* INC_BOARDPARAMETER_H_ */

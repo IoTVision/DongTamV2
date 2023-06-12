@@ -15,8 +15,7 @@
 #define FLAG_AFTER_TRIG_VAN_ON (1<<7)
 #define FLAG_GET_PRESSURE_MAX_DONE (1 << 9)
 
-#define MAX_MESSAGE 50
-#define MAX_NUM_VAN 16
+
 
 
 

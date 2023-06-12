@@ -16,7 +16,6 @@ typedef enum MesgValRX{
 	SET_VAN = 1,
 	CLEAR_VAN,
 	PULSE_TIME,
-	CYCLE_TIME,
 	TOTAL_VAN,
 	CYC_INTV_TIME,
 	INTERVAL_TIME,
@@ -35,7 +34,6 @@ typedef enum MesgValTX{
 	TX_PULSE_TIME,
 	TX_INTERVAL_TIME,
 	TX_CYC_INTV_TIME,
-	TX_CYCLE_TIME,
 }MesgValTX;
 
 
