@@ -7,7 +7,7 @@
 #include "sdkconfig.h"
 #include "freertos/queue.h"
 
-
+#define cJSON_OFFSET_BYTES 5
 #define NVS_SAVE_VAN_VALUE "FlashSaveVan" 
 #define NVS_GET_VAN_VALUE "FlashReadVan" 
 

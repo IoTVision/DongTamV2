@@ -10,8 +10,6 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
-#define PRESSURE_BUFFER 10
-
 #define USE_SCROLL_SCREEN 
 
 #define EVT_GET_PRESSURE (1<<GET_PRESSURE)
@@ -33,12 +31,6 @@
 #define EVT_UART_DELETE_TASK_BIG_SIZE (1<<1)
 #define EVT_UART_OVERSIZE_HW_FIFO (1<<2)
 
-#define EVT_GUI_SIMU_BTN_MODE (1 << 0)
-#define EVT_GUI_SIMU_BTN_SET (1 << 1)
-#define EVT_GUI_SIMU_BTN_UP (1 << 2)
-#define EVT_GUI_SIMU_BTN_DR (1 << 3)
-
-
 typedef enum EventCommand{
     GET_PRESSURE,
     GET_TIME,
@@ -55,7 +47,7 @@ typedef enum EventCommand{
 
 typedef struct BoardParameter{
     char ID[12];
-    float Pressure[PRESSURE_BUFFER];
+    float Pressure;
     RTC_t Time;
     char VanState[16];
     uint32_t VanData;

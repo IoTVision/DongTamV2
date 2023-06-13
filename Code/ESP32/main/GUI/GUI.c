@@ -24,6 +24,27 @@ GUI_Info guiInfo = {
     .operateHours = 0,
 };
 
+#define LENGTH_OF_PARAM      strlen(s[0])
+
+char *s[]={
+    "Param code:",
+    "DP-Low    :",
+    "DP-High   :",
+    "DP-Alarm  :",
+    "Cycle Time:",
+    "Inter Time:",
+    "Pulse Time:",
+    "Total Van :",
+    "Down T Cyc:",
+    "OCD High  :",
+    "OCD Low   :",
+    "OperHours :",
+    "Clean Mode:",
+    "SerH Alarm:",
+    "DP Mode   :",
+};
+
+
 void PrintNavigation();
 uint8_t CountLengthPreviousValue(uint32_t value);
 esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,Param_t param);

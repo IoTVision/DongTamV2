@@ -7,7 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "RTC_Format.h"
-#include "JsonHandle/JsonHandle.h"
+#include "MessageHandle/MessageHandle.h"
 #include "ShareVar.h"
 #include "GUI/GUI.h"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
@@ -41,21 +41,13 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-            if(strstr(s,"{") && strstr(s,"}")){ // is JSON format
-                char *parseResult;
-                cjsMain = cJSON_ParseWithOpts(s,(const char **)&parseResult,true);
-                ESP_LOGI("UartHandleString","Parse Result: %s",parseResult);
-                ESP_LOGI("UartHandleString","Detect {}, size s: %d",strlen(s));
-                
-            } 
-            else if(CheckLogCommandList(s)) {
+            if(CheckLogCommandList(s)) {
                 ESP_LOGI("UartHandleString","Detect command in list");
             }
             else {
                 ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
                 SendStringToUART(qLogTx,s);
             }
-            // ESP_LOGI("UartHandleString","Receive:%p",s);
             free(s);
         }
     }
@@ -63,76 +55,17 @@ void UartHandleString(void *pvParameter)
 
 EventBits_t CheckLogCommandList(char *s)
 {
-#define COMPARE_STRING_SET_EVENT(STRING_COMPARE,EVENT) (strcmp(s,(STRING_COMPARE)) == 0 ? (xEventGroupSetBits(evg1,(EVENT))) : 0)
-    if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_TIME,EVT_GET_TIME)) return EVT_GET_TIME; 
-    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_ALL_PARAM,EVT_GET_FULL_PARAM))return EVT_GET_FULL_PARAM; 
-    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_PRESSURE,EVT_GET_PRESSURE))return EVT_GET_PRESSURE; 
-    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_GET_VAN_VALUE,EVT_GET_VAN_VALUE))return EVT_GET_VAN_VALUE;
-    else if(COMPARE_STRING_SET_EVENT(JSON_KEY_TRIG_VAN,EVT_TRIG_VAN))return EVT_TRIG_VAN; 
-    else if(COMPARE_STRING_SET_EVENT(NVS_SAVE_VAN_VALUE,EVT_NVS_SAVE_VAN))return EVT_NVS_SAVE_VAN; 
-    else if(COMPARE_STRING_SET_EVENT(NVS_GET_VAN_VALUE,EVT_NVS_GET_VAN))return EVT_NVS_GET_VAN;
-    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_MODE,EVT_GUI_SIMU_BTN_MODE)) return EVT_GUI_SIMU_BTN_MODE;
-    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_SET,EVT_GUI_SIMU_BTN_SET)) return EVT_GUI_SIMU_BTN_SET;
-    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_DOWN_RIGHT,EVT_GUI_SIMU_BTN_DR)) return EVT_GUI_SIMU_BTN_DR;
-    // else if(COMPARE_STRING_SET_EVENT(GUI_SIMU_BTN_UP,EVT_GUI_SIMU_BTN_UP)) return EVT_GUI_SIMU_BTN_UP;
-    return 0; 
-#undef COMPARE_STRING_SET_EVENT
+    
 }
 
 void TaskCommon(void *pvParameter)
 {
     while(1){
-        SendCommandToSTM32(cjsMain);
-        UpdateParamFromParsedJsonItem(cjsMain);
         vTaskDelay(10/portTICK_PERIOD_MS);
     }
 }
 
-esp_err_t TestFlashNVS()
-{
-    esp_err_t err = ESP_OK;
-    size_t reqSize;
-    nvs_handle_t nvsBrdStorage;
-    // err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
-    // if (err != ESP_OK) {
-    //     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-    // } 
-    // else {
-    //     // err = nvs_set_str(nvsBrdStorage,"TestFlash","SpiritBoi");
-    //     // err = nvs_set_blob(nvsBrdStorage,"Pressure",(void*)&p,sizeof(p));
-    //     // err = nvs_commit(nvsBrdStorage);
-    // }
-    // nvs_close(nvsBrdStorage);
-    // ESP_LOGI("NVS","Write TestFlash and close");
-    // vTaskDelay(100/portTICK_PERIOD_MS);
-    
-    ESP_LOGI("NVS","Begin to read flash");
-    err = nvs_open("Board", NVS_READONLY, &nvsBrdStorage);
-    if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-    } 
-    else {
-        err = nvs_get_str(nvsBrdStorage,"TestFlash",NULL,&reqSize);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-        char *s = malloc(reqSize);
-        err = nvs_get_str(nvsBrdStorage,"TestFlash",s,&reqSize);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-        ESP_LOGI("NVSTest","%s",s);
 
-        double p1;
-        size_t sz;
-        char s1[15] = {0};
-        err = nvs_get_blob(nvsBrdStorage,"Pressure",NULL,&sz);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-        err = nvs_get_blob(nvsBrdStorage,"Pressure",&p1,&sz);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-        sprintf(s1,"%.6f",p1);
-        ESP_LOGI("NVSTest","%s",s1);
-    }
-    nvs_close(nvsBrdStorage);
-
-    return err;
-}
 
 void InitProcess()
 {
@@ -179,6 +112,52 @@ void Setup()
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, &taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
+}
+
+esp_err_t TestFlashNVS()
+{
+    esp_err_t err = ESP_OK;
+    size_t reqSize;
+    nvs_handle_t nvsBrdStorage;
+    // err = nvs_open("Board", NVS_READWRITE, &nvsBrdStorage);
+    // if (err != ESP_OK) {
+    //     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    // } 
+    // else {
+    //     // err = nvs_set_str(nvsBrdStorage,"TestFlash","SpiritBoi");
+    //     // err = nvs_set_blob(nvsBrdStorage,"Pressure",(void*)&p,sizeof(p));
+    //     // err = nvs_commit(nvsBrdStorage);
+    // }
+    // nvs_close(nvsBrdStorage);
+    // ESP_LOGI("NVS","Write TestFlash and close");
+    // vTaskDelay(100/portTICK_PERIOD_MS);
+    
+    ESP_LOGI("NVS","Begin to read flash");
+    err = nvs_open("Board", NVS_READONLY, &nvsBrdStorage);
+    if (err != ESP_OK) {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    } 
+    else {
+        err = nvs_get_str(nvsBrdStorage,"TestFlash",NULL,&reqSize);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+        char *s = malloc(reqSize);
+        err = nvs_get_str(nvsBrdStorage,"TestFlash",s,&reqSize);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+        ESP_LOGI("NVSTest","%s",s);
+
+        double p1;
+        size_t sz;
+        char s1[15] = {0};
+        err = nvs_get_blob(nvsBrdStorage,"Pressure",NULL,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+        err = nvs_get_blob(nvsBrdStorage,"Pressure",&p1,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+        sprintf(s1,"%.6f",p1);
+        ESP_LOGI("NVSTest","%s",s1);
+    }
+    nvs_close(nvsBrdStorage);
+
+    return err;
 }
 
 
