@@ -65,6 +65,7 @@ UART_HandleTypeDef *uartTarget;
 char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
 MesgValRX mesgRxRet;
 uint16_t timerArray[2];
+char outputStr[50];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,9 +84,12 @@ void ProcedureVan();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+const char *TAG = "MAIN";
+
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	if(hi2c->Instance == I2C1){
+
 	}
 }
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
@@ -101,24 +105,31 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 	}
 }
 
+
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2){
 		VanProcedure state = Brd_GetVanProcState();
 		uint32_t tArray;
 		switch(state){
-		case BRD_PULSE_TIME:
-			tArray = Brd_GetTimerArray(0);
-			tArray++;
-			Brd_SetTimerArray(0, tArray);
+			case BRD_PULSE_TIME:
+				tArray = Brd_GetTimerArray(0);
+				tArray++;
+				Brd_SetTimerArray(0, tArray);
 			break;
-		case BRD_INTERVAL_TIME:
-			tArray = Brd_GetTimerArray(1);
-			tArray++;
-			Brd_SetTimerArray(1, tArray);
+			case BRD_INTERVAL_TIME:
+				tArray = Brd_GetTimerArray(1);
+				tArray++;
+				Brd_SetTimerArray(1, tArray);
 			break;
-		case BRD_CYCLE_INTERVAL_TIME:
-			timerArray[2]++;
+			case BRD_CYCLE_INTERVAL_TIME:
+//				tArray = Brd_GetTimerArray(2);
+//				tArray++;
+//				Brd_SetTimerArray(2, tArray);
+			break;
+			default:
+
 			break;
 		}
 	}
@@ -126,7 +137,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 
 
-
+extern BoardParameter brdParam;
 /* USER CODE END 0 */
 
 /**
@@ -166,6 +177,12 @@ int main(void)
   SetUp();
   HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
   HAL_TIM_Base_Start_IT(&htim2);
+  uartTarget = &huart3;
+  while(!uartTarget);
+  brdParam.cycIntvTime = 2;
+  brdParam.intervalTime = 10;
+  brdParam.pulseTime = 60;
+  Brd_SetTotalVan(2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -181,8 +198,16 @@ int main(void)
 		  }
 		  else HAL_UART_Transmit(uartTarget, (uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
 	  }
-	  ProcedureTriggerVan();
-
+	  ProcedureTriggerVan(outputStr);
+	  if(Brd_GetVanProcState() == BRD_PULSE_TIME){
+		  // log pressure
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+	  }
+	  if(Brd_GetVanProcState() == BRD_INTERVAL_TIME && Brd_GetHC165State()){
+		  // log VanState
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+		  Brd_SetHC165State(false);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

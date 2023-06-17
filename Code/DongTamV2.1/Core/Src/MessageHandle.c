@@ -1,14 +1,16 @@
 #include "MessageHandle.h"
 #include "RTC_Format.h"
 #include "BoardParameter.h"
+#include <stdlib.h>
+
 
 const char* strRxKey[] = {
 	// Receive message
 	"DoNothing",
 	"SetVan",
+	"SetMultiVan",
 	"ClearVan",
 	"SetPulseTime",
-	"SetCycleTime",
 	"SetTotalVan",
 	"SetCycleIntervalTime",
 	"SetIntervalTime",
@@ -35,7 +37,8 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 
 HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 {
-	char s[40], sTemp[30];
+	char s[40]={0};
+	uint16_t len;
 	for(uint8_t i = 1; i < (sizeof(strTxKey)/sizeof(char*)); i++){
 			// copy key string to send response
 			if(i == mesgValTX) {
@@ -43,45 +46,46 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 				break;
 			}
 	}
+	len = strlen(s);
 	switch (mesgValTX)
 	{
 	case TX_VAN:
-		sprintf(sTemp,"%u",Brd_GetVanOn());
+		itoa(Brd_GetVanOn(),(s+len),2);
 		break;
 	case TX_VANSTATE:
-		sprintf(sTemp,"%lu",Brd_GetVanState());
+		sprintf((s+len),"%lu",Brd_GetVanState());
 		break;
 	case TX_TIME:
-		RTC_PackTimeToString(Brd_GetRTC(),sTemp);
+		RTC_PackTimeToString(Brd_GetRTC(),(s+len));
 		break;
 	case TX_PRESSURE:
-		sprintf(sTemp,"%.2f",Brd_GetPressure());
+		sprintf((s+len),"%.2f",Brd_GetPressure());
 		break;
 	case TX_TOTAL_VAN:
-		sprintf(sTemp,"%u",Brd_GetTotalVan());
+		sprintf((s+len),"%u",Brd_GetTotalVan());
 		break;
 	case TX_PULSE_TIME:
-		sprintf(sTemp,"%u",Brd_GetPulseTime());
+		sprintf((s+len),"%u",Brd_GetPulseTime());
 		break;
 	case TX_INTERVAL_TIME:
-		sprintf(sTemp,"%u",Brd_GetIntervalTime());
+		sprintf((s+len),"%u",Brd_GetIntervalTime());
 		break;
 	case TX_CYC_INTV_TIME:
-		sprintf(sTemp,"%u",Brd_GetCycleIntervalTime());
+		sprintf((s+len),"%u",Brd_GetCycleIntervalTime());
 		break;
 	default:
 		break;
 	}
-	strcat(s,sTemp);
 	strcpy(outputStr,s);
-	strcat(outputStr,"\n");
+	strcat(outputStr,"\r\n");
+
 	return HAL_OK;
 }
 
 HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 {
 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
-	for(uint8_t i=0;i < indexKey;i++){
+	for(uint8_t i=1;i < indexKey;i++){
 		if(strstr(inputStr,strRxKey[i]))
 			return MesgGetValue(i,inputStr,outputStr);
 	}
@@ -93,7 +97,13 @@ HAL_StatusTypeDef Mesg_SetVan(void *pvParameter)
 	uint32_t *val = (uint32_t*)pvParameter;
 	if(Brd_SetVanOn(*val) == -1) return HAL_ERROR;
 	return HAL_OK;
+}
 
+HAL_StatusTypeDef Mesg_SetMultiVan(void *pvParameter)
+{
+	uint32_t *val = (uint32_t*)pvParameter;
+	if(Brd_SetMultiVan(*val) == -1) return HAL_ERROR;
+	return HAL_OK;
 }
 
 HAL_StatusTypeDef Mesg_ClearVan(void *pvParameter)
@@ -160,6 +170,11 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 	switch(mesgValRX){
 		case SET_VAN:
 			pVal = &Mesg_SetVan;
+			pValRet = pVal((void *)&val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
+			break;
+		case SET_MULTI_VAN:
+			pVal = &Mesg_SetMultiVan;
 			pValRet = pVal((void *)&val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;

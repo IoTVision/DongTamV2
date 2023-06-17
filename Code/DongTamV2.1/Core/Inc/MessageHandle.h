@@ -14,6 +14,7 @@
 
 typedef enum MesgValRX{
 	SET_VAN = 1,
+	SET_MULTI_VAN,
 	CLEAR_VAN,
 	PULSE_TIME,
 	TOTAL_VAN,
@@ -40,7 +41,7 @@ typedef enum MesgValTX{
 #define MESG_PATTERN_KEY_VALUE_INT "%*s %lu" //Ex: SetVan: 10
 #define MESG_PATTERN_KEY_VALUE_FLOAT "%*s %f" //Ex: Pressure: 0.2543
 #define MESG_PATTERN_KEY_VALUE_STRING "%*s \"%s\"" //Ex: SampleString: "Test String"
-#define MESG_PATTERN_KEY_VALUE_TIME "%*s %u/%u/%u %u:%u:%u"//Ex: SetTime: 3/6/2023 16:00:00
+#define MESG_PATTERN_KEY_VALUE_TIME "%*s %u/%u/%u %u:%u:%u"//Ex: SetTime: 3/6/23 16:00:00
 #define MESG_PATTERN_KEY_INDEX_VALUE_STRING "%*s%u: \"%s\""
 
 

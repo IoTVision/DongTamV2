@@ -32,14 +32,15 @@ typedef struct BoardParameter
     uint16_t currentVanOn;
     float pressure;
     uint8_t totalVan;
-    uint8_t timerArray[3];// 1 for pulse time, 2 for interval time
+    uint16_t timerArray[3];// 1 for pulse time, 2 for interval time
     RTC_t RTCtime;
+    bool HC165_state;
 }BoardParameter;
 
 
 
-
 typedef enum {
+	PROC_IDLE,
 	PROC_START,
 	BRD_VAN_ON,
 	BRD_PULSE_TIME,
@@ -56,27 +57,31 @@ uint16_t Brd_GetIntervalTime();
 uint16_t Brd_GetPulseTime();
 RTC_t Brd_GetRTC();
 uint16_t Brd_GetCycleIntervalTime();
-uint8_t Brd_GetTimerArray(uint8_t element);
+uint16_t Brd_GetTimerArray(uint8_t element);
 
 int8_t Brd_SetTotalVan(uint8_t val);
 int16_t Brd_SetVanOn(uint16_t val);
+int16_t Brd_SetMultiVan(uint16_t val);
 int16_t Brd_SetVanOff(uint16_t val);
 uint32_t Brd_GetVanState();
 int16_t Brd_SetIntervalTime(uint16_t val);
 int16_t Brd_SetPulseTime(uint16_t val);
 int8_t Brd_SetRTC(RTC_t t);
 int16_t Brd_SetCycleTime(uint16_t val);
-int8_t Brd_SetTimerArray(uint8_t element, uint8_t val);
+int16_t Brd_SetTimerArray(uint8_t element, uint16_t val);
 int16_t Brd_SetCycleIntervalTime(uint16_t val);
+void Brd_SetHC165State(bool state);
 
 HC595* Brd_GetAddress_HC595();
 HC165* Brd_GetAddress_HC165();
 PCF8563_Handle* Brd_GetAddress_PCF8563();
 AMS5915* Brd_GetAddress_AMS5915();
+bool Brd_GetHC165State(void);
 
 void ProcedureTriggerVan();
 
 VanProcedure Brd_GetVanProcState();
 void Brd_SetVanProcState(VanProcedure state);
+int8_t LogDataValue(char *s,uint32_t value);
 
 #endif /* INC_BOARDPARAMETER_H_ */
