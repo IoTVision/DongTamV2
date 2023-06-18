@@ -15,7 +15,6 @@ const char* strRxKey[] = {
 	"DP-Low",
 	"DP-Warn",
 	"Time: ",
-	
 };
 
 const char* strTxKey[] = {

@@ -1,53 +1,70 @@
 
 #include "GUI.h"
 #include "GUI_Navigation.h"
+#include "BoardParameter.h"
 
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
 TaskHandle_t taskGUIHandle;
-Param_t param[LCD_ROWS];
+GUIParam_t param[LCD_ROWS];
 
-GUI_Info guiInfo = {
-    .dpHigh = 1300,
-    .dpLow = 700,
-    .dpAlarm = 2300,
-    .cycleIntervalTime = 6,
-    .pulseTime = 60,
-    .intervalTime = 10,
-    .totalVan = 0,
-    .odcDownTimeCycle = 6,
-    .odcHigh = 1000,
-    .odcLow = 250,
-    .odcCleanMode = 3,
-    .serviceRunHoursAlarm = 3000,
-    .dpMode = true,
-    .operateHours = 0,
-};
 
-#define LENGTH_OF_PARAM      strlen(s[0])
+#define LENGTH_OF_PARAM      strlen(paramText[0])
 
-char *s[]={
-    "Param code:",
+char *paramText[]={
+    "Total Van :",
+    "Down T Cyc:",
+    "Clean Mode:",
+    "Contrast  :",
     "DP-Low    :",
     "DP-High   :",
     "DP-Alarm  :",
-    "Cycle Time:",
-    "Inter Time:",
-    "Pulse Time:",
-    "Total Van :",
-    "Down T Cyc:",
     "OCD High  :",
     "OCD Low   :",
+    "Pulse Time:",
+    "Inter Time:",
+    "Cycle Time:",
     "OperHours :",
-    "Clean Mode:",
+    "Serv Run H:",
     "SerH Alarm:",
+    // special param to handle
+    "Language  :",
+    "dpDisRange:",
+    "Test Mode :",
+    "Param code:",
+    "Tech code :",
     "DP Mode   :",
+};
+
+// to map ParamIndex with real param setting table
+uint8_t orderToDisplay[21] = {
+    INDEX_PARAM_CODE,
+    INDEX_DP_LOW,
+    INDEX_DP_HIGH,
+    INDEX_DP_WARN,
+    INDEX_PULSE_TIME,
+    INDEX_INTERVAL_TIME,
+    INDEX_CYCLE_INTERVAL_TIME,
+    INDEX_TOTAL_VAN,
+    INDEX_DOWN_TIME_CYCLE,
+    INDEX_ODC_HIGH,
+    INDEX_ODC_LOW,
+    INDEX_OPERATE_HOURS,
+    INDEX_LANGUAGE,
+    INDEX_DISPLAY_RANGE,
+    INDEX_ODC_CLEAN_MODE,
+    INDEX_TEST_MODE,
+    INDEX_DISPLAY_CONTRAST,
+    INDEX_SERV_RUN_HOURS,
+    INDEX_SERV_RUN_HOURS_ALARM,
+    INDEX_TECH_CODE,
+    INDEX_DP_MODE,
 };
 
 
 void PrintNavigation();
 uint8_t CountLengthPreviousValue(uint32_t value);
-esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,Param_t param);
+esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,GUIParam_t param);
 uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHighLimit, EventGroupHandle_t *eventLimit);
 void GUI_ScrollUpDown(uint8_t paramNO);
 
@@ -125,7 +142,7 @@ void GUI_Manage()
  *  
  */
 
-esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,Param_t param)
+esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,GUIParam_t param)
 {
     EventBits_t e = xEventGroupWaitBits(*evg,EVT_SAVE_VALUE_TO_FLASH,pdTRUE,pdFALSE,0);
     esp_err_t err = ESP_OK;
@@ -328,105 +345,11 @@ void GUI_ClearPointer()
     LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
 }
 
-static inline void AssignParam(Param_t *param, char*textScreen,uint16_t value, uint16_t lowLimit, uint16_t highLimit, uint16_t scale, char* unit){
-    param->text_on_screen = textScreen;
-    param->Value = value;
-    param->lowLimit = lowLimit;
-    param->highLimit = highLimit;
-    param->unit = unit;
-    param->scaleValue = scale;
-}
-
-void GUI_GetParam(Param_t *param, uint8_t paramNO)
+void GUI_GetParam(GUIParam_t *gp, uint8_t paramNO)
 {
-    switch (paramNO)
-    {
-    case NO_PARAM_CODE:
-        AssignParam(param,TEXT_PARAM_CODE,0,0,0,0,NULL);
-        break;
-    case NO_DP_LOW:
-        AssignParam(param,TEXT_DP_LOW,guiInfo.dpLow,250,4000,50,"Pa");
-        break;
-    case NO_DP_HIGH:
-        AssignParam(param,TEXT_DP_HIGH,guiInfo.dpHigh,250,4000,50,"Pa");
-        break;
-    case NO_DP_ALARM:
-        AssignParam(param,TEXT_DP_ALARM,guiInfo.dpAlarm,300,5000,100,"Pa");
-        break;
-    case NO_PULSE_TIME:
-        AssignParam(param,TEXT_PULSE_TIME,guiInfo.pulseTime,30,300,30,"ms");
-        break;
-    case NO_INTERVAL_TIME:
-        AssignParam(param,TEXT_INTERVAL_TIME,guiInfo.intervalTime,4,500,1,"s");
-        break;
-    case NO_CYCLE_TIME:
-        AssignParam(param,TEXT_CYCLE_TIME,guiInfo.cycleIntervalTime,2,100,1,"s");
-        break;
-    case NO_TOTAL_VAN:
-        AssignParam(param,TEXT_TOTAL_VAN,guiInfo.totalVan,0,15,1,NULL);
-        break;
-    case NO_ODC_DOWN_TIME_CY:
-        AssignParam(param,TEXT_ODC_DOWN_CYC,guiInfo.odcDownTimeCycle,0,32,1,NULL);
-        break;
-    case NO_ODC_HIGH:
-        AssignParam(param,TEXT_ODC_HIGH,guiInfo.odcHigh,250,4000,100,"Pa");
-        break;
-    case NO_ODC_LOW:
-        AssignParam(param,TEXT_ODC_LOW,guiInfo.odcLow,250,4000,100,"Pa");
-        break;
-    case NO_OPERATE_HOURS:
-        AssignParam(param,TEXT_OPERATE_H,guiInfo.operateHours,0,25000,1000,"H");
-        break;
-    case NO_ODC_CLEANING_MODE:
-        AssignParam(param,TEXT_CLEAN_MODE,guiInfo.odcCleanMode,1,5,1,NULL);
-        break;
-    case NO_SER_RUN_HOURS_ALARM:
-        AssignParam(param,TEXT_SER_H_ALARM,guiInfo.serviceRunHoursAlarm,0,25000,1000,"H");
-        break;
-    case NO_DP_MODE:
-        AssignParam(param,TEXT_DP_MODE,guiInfo.dpMode,0,25000,1000,NULL);
-        break;
-    default:
-        param->text_on_screen = NULL;
-        param->Value = 0;
-        param->highLimit = 0;
-        param->lowLimit = 0;
-        param->scaleValue = 0;
-        param->unit = NULL;
-        break;
-    }
-}
-
-void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value)
-{
-    switch (paramNO)
-    {
-    case NO_PARAM_CODE:
-        break;
-    case NO_DP_LOW:
-        gi->dpLow = value;
-        break;
-    case NO_DP_HIGH:
-        gi->dpHigh = value;
-        break;
-    case NO_DP_ALARM:
-        gi->dpAlarm = value;
-        break;
-    case NO_PULSE_TIME:
-        gi->pulseTime = value;
-        break;
-    case NO_INTERVAL_TIME:
-        gi->intervalTime = value;
-        break;
-    case NO_CYCLE_TIME:
-        gi->cycleIntervalTime = value;
-        break;
-    case NO_TOTAL_VAN:
-        gi->totalVan = value;
-        break;
-    default:
-
-        break;
+    if(paramNO >= INDEX_TOTAL_VAN && paramNO <= INDEX_SERV_RUN_HOURS_ALARM){
+        gp->index = paramNO;
+        gp->Value
     }
 }
 

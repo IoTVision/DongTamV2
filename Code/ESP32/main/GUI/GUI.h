@@ -41,50 +41,11 @@
 #define BT3_MASK (1ULL<<GPIO_NUM_34)
 #define BT4_MASK (1ULL<<GPIO_NUM_35)
 
-typedef struct GUI_Info {
-    uint16_t dpHigh; // in Pa
-    uint16_t dpLow; // in Pa
-    uint16_t dpAlarm; // in Pa
-    uint16_t pulseTime; // in second
-    uint16_t intervalTime; // in second
-    uint16_t cycleIntervalTime; // in second
-    uint16_t totalVan; // max 16
-    uint16_t odcDownTimeCycle;
-    uint16_t odcHigh;
-    uint16_t odcLow;
-    uint16_t operateHours;
-    uint16_t odcCleanMode;
-    uint16_t serviceRunHoursAlarm;
-    bool dpMode;
-}GUI_Info;
-
 typedef struct {
-    char* text_on_screen;
-    char* unit;
-    uint16_t Value;    
-    uint16_t lowLimit;
-    uint16_t highLimit;
+    void* Value;    
     uint16_t scaleValue; // multiply with GUI_NAV.value to get actual result
-}Param_t;
-
-#define TEXT_PARAM_CODE      "Param code:"
-#define TEXT_DP_LOW          "DP-Low    :"
-#define TEXT_DP_HIGH         "DP-High   :"
-#define TEXT_DP_ALARM        "DP-Alarm  :"
-#define TEXT_CYCLE_TIME      "Cycle Time:"
-#define TEXT_INTERVAL_TIME   "Inter Time:"
-#define TEXT_PULSE_TIME      "Pulse Time:"
-#define TEXT_TOTAL_VAN       "Total Van :"
-#define TEXT_ODC_DOWN_CYC    "Down T Cyc:"
-#define TEXT_ODC_HIGH        "OCD High  :"
-#define TEXT_ODC_LOW         "OCD Low   :"
-#define TEXT_OPERATE_H       "OperHours :"
-#define TEXT_CLEAN_MODE      "Clean Mode:"
-#define TEXT_SER_H_ALARM     "SerH Alarm:"
-#define TEXT_DP_MODE         "DP Mode   :"
-#define LENGTH_OF_PARAM      strlen(TEXT_PARAM_CODE)
-
-
+    uint8_t index;
+}GUIParam_t;
 
 #define LCD_COLS 20
 #define LCD_ROWS 4
@@ -99,6 +60,6 @@ void GuiTestFull();
 void GUI_ClearPointer();
 void GUI_ShowPointer();
 void GUI_GetParam(Param_t *param, uint8_t paramNO);
-void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
+// void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
 void GUI_LoadPage();
 #endif
