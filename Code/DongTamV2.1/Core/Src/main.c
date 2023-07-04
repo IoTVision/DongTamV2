@@ -468,14 +468,14 @@ int8_t GetUartMessage(char *outputStr)
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		uartTarget = &huart1;
-		strcpy(outputStr,uartEsp32Buffer);
+		strcpy(mesgRX,uartEsp32Buffer);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
 		return 0;
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
 		uartTarget = &huart3;
-		strcpy(outputStr,uartLogBuffer);
+		strcpy(mesgRX,uartLogBuffer);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
 		return 0;

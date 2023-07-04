@@ -134,14 +134,6 @@ HAL_StatusTypeDef Mesg_IntervalTime(void *pvParameter)
 	return HAL_OK;
 }
 
-
-HAL_StatusTypeDef Mesg_SetTime(void *pvParameter)
-{
-	RTC_t *t = (RTC_t*)pvParameter;
-	if(Brd_SetRTC(*t) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
 HAL_StatusTypeDef Mesg_SetCycleIntervalTime(void *pvParameter)
 {
 	uint32_t *val = (uint32_t*)pvParameter;
@@ -169,39 +161,32 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 	}
 	switch(mesgValRX){
 		case SET_VAN:
-			pVal = &Mesg_SetVan;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
+			pValRet = Brd_SetVanOn(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case SET_MULTI_VAN:
-			pVal = &Mesg_SetMultiVan;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
+			pValRet = Brd_SetMultiVan(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case CLEAR_VAN:
-			pVal = &Mesg_ClearVan;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
+			pValRet = Brd_SetVanOff(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case PULSE_TIME:
-			pVal = &Mesg_PulseTime;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_PULSE_TIME,outputStr);
+			pValRet = Brd_SetPulseTime(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case TOTAL_VAN:
-			pVal = &Mesg_TotalVan;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_TOTAL_VAN,outputStr);
+			pValRet = Brd_SetTotalVan(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case CYC_INTV_TIME:
-			pVal = &Mesg_SetCycleIntervalTime;
-			pValRet = pVal((void *)&val);
+			pValRet = Brd_SetCycleIntervalTime(*val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case INTERVAL_TIME:
-			pVal = &Mesg_IntervalTime;
-			pValRet = pVal((void *)&val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
+			pValRet = Brd_SetIntervalTime(*val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case TRIG_VAN:
 			Brd_SetVanProcState(PROC_START);
