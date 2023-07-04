@@ -58,18 +58,18 @@ uint16_t Brd_GetPulseTime();
 RTC_t Brd_GetRTC();
 uint16_t Brd_GetCycleIntervalTime();
 uint16_t Brd_GetTimerArray(uint8_t element);
-
-int8_t Brd_SetTotalVan(uint8_t val);
-int16_t Brd_SetVanOn(uint16_t val);
-int16_t Brd_SetMultiVan(uint16_t val);
-int16_t Brd_SetVanOff(uint16_t val);
 uint32_t Brd_GetVanState();
-int16_t Brd_SetIntervalTime(uint16_t val);
-int16_t Brd_SetPulseTime(uint16_t val);
-int8_t Brd_SetRTC(RTC_t t);
-int16_t Brd_SetCycleTime(uint16_t val);
-int16_t Brd_SetTimerArray(uint8_t element, uint16_t val);
-int16_t Brd_SetCycleIntervalTime(uint16_t val);
+
+HAL_StatusTypeDef Brd_SetTotalVan(uint8_t val);
+HAL_StatusTypeDef Brd_SetVanOn(uint16_t val);
+HAL_StatusTypeDef Brd_SetMultiVan(uint16_t val);
+HAL_StatusTypeDef Brd_SetVanOff(uint16_t val);
+HAL_StatusTypeDef Brd_SetIntervalTime(uint16_t val);
+HAL_StatusTypeDef Brd_SetPulseTime(uint16_t val);
+HAL_StatusTypeDef Brd_SetRTC(RTC_t t);
+HAL_StatusTypeDef Brd_SetCycleTime(uint16_t val);
+HAL_StatusTypeDef Brd_SetTimerArray(uint8_t element, uint16_t val);
+HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val);
 void Brd_SetHC165State(bool state);
 
 HC595* Brd_GetAddress_HC595();

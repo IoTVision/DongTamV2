@@ -8,6 +8,7 @@
 
 #include "BoardParameter.h"
 #include "MessageHandle.h"
+#include "main.h"
 
 #include <stdlib.h>
 
@@ -18,7 +19,11 @@ VanProcedure vanProcState;
 
 uint16_t CheckVanInUsed(uint16_t *currentVanOn);
 
-
+/**
+ * @brief Thực hiện kích đóng van
+ * @param outputStr Gửi giá trị áp suất sau khi thực hiện xong
+ * @param VanTrigger thứ tự van cần kích
+ */
 void VanOn(char *outputStr,uint8_t VanTrigger)
 {
 	if(VanTrigger > 16) return;
@@ -29,6 +34,11 @@ void VanOn(char *outputStr,uint8_t VanTrigger)
 
 }
 
+/**
+ * @brief Tắt van (hở mạch, không có dòng qua cuộn dây của van)
+ * @param outputStr Gửi giá trị trạng thái van thông báo sự cố van nếu có
+ * @param VanTrigger thứ tự van cần tắt
+ */
 void VanOff(char *outputStr,uint8_t VanTrigger)
 {
 	if(VanTrigger > 16) return;
@@ -38,7 +48,12 @@ void VanOff(char *outputStr,uint8_t VanTrigger)
 	vanProcState = BRD_INTERVAL_TIME;
 }
 
-void CheckCycleIntervalTime(uint16_t *cycleTime,uint16_t *currentVanOn,uint16_t *VanToTrigger)
+/**
+ * @brief Kiểm tra số chu kỳ còn lại trong chu trình kích van
+ * @param cycleTime số chu kỳ còn lại, nếu chu kỳ còn lại = 0 thì chuyển sang kết thúc chu trình
+ * @param currentVanOn khi kích hết van, reset lại số van cần kích như ban đầu để bắt đầu chu trình kích van mới
+ */
+void CheckCycleIntervalTime(uint16_t *cycleTime,uint16_t *currentVanOn)
 {
 	(*cycleTime) -= 1;
 	if(*cycleTime > 0) {
@@ -50,6 +65,10 @@ void CheckCycleIntervalTime(uint16_t *cycleTime,uint16_t *currentVanOn,uint16_t 
 	}
 }
 
+/**
+ * @brief Cài đặt thời gian kích van (kín mạch cho phép dòng điện chạy qua cuộn dây)
+ * @param outputStr Gửi liên tục giá trị áp suất đọc được
+ */
 void PulseTimeHandle(char *outputStr)
 {
 	MessageTxHandle(TX_PRESSURE, outputStr);
@@ -59,11 +78,15 @@ void PulseTimeHandle(char *outputStr)
 	}
 }
 
+/**
+ * @brief
+ * @param currentVanOn Lấy ra vị trí van cần kích và load vị trí van tiếp theo
+ * @return Trả về thứ tự van đang được kích
+ */
 uint16_t CheckVanInUsed(uint16_t *currentVanOn)
 {
 	if(*currentVanOn > 0){
 		for(uint8_t i=0;i<MAX_NUM_VAN;i++){
-
 			if((*currentVanOn & (1<<i)) != 0) {
 				char s[16]={0};
 				itoa(*currentVanOn,s,2);
@@ -72,9 +95,13 @@ uint16_t CheckVanInUsed(uint16_t *currentVanOn)
 			}
 		}
 	}
-	return -1;
+	return HAL_ERROR;
 }
 
+/**
+ * @brief Thời gian nghỉ giữa 2 lần kích van, nếu vẫn còn van kích thì chờ đủ thời gian rồi kích van tiếp theo
+ * @param currentVanOn nếu không còn van nào được kích thì chuyển sang trạng thái kiểm tra số chu kỳ còn lại
+ */
 void IntervalTimeHandle(uint16_t *currentVanOn)
 {
 	//if interval time is passed and no van to trigger
@@ -90,6 +117,10 @@ void IntervalTimeHandle(uint16_t *currentVanOn)
 	}
 }
 
+/**
+ * Thực thi chu trình kích van
+ * @param outputStr chuỗi trả về tương ứng với các giai đoạn khác nhau trong chu trình
+ */
 void ProcedureTriggerVan(char *outputStr)
 {
 	static uint16_t cycleTime;
@@ -123,7 +154,7 @@ void ProcedureTriggerVan(char *outputStr)
 			IntervalTimeHandle(&currentVanOn);
 			break;
 		case BRD_CYCLE_INTERVAL_TIME:
-			CheckCycleIntervalTime(&cycleTime,&currentVanOn,&VanToTrigger);
+			CheckCycleIntervalTime(&cycleTime,&currentVanOn);
 			LogDataValue("CycleInterval:", cycleTime);
 			break;
 		case PROC_END:
@@ -152,7 +183,7 @@ float Brd_GetPressure()
 	return brdParam.pressure;
 }
 
-int8_t Brd_SetTotalVan(uint8_t val)
+HAL_StatusTypeDef Brd_SetTotalVan(uint8_t val)
 {
 
     if(val > 0 && val <= 16){
@@ -163,80 +194,83 @@ int8_t Brd_SetTotalVan(uint8_t val)
         for(uint8_t i = 0; i < val; i++){
         	brdParam.currentVanOn |=  (1 << i);
         }
-    } else return -1;
-	return 0;
+        return HAL_OK;
+    }
+    return HAL_ERROR;
 }
 
-int16_t Brd_SetMultiVan(uint16_t val)
+HAL_StatusTypeDef Brd_SetMultiVan(uint16_t val)
 {
-	if(val > 65535) return -1;
+	if(val > 65535) return HAL_ERROR;
 	brdParam.currentVanOn =  val;
-    return 0;
+    return HAL_OK;
 }
 
-int16_t Brd_SetVanOn(uint16_t val)
+HAL_StatusTypeDef Brd_SetVanOn(uint16_t val)
 {
 
     if(val < 16){
         brdParam.currentVanOn |=  (1 << (val));
     }
-    else return -1;
-    return 0;
+    else return HAL_ERROR;
+    return HAL_OK;
 }
 
-int16_t Brd_SetVanOff(uint16_t val)
+HAL_StatusTypeDef Brd_SetVanOff(uint16_t val)
 {
     if(val < 16){
-        return (int16_t)(brdParam.currentVanOn &=  ~(1 << (val)));
+    	brdParam.currentVanOn &=  ~(1 << (val));
+    	return HAL_OK;
     }
-    else return -1;
+    else return HAL_ERROR;
 }
 
-int16_t Brd_SetIntervalTime(uint16_t val)
+HAL_StatusTypeDef Brd_SetIntervalTime(uint16_t val)
 {
     if(val > 0 && val <= 100){
         brdParam.intervalTime = val;
+		return HAL_OK;
     }
-    else return -1;
-    return 0;
+    return HAL_ERROR;
 }
 
-int16_t Brd_SetPulseTime(uint16_t val)
+HAL_StatusTypeDef Brd_SetPulseTime(uint16_t val)
 {
     if(val >= 30 && val <= 300) {
         brdParam.pulseTime = val;
-        return (int16_t)brdParam.pulseTime;
+        return HAL_OK;
     }
-    return -1;
+    return HAL_ERROR;
 }
 
-int8_t Brd_SetRTC(RTC_t t){
+HAL_StatusTypeDef Brd_SetRTC(RTC_t t){
     uint8_t indexT = sizeof(t) / (sizeof(int8_t));
     int8_t *a = &t.year;
     for(uint8_t i = 0; i < indexT; i++){
-        if(*(a+i) == -1) return -1;
+        if(*(a+i) == -1) return HAL_ERROR;
     }
     brdParam.RTCtime = t;
     PCF8563_WriteTimeRegisters(brdParam.RTCtime);
-    return 0;
+    return HAL_OK;
 }
 
 
 
-int16_t Brd_SetCycleIntervalTime(uint16_t val)
+HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val)
 {
     if(val > 2 && val <= 100){
         brdParam.cycIntvTime = val;
+    	return HAL_OK;
     }
-    else return -1;
-    return 0;
+	return HAL_ERROR;
 }
 uint16_t Brd_GetTimerArray(uint8_t element){return brdParam.timerArray[element];}
-int16_t Brd_SetTimerArray(uint8_t element, uint16_t val)
+
+HAL_StatusTypeDef Brd_SetTimerArray(uint8_t element, uint16_t val)
 {
-	if(element >= sizeof(brdParam.timerArray)) return -1;
+	if(element >= sizeof(brdParam.timerArray)) return HAL_ERROR;
 	brdParam.timerArray[element] = val;
-	return 0;
+	return HAL_OK;
 }
 
 void Brd_SetHC165State(bool state){brdParam.HC165_state = state;}
@@ -254,14 +288,14 @@ int8_t LogDataValue(char *s,uint32_t value)
 {
 	if(strlen(s) > 30) {
 		HAL_UART_Transmit(&huart3, (uint8_t*)"Oversize\n", strlen("Oversize\n"), HAL_MAX_DELAY);
-		return -1;
+		return HAL_ERROR;
 	}
 	char sTemp[30]={0};
 	uint16_t len = strlen(s);
 	strcpy(sTemp,s);
 	sprintf((sTemp+len),"%lu\n",value);
 	HAL_UART_Transmit(&huart3, (uint8_t*)sTemp, strlen(sTemp), HAL_MAX_DELAY);
-	return 0;
+	return HAL_OK;
 }
 
 

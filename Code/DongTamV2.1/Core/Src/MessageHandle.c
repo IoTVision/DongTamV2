@@ -35,6 +35,12 @@ const char* strTxKey[] = {
 
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
 
+/**
+ * @brief Lấy giá trị member trong BoardParameter tương ứng với mesgValTX, đóng gói và trả về chuỗi chứa giá trị member
+ * @param mesgValTX thứ tự param trong enum MesgValTX
+ * @param outputStr chuỗi trả về để thông báo kết quả xử lý
+ * @return HAL_OK nếu xử lý thành công, HAL_ERROR nếu có lỗi xảy ra
+ */
 HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 {
 	char s[40]={0};
@@ -82,71 +88,38 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	return HAL_OK;
 }
 
+/**
+ * @brief Xử lý chuỗi nhận được, so sánh với các chuỗi đã có trong strRxKey
+ * @param inputStr chuỗi cần xử lý
+ * @param outputStr chuỗi trả về để thông báo kết quả xử lý
+ * @return HAL_OK nếu xử lý thành công, HAL_ERROR nếu có lỗi xảy ra
+ */
 HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 {
 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
 	for(uint8_t i=1;i < indexKey;i++){
 		if(strstr(inputStr,strRxKey[i]))
 			return MesgGetValue(i,inputStr,outputStr);
+		else {
+			strcpy(outputStr,"--->No parameter found \n");
+			return HAL_ERROR;
+		}
 	}
 	return HAL_OK;
 }
 
-HAL_StatusTypeDef Mesg_SetVan(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetVanOn(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_SetMultiVan(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetMultiVan(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_ClearVan(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetVanOff(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_TotalVan(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetTotalVan(*val) ==  -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_PulseTime(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetPulseTime(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_IntervalTime(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetIntervalTime(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef Mesg_SetCycleIntervalTime(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetCycleIntervalTime(*val) == -1) return HAL_ERROR;
-	return HAL_OK;
-}
-
+/**
+ * @brief Tách lấy giá trị từ chuỗi inputStr, gán tương ứng vào các member của BoardParameter
+ * @param mesgValRX thứ tự param trong enum MesgValRX
+ * @param inputStr chuỗi truyền vào để tách lấy giá trị
+ * @param outputStr chuỗi trả về để thông báo kết quả xử lý
+ * @return HAL_OK nếu tách giá trị thành công, HAL_ERROR nếu có lỗi xảy ra
+ */
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
 	uint32_t val;
 	uint8_t itemConverted = 0;
-	pValueHandle pVal;
 	HAL_StatusTypeDef pValRet = HAL_OK;
 	if(mesgValRX >= SET_VAN && mesgValRX <= INTERVAL_TIME){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
@@ -157,36 +130,36 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 		}
 	} else if (mesgValRX == SET_TIME){
 		t = RTC_GetTimeFromString(inputStr);
-		if(Brd_SetRTC(t) == -1) return HAL_ERROR;
+		if(Brd_SetRTC(t) == HAL_ERROR) return HAL_ERROR;
 	}
 	switch(mesgValRX){
 		case SET_VAN:
-			pValRet = Brd_SetVanOn(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetVanOn(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
 		case SET_MULTI_VAN:
-			pValRet = Brd_SetMultiVan(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetMultiVan(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
 		case CLEAR_VAN:
-			pValRet = Brd_SetVanOff(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetVanOff(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
 		case PULSE_TIME:
-			pValRet = Brd_SetPulseTime(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetPulseTime(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_PULSE_TIME,outputStr);
 			break;
 		case TOTAL_VAN:
-			pValRet = Brd_SetTotalVan(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetTotalVan(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
 		case CYC_INTV_TIME:
-			pValRet = Brd_SetCycleIntervalTime(*val);
+			pValRet = Brd_SetCycleIntervalTime(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
 		case INTERVAL_TIME:
-			pValRet = Brd_SetIntervalTime(*val);
-			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
+			pValRet = Brd_SetIntervalTime(val);
+			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
 			break;
 		case TRIG_VAN:
 			Brd_SetVanProcState(PROC_START);
@@ -199,7 +172,7 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
 			return HAL_OK;
 		default:
-			return HAL_OK;
+			return HAL_ERROR;
 			break;
 	}
 	if(pValRet != HAL_OK) {

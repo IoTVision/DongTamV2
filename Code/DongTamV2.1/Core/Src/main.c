@@ -78,8 +78,8 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
-int8_t GetUartMessage(char *outputStr);
 void ProcedureVan();
+HAL_StatusTypeDef GetUartMessage(char *outputStr);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -463,24 +463,28 @@ static void MX_GPIO_Init(void)
 
 
 
-
-int8_t GetUartMessage(char *outputStr)
+/**
+ * @brief Nếu có chuỗi nhận được từ port UART (ESP hoặc máy tính), copy chuỗi nhận được ra outputStr và reset bộ đệm
+ * @param outputStr mảng chứa thông tin nhận được từ UART
+ * @return
+ */
+HAL_StatusTypeDef GetUartMessage(char *outputStr)
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
 		uartTarget = &huart1;
 		strcpy(mesgRX,uartEsp32Buffer);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
-		return 0;
+		return HAL_OK;
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
 		uartTarget = &huart3;
 		strcpy(mesgRX,uartLogBuffer);
 		memset(uartLogBuffer,0,uartLogRxSize);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
-		return 0;
+		return HAL_OK;
 	}
-	return -1;
+	return HAL_ERROR;
 }
 
 
