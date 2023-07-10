@@ -18,7 +18,6 @@ TaskHandle_t taskCommon,taskUartHandleString;
 
 
 void Setup();
-EventBits_t CheckLogCommandList(char *s);
 void SendStringToUART(QueueHandle_t q,char *s);
 void InitProcess();
 esp_err_t TestFlashNVS();
@@ -41,21 +40,11 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-            if(CheckLogCommandList(s)) {
-                ESP_LOGI("UartHandleString","Detect command in list");
-            }
-            else {
-                ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-                SendStringToUART(qLogTx,s);
-            }
+            ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
+            SendStringToUART(qLogTx,s);
             free(s);
         }
     }
-}
-
-EventBits_t CheckLogCommandList(char *s)
-{
-    
 }
 
 void TaskCommon(void *pvParameter)

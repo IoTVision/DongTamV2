@@ -12,6 +12,7 @@
 #include "main.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "../BoardParameter.h"
 
 #define LED_ERROR_MASK 10
 #define LED_STATUS_MASK 11
@@ -30,16 +31,7 @@
 #define EVT_PARAM_SCOLL_UP (1<<10)
 #define EVT_PARAM_SCOLL_DOWN (1<<1)
 
-
-#define BTN_MENU GPIO_NUM_36
-#define BTN_SET GPIO_NUM_39
-#define BTN_UP GPIO_NUM_34
-#define BTN_DOWN_RIGHT GPIO_NUM_35
-
-#define BT1_MASK (1ULL<<GPIO_NUM_36)
-#define BT2_MASK (1ULL<<GPIO_NUM_39)
-#define BT3_MASK (1ULL<<GPIO_NUM_34)
-#define BT4_MASK (1ULL<<GPIO_NUM_35)
+#define LENGTH_OF_PARAM     12 //length of paramText
 
 typedef struct {
     void* Value;    
@@ -59,7 +51,8 @@ void GuiInit();
 void GuiTestFull();
 void GUI_ClearPointer();
 void GUI_ShowPointer();
-void GUI_GetParam(Param_t *param, uint8_t paramNO);
+void GUI_GetParam(GUIParam_t *gp, uint8_t paramNO);
 // void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
 void GUI_LoadPage();
+TaskHandle_t* GUI_GetTaskHandle();
 #endif

@@ -45,19 +45,6 @@ typedef enum EventCommand{
     UART_READY_TO_SEND_QUEUE,
 }EventCommand;
 
-typedef struct BoardParameter{
-    char ID[12];
-    float Pressure;
-    RTC_t Time;
-    char VanState[16];
-    uint32_t VanData;
-    uint32_t SetVan;
-    uint32_t ClearVan;
-}BoardParameter;
-
-
-
-
 extern LCDI2C lcdI2C;
 extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
 extern cJSON *cjsMain;

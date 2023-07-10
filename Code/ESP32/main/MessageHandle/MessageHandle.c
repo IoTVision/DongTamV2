@@ -10,7 +10,6 @@ const char* strRxKey[] = {
 	"PulseTime",
 	"IntervalTime",
 	"CycleIntervalTime",
-	"CycleTime",
 	"DP-High",
 	"DP-Low",
 	"DP-Warn",
@@ -23,32 +22,23 @@ const char* strTxKey[] = {
 	"SetVan: ",
 	"ClearVan: ",
 	"SetPulseTime: ",
-	"SetCycleTime: ",
 	"SetTotalVan: ",
 	"SetCycleIntervalTime: ",
 	"SetIntervalTime: ",
 	"TrigVan:",
 	"SetTime: ",
-	"GetTime:",
+	"GetTime: ",
 };
 
-esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
-{
-	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
-	for(uint8_t i=0;i < indexKey;i++){
-		if(strstr(inputStr,strRxKey[i]))
-			return MesgGetValue(i,inputStr,outputStr);
-	}
-	return ESP_OK;
-}
-
-esp_err_t Mesg_SetVan(void *pvParameter)
-{
-	uint32_t *val = (uint32_t*)pvParameter;
-	if(Brd_SetVanOn(*val) == -1) return ESP_ERR_INVALID_ARG;
-	return ESP_OK;
-
-}
+// esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
+// {
+// 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
+// 	for(uint8_t i=0;i < indexKey;i++){
+// 		if(strstr(inputStr,strRxKey[i]))
+// 			return MesgGetValue(i,inputStr,outputStr);
+// 	}
+// 	return ESP_OK;
+// }
 
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
@@ -92,4 +82,5 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	default:
 		break;
 	}
+	return ESP_ERR_INVALID_ARG;
 }

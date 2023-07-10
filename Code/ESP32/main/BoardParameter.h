@@ -73,4 +73,42 @@ typedef struct BoardParameter
     RTC_t RTCtime;
 }BoardParameter;
 
+
+uint16_t Brd_ParamGetMaxLimit(uint8_t index);
+uint16_t Brd_ParamGetMinLimit(uint8_t index);
+uint16_t Brd_ParamGetValueInt(uint8_t index);
+char* Brd_ParamGetValueString(uint8_t index);
+char* Brd_ParamGetUnit(uint8_t index);
+
+uint8_t Brd_GetTotalVan();
+uint8_t Brd_GetDownTimeCycle();
+uint8_t Brd_GetCleanMode();
+uint8_t Brd_GetContrast();
+
+uint16_t Brd_GetDPHigh();
+uint16_t Brd_GetDPLow();
+uint16_t Brd_GetDPWarn();
+uint16_t Brd_GetODCLow();
+uint16_t Brd_GetODCHigh();
+
+uint16_t Brd_GetPulseTime();
+uint16_t Brd_GetIntervalTime();
+uint16_t Brd_GetCycleIntervalTime();
+
+uint16_t Brd_GetServiceRunHours();
+uint16_t Brd_GetServiceAlarm();
+
+char* Brd_GetLanguage();
+char* Brd_GetDisplayRange();
+char* Brd_GetTestMode();
+char* Brd_GetParamCode();
+char* Brd_GetTechCode();
+char* Brd_GetDPMode();
+RTC_t Brd_GetRTC();
+char* Brd_GetUnit(uint8_t index);
+
+
+int16_t Brd_SetParamInt(uint8_t index,uint16_t val);
+int16_t Brd_SetParamString(uint8_t index, char* valStr);
+int16_t Brd_SetParamString(uint8_t index, char* valStr);
 #endif

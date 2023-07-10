@@ -103,6 +103,7 @@ char* paramValString[]={
         "Eng",
         "F2",
         "Pa",
+        "InWc"
         "F0",
         "On",
         "Off",
@@ -116,13 +117,14 @@ char* paramUnit[] = {
         "h",
 };
 
+
+BoardParameter brdParam;
+
 uint16_t Brd_ParamGetMaxLimit(uint8_t index){return paramMaxLimit[index];}
 uint16_t Brd_ParamGetMinLimit(uint8_t index){return paramMinLimit[index];}
 uint16_t Brd_ParamGetValueInt(uint8_t index){return paramValInt[index];}
 char* Brd_ParamGetValueString(uint8_t index){return paramValString[index];}
 char* Brd_ParamGetUnit(uint8_t index){return paramUnit[index];}
-
-BoardParameter brdParam;
 
 uint8_t Brd_GetTotalVan(){return brdParam.totalVan;}
 uint8_t Brd_GetDownTimeCycle(){return brdParam.downTimeCycle;}
@@ -163,6 +165,7 @@ char* Brd_GetUnit(uint8_t index){
         } else if (index <= INDEX_SERV_RUN_HOURS_ALARM){
                 return paramUnit[4];
         }
+        return 0;
 }
 
 int16_t Brd_SetParamInt(uint8_t index,uint16_t val){

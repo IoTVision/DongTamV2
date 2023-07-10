@@ -39,8 +39,6 @@ typedef enum MesgValRX{
 	RX_INTERVAL_TIME,
 	RX_TIME,
 	RX_PRESSURE,
-
-	
 }MesgValRX;
 
 

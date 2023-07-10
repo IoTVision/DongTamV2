@@ -1,4 +1,5 @@
 #include "GUI/GUI_Navigation.h"
+#include "GUI.h"
 
 
 // #define USE_LOAD_NEW_SCREEN 
