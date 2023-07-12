@@ -11,9 +11,7 @@ GUIParam_t param[LCD_ROWS];
 TaskHandle_t* GUI_GetTaskHandle(){
     return &taskGUIHandle;
 }
-
-
-char *paramText[]={
+const char *paramText[]={
     "Total Van :",
     "Down T Cyc:",
     "Clean Mode:",
@@ -39,7 +37,7 @@ char *paramText[]={
 };
 
 // to map ParamIndex with real param setting table
-uint8_t orderToDisplay[21] = {
+ParamIndex orderToDisplay[21] = {
     INDEX_PARAM_CODE,
     INDEX_DP_LOW,
     INDEX_DP_HIGH,
@@ -66,7 +64,6 @@ uint8_t orderToDisplay[21] = {
 
 void PrintNavigation();
 uint8_t CountLengthPreviousValue(uint32_t value);
-esp_err_t GUI_SaveValueToFlash(EventGroupHandle_t *evg,GUIParam_t param);
 uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHighLimit, EventGroupHandle_t *eventLimit);
 void GUI_ScrollUpDown(uint8_t paramNO);
 
@@ -113,7 +110,6 @@ void GUI_Manage()
     //     if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=scale;
     //     if(CHECKFLAG(e,EVT_DECREASE_VALUE))value -=scale;
     //     CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
-    //     ESP_ERROR_CHECK(GUI_SaveValueToFlash(&evgGUI,param[pY]));
     //     char s[8]={0};
     //     uint8_t i=0;
     //     do{
@@ -164,10 +160,10 @@ void GUI_ScrollUpDown(uint8_t paramNO)
 }
 
 /**
- * @brief calculate how many columns that value take place on LCD before it's value change to clear, up to 6 digit 
+ * @brief Tính toán số ô cần xóa giá trị value trước đó, xóa tới 6 hàng
  * 
- * @param value input value
- * @return uint8_t columns that value take place
+ * @param value Giá trị trước khi update 
+ * @return uint8_t Số ô màn hình LCD cần xóa mà giá trị trước đó chiếm dụng
  */
 uint8_t CountLengthPreviousValue(uint32_t value){
     uint8_t lenPrevVal = 0;
@@ -181,13 +177,13 @@ uint8_t CountLengthPreviousValue(uint32_t value){
 }
 
 /**
- * @brief Check if value input is above or below limit
- * 
- * @param value input value
- * @param valLowLimit low limit input
- * @param valHighLimit high limit input
- * @param eventLimit event group to set if detect low or high limit occur
- * @return uint8_t 0 is not limit, 1 is high limit and 2 is low limit
+ * @brief Kiểm tra giá trị đầu vào có vượt ngưỡng thấp và cao hay không
+ * Nếu có thì gán ngưỡng vào giá trị đầu vào 
+ * @param value Giá trị cần kiểm tra ngưỡng
+ * @param valLowLimit Ngưỡng thấp của thông số
+ * @param valHighLimit Ngưỡng cao của thông số
+ * @param eventLimit event group để bật cờ sự kiện giá trị vượt ngưỡng
+ * @return uint8_t 0 là không vượt ngưỡng, 1 ngưỡng cao and 2 là ngưỡng thấp
  */
 uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHighLimit, EventGroupHandle_t *eventLimit)
 {
@@ -227,14 +223,14 @@ void GUI_GetParam(GUIParam_t *gp, uint8_t paramNO)
     }
 }
 
-void GUI_PrintParam(char *keyword, uint16_t value, char* unit, uint8_t row)
+void GUI_PrintParam(uint8_t index, uint8_t row)
 {
-    if(!keyword) return;
-    else LCDI2C_Print(keyword,POINTER_SLOT,row);
-    char StringValue[10];
-    if(!unit) sprintf(StringValue,"%u",value);
-    else sprintf(StringValue,"%u%s",value,unit);
-    // pointer slot for pointer to text and slot for point to value
+    char *unit = Brd_GetUnit(index);
+    LCDI2C_Print(paramText[index],POINTER_SLOT,row);
+    char StringValue[20];
+    if(!unit) sprintf(StringValue,"%lu",Brd_GetParamInt(index));
+    else sprintf(StringValue,"%u%s",Brd_GetParamInt(index),unit);
+    // pointer slot for pointer of text and slot for point of value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
 }
 
@@ -292,89 +288,6 @@ void PrintNavigation()
 }
 /*
     End Debug section
-*/
-
-
-
-/**
- * @brief Test section
- * 
- */
-
-void TestGUI()
-{
-    LCDI2C_Print("GUI test",0,0);
-    LCDI2C_Print("Press 4 button",0,1);
-    while(1){
-        ReadGuiButton(BTN_MENU,EVT_BTN_MENU);
-        ReadGuiButton(BTN_UP,EVT_BTN_UP);
-        ReadGuiButton(BTN_DOWN_RIGHT,EVT_BTN_DOWN_RIGHT);
-        ReadGuiButton(BTN_SET,EVT_BTN_SET);
-        EventBits_t BitsToWaitFor = (EVT_BTN_DOWN_RIGHT 
-                                    |EVT_BTN_MENU 
-                                    |EVT_BTN_SET 
-                                    |EVT_BTN_UP);
-        EventBits_t e = xEventGroupWaitBits(evgGUI, BitsToWaitFor,pdTRUE,pdFALSE,0);
-        if(e & EVT_BTN_MENU){
-            LCDI2C_Print("MENU      ",0,1);
-            PI_SetLevel(3);
-        }
-        if(e & EVT_BTN_SET){
-            LCDI2C_Print("SET       ",0,1);
-            PI_SetLevel(6);
-        }
-        
-        if(e & EVT_BTN_UP){
-            LCDI2C_Print("UP        ",0,1);
-            PI_SetLevel(9);
-        }
-
-        if(e & EVT_BTN_DOWN_RIGHT){
-            LCDI2C_Print("DOWN RIGHT    ",0,1);
-            for(uint8_t i=0;i<10;i++){
-                LedErrorWrite(1);
-                LedStatusWrite(0);
-                HC595_ShiftOut(NULL,2,1);
-                vTaskDelay(50/portTICK_PERIOD_MS);
-                LedErrorWrite(0);
-                LedStatusWrite(1);
-                HC595_ShiftOut(NULL,2,1);
-                vTaskDelay(50/portTICK_PERIOD_MS);
-            }
-            vTaskDelay(500/portTICK_PERIOD_MS);
-            for(uint8_t i=0;i<10;i++){
-                LedErrorWrite(1);
-                LedStatusWrite(0);
-                HC595_ShiftOut(NULL,2,1);
-                vTaskDelay(50/portTICK_PERIOD_MS);
-                LedErrorWrite(0);
-                LedStatusWrite(1);
-                HC595_ShiftOut(NULL,2,1);
-                vTaskDelay(50/portTICK_PERIOD_MS);
-            }
-            LCDI2C_Print("Full complete",0,0);
-            vTaskDelay(1000/portTICK_PERIOD_MS);
-            LCDI2C_Clear();
-            break;
-        }
-
-        vTaskDelay(10/portTICK_PERIOD_MS);
-    }
-}
-
-
-
-
-
-void GuiTestFull()
-{
-    // TestLedStatusErr(5,35);
-    // TestButton();
-    // TestGUI();
-}
-
-/*
-    End Test section
 */
 
 

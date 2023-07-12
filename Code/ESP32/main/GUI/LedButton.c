@@ -91,6 +91,7 @@ void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
         BtnHandleWhenHolding(0,2);
     }
 }
+
 void TestLedStatusErr(uint8_t blinkNum,uint16_t delay)
 {
     for(uint8_t i=0;i<blinkNum;i++){
@@ -121,7 +122,6 @@ void TestLedStatusErr(uint8_t blinkNum,uint16_t delay)
         vTaskDelay(delay/portTICK_PERIOD_MS);
     }
 }
-
 
 void TestReadSingleButton(EventGroupHandle_t evg, EventBits_t e, gpio_num_t gpio,char* logMessage)
 {
