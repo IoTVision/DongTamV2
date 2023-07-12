@@ -8,7 +8,8 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include <string.h>
-#include "ShareVar.h"
+
+#include "./ShareVar.h"
 
 
 #define UART_RX GPIO_NUM_16

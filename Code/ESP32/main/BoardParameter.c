@@ -1,4 +1,5 @@
-#include "BoardParameter.h"
+#include "./BoardParameter.h"
+
 #include <stdint.h>
 #include "esp_err.h"
 #include "nvs_flash.h"
@@ -7,6 +8,7 @@
 #include "esp_log.h"
 BoardParameter brdParam;
 nvs_handle_t brdNVS_Storage;
+extern const char *paramText[];
 
 char *Brd_NVS_Key[] = {
     "TotalVan",
@@ -408,6 +410,7 @@ char* Brd_GetParamString(uint8_t index)
             }
             return ESP_ERR_INVALID_ARG; 
         }
+        return NULL;
 }
 
 void Brd_PrintAllParameter()

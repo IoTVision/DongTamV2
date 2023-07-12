@@ -1,7 +1,8 @@
 
 #include "GUI.h"
+
+#include "../BoardParameter.h"
 #include "GUI_Navigation.h"
-#include "BoardParameter.h"
 #include "LedButton.h"
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
@@ -229,7 +230,7 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
     LCDI2C_Print(paramText[index],POINTER_SLOT,row);
     char StringValue[20];
     if(!unit) sprintf(StringValue,"%lu",Brd_GetParamInt(index));
-    else sprintf(StringValue,"%u%s",Brd_GetParamInt(index),unit);
+    else sprintf(StringValue,"%lu%s",Brd_GetParamInt(index),unit);
     // pointer slot for pointer of text and slot for point of value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
 }

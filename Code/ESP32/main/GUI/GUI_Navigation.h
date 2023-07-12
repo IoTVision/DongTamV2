@@ -1,7 +1,7 @@
 #ifndef _GUI_NAVIGATION_H_
 #define _GUI_NAVIGATION_H_
+#include "../ShareVar.h"
 #include "GUI/GUI.h"
-#include "ShareVar.h"
 
 /*
 Parameter should be padding left by 2 column for ">" pointer character 

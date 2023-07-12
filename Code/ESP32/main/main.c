@@ -1,18 +1,19 @@
 
+#include "./main.h"
+
 #include <stdio.h>
-#include "main.h"
-#include "UART.h"
+
+#include "./ShareVar.h"
+#include "./UART.h"
 #include "driver/dac.h"
 #include "cJSON.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "RTC_Format.h"
 #include "MessageHandle/MessageHandle.h"
-#include "ShareVar.h"
 #include "GUI/GUI.h"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
 cJSON *cjsMain;
-BoardParameter brdParam;
 EventGroupHandle_t evg1,evgJson;
 TaskHandle_t taskCommon,taskUartHandleString;
 
@@ -76,7 +77,7 @@ void InitProcess()
     evg1 = xEventGroupCreate();
     UARTConfig();
     GuiInit();
-    GuiTestFull();
+//    GuiTestFull();
     ESP_ERROR_CHECK(TestFlashNVS()); 
 }
 

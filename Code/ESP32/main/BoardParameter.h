@@ -1,7 +1,7 @@
 #ifndef INC_BOARDPARAMETER_H_
 #define INC_BOARDPARAMETER_H_
 
-#include "main.h"
+#include "./main.h"
 #include "RTC_Format.h"
 #include "esp_err.h"
 

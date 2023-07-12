@@ -8,11 +8,12 @@
 #include "PressureIndicator.h"
 #include "74HC595.h"
 #include "GUI.h"
+
+#include "../BoardParameter.h"
+#include "../main.h"
 #include "freertos/event_groups.h"
-#include "main.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "../BoardParameter.h"
 
 #define LED_ERROR_MASK 10
 #define LED_STATUS_MASK 11
