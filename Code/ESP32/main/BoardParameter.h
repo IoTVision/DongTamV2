@@ -16,6 +16,7 @@ In BoardParameter.c has paramMaxLimit array and paramMinLimit array which is map
 In GUI.c has paramText pointer char* array which is mapped to this enum ParamIndex
 */ 
 typedef enum {
+    INDEX_START_PARAM,
     // unit is none
     INDEX_TOTAL_VAN,
     INDEX_DOWN_TIME_CYCLE,
@@ -103,6 +104,7 @@ uint16_t Brd_GetServiceAlarm();
 const char* Brd_ParamGetValueString(uint8_t index);
 const char* Brd_GetParamText(uint8_t index); 
 const char* Brd_GetUnit(uint8_t index);
+char* Brd_GetParamString(ParamIndex index);
 char* Brd_GetLanguage();
 char* Brd_GetDisplayRange();
 char* Brd_GetTestMode();
@@ -117,7 +119,7 @@ esp_err_t Brd_WriteParamToFlash();
 esp_err_t Brd_ReadParamFromFlash();
 
 
-uint32_t Brd_GetParamInt(uint8_t index);
+uint32_t Brd_GetParamInt(ParamIndex index);
 
 /**
  * @brief Set value of integer for parameter
@@ -127,7 +129,7 @@ uint32_t Brd_GetParamInt(uint8_t index);
  * @param outputStr result of this function
  * @return int32_t -1 if error, return 0 if OK
  */
-esp_err_t Brd_SetParamInt(uint8_t index,uint32_t val,char *outputStr);
+esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr);
 /**
  * @brief Set value of string for parameter 
  * 

@@ -163,7 +163,7 @@ void GUI_ScrollUpDown(uint8_t paramNO)
 /**
  * @brief Tính toán số ô cần xóa giá trị value trước đó, xóa tới 6 hàng
  * 
- * @param value Giá trị trước khi update 
+ * @param value Giá trị cần xóa trước khi update giá trị mới vào 
  * @return uint8_t Số ô màn hình LCD cần xóa mà giá trị trước đó chiếm dụng
  */
 uint8_t CountLengthPreviousValue(uint32_t value){
@@ -184,7 +184,7 @@ uint8_t CountLengthPreviousValue(uint32_t value){
  * @param valLowLimit Ngưỡng thấp của thông số
  * @param valHighLimit Ngưỡng cao của thông số
  * @param eventLimit event group để bật cờ sự kiện giá trị vượt ngưỡng
- * @return uint8_t 0 là không vượt ngưỡng, 1 ngưỡng cao and 2 là ngưỡng thấp
+ * @return uint8_t 0 là không vượt ngưỡng, 1 ngưỡng cao và 2 là ngưỡng thấp
  */
 uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHighLimit, EventGroupHandle_t *eventLimit)
 {
@@ -216,7 +216,7 @@ uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHig
     }
     return 0;
 }
-void GUI_GetParam(GUIParam_t *gp, uint8_t paramNO)
+void GUI_GetParam(GUIParam_t *gp, ParamIndex paramNO)
 {
     //Get value integer
     if(paramNO >= INDEX_TOTAL_VAN && paramNO <= INDEX_SERV_RUN_HOURS_ALARM){
@@ -226,10 +226,12 @@ void GUI_GetParam(GUIParam_t *gp, uint8_t paramNO)
 
 void GUI_PrintParam(uint8_t index, uint8_t row)
 {
-    char *unit = Brd_GetUnit(index);
+    char unit[3] = {0};
+    strcpy(unit,Brd_GetUnit(index)); 
     LCDI2C_Print(paramText[index],POINTER_SLOT,row);
     char StringValue[20];
-    if(!unit) sprintf(StringValue,"%lu",Brd_GetParamInt(index));
+    // if no string is copied to unit, strlen would be zero
+    if(!strlen(unit)) sprintf(StringValue,"%lu",Brd_GetParamInt(index));
     else sprintf(StringValue,"%lu%s",Brd_GetParamInt(index),unit);
     // pointer slot for pointer of text and slot for point of value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
@@ -248,25 +250,21 @@ void GUI_LoadPage()
     GUI_ShowPointer();
 }
 
+/**
+ * @brief Hiển thị các thông số lên màn hình LCD theo thứ tự trong bảng, không tuân theo thứ tự của ParamIndex
+ * 
+ */
 void GUI_LoadPageAtInit()
 {
-    uint8_t paramNum = GUINAV_GetParamNum();
+    GUINAV_GetCurrentSelected();
     // each parameter will be placed in each rows of LCD
-    // for(uint8_t i=0;i<LCD_ROWS;i++){
-    //     GUI_GetParam((param+i),paramNum+i);
-    //     GUI_PrintParam((param+i)->text_on_screen,(param +i)->Value,(param +i)->unit,i);
-    // }
+    for(uint8_t i=0;i<LCD_ROWS;i++){
+        GUI_PrintParam(orderToDisplay[i],i);
+    }
 }
 
-void GUI_ShowPointer()
-{
-    LCDI2C_Print(">",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
-}
-
-void GUI_ClearPointer()
-{
-    LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());
-}
+void GUI_ShowPointer(){LCDI2C_Print(">",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());}
+void GUI_ClearPointer(){LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPointerPosY());}
 
 /*
     End Single function section
@@ -301,7 +299,6 @@ void PrintNavigation()
 
 void PressureIndicator_Init()
 {
-    ESP_LOGI("LedBar","init");
     PI_Init();
     PI_SetLevel(0);
 }
@@ -311,7 +308,6 @@ esp_err_t LCD_init()
     esp_err_t err = ESP_OK;
     err = LCDI2C_Config(&lcdI2C);
     LCDI2C_TurnOnBackLight();
-    // LCDI2C_Print("SpiritBoi",0,0);
     return err;
 }
 

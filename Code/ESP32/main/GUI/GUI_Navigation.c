@@ -2,19 +2,16 @@
 #include "GUI.h"
 
 
-// #define USE_LOAD_NEW_SCREEN 
 
-/*
-#if defined(USE_LOAD_NEW_SCREEN) 
-#elif defined(USE_SCROLL_SCREEN) 
-#endif
-*/
-
+/**
+ * @brief Khởi tạo giá trị ban đầu cho đối tượng điều hướng trên màn hình
+ * 
+ */
 GUI_NAV guiNav = {
     .pX = 0,
     .pY = 0,
     .page = PAGE_SETTING,
-    .param = NO_PARAM_CODE,
+    .param = INDEX_TOTAL_VAN,
     .pNow = IS_KEYWORD,
 };
 
@@ -22,53 +19,48 @@ static inline void NextPage(){
     guiNav.page++;
     if(guiNav.page == PAGE_END) guiNav.page = PAGE_START + 1;
 }
+
+/**
+ * @brief Trỏ tới thông số tiếp theo trong bảng, cuộn xuống thông số khi con trỏ 
+ * nằm ở hàng dưới cùng
+ * 
+ */
 static inline void PointToNextParam(){
     xEventGroupClearBits(evgGUI,EVT_PARAM_SCOLL_UP);
     uint8_t paramNO = GUINAV_GetParamNum();
     int8_t pY = (int8_t) GUINAV_GetPointerPosY();
     paramNO ++;
-    pY++;
-    #if defined(USE_LOAD_NEW_SCREEN) 
-    // if param reach the last parameter, roll back to the first
-    if(guiNav.param == NO_PARAM_END) guiNav.param = NO_PARAM_START + 1;
-    if(guiNav.pY == LCD_ROWS) guiNav.pY = 0;
-    #elif defined(USE_SCROLL_SCREEN) 
+    if(paramNO == INDEX_END_PARAM) return;
+    guiNav.param = paramNO;  
     // if param reach the end of the list, keep the same value
-    if(paramNO == SETTING_NO_PARAM_END) paramNO = SETTING_NO_PARAM_END - 1;
     // not roll back pointer, keep it at the latest row
-    if(pY > LCD_ROWS - 1) {
-        pY = LCD_ROWS - 1;
+    if(pY == LCD_ROWS - 1) {
         xEventGroupSetBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
-        
-    }
-    guiNav.param = paramNO; 
+        return;
+    } else pY++;
     guiNav.pY = (uint8_t)pY;
-    #endif
 }
+
+/**
+ * @brief Trỏ tới thông số trước đó trong bảng, cuộn lên thông số khi con trỏ 
+ * nằm ở hàng trên cùng
+ * 
+ */
 static inline void PointToPrevParam(){
     xEventGroupClearBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
     uint8_t paramNO = GUINAV_GetParamNum();
     int pY = (int) GUINAV_GetPointerPosY();
     paramNO --;
-    pY--;
-    #if defined(USE_LOAD_NEW_SCREEN) 
-    // if param reach the the first, roll back to last
-    if(guiNav.param == NO_PARAM_START) guiNav.param = NO_PARAM_END - 1;
-    // because uint8_t data type so pY will roll back to 255, set it to the last row
-    if(guiNav.pY > (LCD_ROWS+1)) guiNav.pY = LCD_ROWS - 1;
-    #elif defined(USE_SCROLL_SCREEN) 
-    // if param reach the start of the list, keep the same value
-    if(paramNO == SETTING_NO_PARAM_START) paramNO = SETTING_NO_PARAM_START + 1;
-    // not roll back pointer, keep it at the 0 row
-    if(pY < 0) {
-        pY = 0;
-        xEventGroupSetBits(evgGUI,EVT_PARAM_SCOLL_UP);
-        
-    }
+    if(paramNO == INDEX_START_PARAM) return;
     guiNav.param = paramNO;
+    // if param reach the start of the list, keep the same value
+    if(!pY) {
+        xEventGroupSetBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
+        return;
+    } else pY--;
     guiNav.pY = (uint8_t)pY;
-    #endif
 }
+
 static inline void SetPointerNowIsKeyword(){
     guiNav.pNow = IS_KEYWORD;
     guiNav.pX = 0;
@@ -77,8 +69,6 @@ static inline void SetPointerNowIsValue(){
     guiNav.pNow = IS_VALUE;
     guiNav.pX = LENGTH_OF_PARAM + 1;
 }
-static inline void SaveValueToFlash(){ESP_LOGI("GUINAV","send save flash event");xEventGroupSetBits(evgGUI,EVT_SAVE_VALUE_TO_FLASH);}
-static inline void GetValueFromFlash(){xEventGroupSetBits(evgGUI,EVT_GET_VALUE_FROM_FLASH);}
 static inline void IncreaseValue(){
     EventBits_t e = xEventGroupGetBits(evgGUI);
     // if not happen event above threshold, bit EVT_INCREASE_VALUE will be set
@@ -91,6 +81,15 @@ static inline void DecreaseValue(){
 }
 static inline void DoNothing(){return;}
 
+
+/**
+ * @brief Xử lý sự kiện từ nút nhấn nhận được ở TaskScanButton
+ * 
+ * @param eventToHandle tên của sự kiện nút nhấn nhận được cần xử lý
+ * @param eventName danh sách các sự kiện nút nhấn có thể được xử lý bởi hàm này quy định trong GUI.h
+ * @param fKEY hàm xử lý sự kiện nếu con trỏ đang trỏ tới tên thông số(key)
+ * @param fVALUE hàm xử lý sự kiện nếu con trỏ đang trỏ tới giá trị thông số(value)
+ */
 void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),void(*fVALUE)()){
     if(eventToHandle == eventName){
         //function pointer to handle pNow
@@ -99,26 +98,23 @@ void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),
     }
 }
 /**
- * @brief Get event from button
+ * @brief Trả về sự kiện khi nhấn nút EventBits_t e
+ * Sự kiện nhấn nút xảy ra ở TaskScanButton thuộc file LedButton.c, dùng TaskNotify thông báo cho GUITask và được chứa trong EventBits_t e
+ * GUITask sẽ chờ sự kiện nhấn nút trong hàm xTaskNotifyWait, khi nhấn thì GUITask sẽ gọi tới hàm này để kiểm tra sự kiện và truyền 
+ * tham số đầu vào là EventBits_t e nhận được từ TaskScanButton
  * 
  */
 void GUINAV_GetEvent(EventBits_t e)
 {
     HandleEvent(e,EVT_BTN_MENU,&NextPage,&SetPointerNowIsKeyword);
-    HandleEvent(e,EVT_BTN_SET,&SetPointerNowIsValue,&SaveValueToFlash);
+    HandleEvent(e,EVT_BTN_SET,&SetPointerNowIsValue,NULL);
     HandleEvent(e,EVT_BTN_UP,&PointToPrevParam,&IncreaseValue);
     HandleEvent(e,EVT_BTN_DOWN_RIGHT,&PointToNextParam,&DecreaseValue);
 }
 
 
-/**
- * @brief indicate that current selected pNow is KEYWORD or VALUE
- * 
- * @return uint8_t IS_KEYWORD or IS_VALUE
- */
-
-uint8_t GUINAV_GetCurrentSelected(){return guiNav.pNow;}
+uint8_t GUINAV_GetCurrentSelected(){return guiNav.pNow;} 
 uint8_t GUINAV_GetPage(){return guiNav.page;}
-uint8_t GUINAV_GetParamNum(){return guiNav.param;}
+uint8_t GUINAV_GetParamNum(){return guiNav.param;} 
 uint8_t GUINAV_GetPointerPosX(){return guiNav.pX;}
-uint8_t GUINAV_GetPointerPosY(){return guiNav.pY;}
+uint8_t GUINAV_GetPointerPosY(){return guiNav.pY;} 

@@ -207,7 +207,7 @@ void Brd_SendResponeString(uint8_t index, char *valStr, char* outputStr)
     sprintf((outputStr+strlen(outputStr)),"%s",valStr);
 }
 
-esp_err_t Brd_SetParamInt(uint8_t index,uint32_t val,char *outputStr){
+esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr){
     if(val < paramMinLimit[index] || val > paramMaxLimit[index]) {
         strcpy(outputStr,"Value beyond threshold");
         return ESP_ERR_INVALID_ARG;
@@ -269,7 +269,7 @@ esp_err_t Brd_SetParamInt(uint8_t index,uint32_t val,char *outputStr){
         return ESP_ERR_INVALID_ARG; 
 }
 
-uint32_t Brd_GetParamInt(uint8_t index)
+uint32_t Brd_GetParamInt(ParamIndex index)
 {
         if(index >= INDEX_TOTAL_VAN && index <= INDEX_SERV_RUN_HOURS_ALARM){
             switch (index)
@@ -332,13 +332,12 @@ esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr)
         if (!valStr) {
             strcpy(outputStr,"valStr NULL");
             return ESP_ERR_INVALID_ARG;
-        }
+        } 
         if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
                 index -= STRING_PARAM_OFFSET; // offset it to 1
                 char start[5] = {0};
                 char end[5] = {0};
                 uint8_t startIndex = 0;
-                uint8_t endIndex = 0;
                 strcpy(start,paramValString[0]); // Get the "S"
                 strcpy(end,paramValString[1]); // Get the "E"
                 sprintf(start+strlen(start),"%d",index); // combine with number, Ex: S1 and E1
@@ -387,11 +386,10 @@ esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr)
         return ESP_ERR_INVALID_ARG; 
 }
 
-char* Brd_GetParamString(uint8_t index)
+char* Brd_GetParamString(ParamIndex index)
 {
-        if(index >= INDEX_TOTAL_VAN && index <= INDEX_SERV_RUN_HOURS_ALARM){
-            switch (index)
-            {
+        if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
+            switch(index){
             case INDEX_LANGUAGE:
                 return brdParam.language;
                 break;
@@ -407,8 +405,10 @@ char* Brd_GetParamString(uint8_t index)
             case INDEX_DP_MODE:
                 return brdParam.dpMode ;
                 break;
+            default:
+                return 0;
+                break;
             }
-            return ESP_ERR_INVALID_ARG; 
         }
         return NULL;
 }
@@ -439,7 +439,6 @@ esp_err_t Brd_WriteParamToFlash(){
 esp_err_t Brd_ReadParamFromFlash()
 {
         esp_err_t err;
-        size_t reqSize;
     err = nvs_open("Board", NVS_READONLY, &brdNVS_Storage);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -456,8 +455,6 @@ esp_err_t Brd_ReadParamFromFlash()
     return err;
 
 }
-
-
 
 RTC_t Brd_GetRTC(){return brdParam.RTCtime;}
 

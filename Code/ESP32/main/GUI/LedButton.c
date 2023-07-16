@@ -86,7 +86,8 @@ void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
             // do things while holding button, i.e count UP and DOWN continously
             BtnHandleWhenHolding(gpio,e);
         }
-        xTaskNotify(taskGUIHandle,e,eSetValueWithoutOverwrite);
+        TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle(); 
+        xTaskNotify(*taskGUIHandle,e,eSetValueWithoutOverwrite);
         // Send RESET_DELAY to reset Delay and DelayCountLoop
         BtnHandleWhenHolding(0,2);
     }

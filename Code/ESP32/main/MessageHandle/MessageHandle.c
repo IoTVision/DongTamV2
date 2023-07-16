@@ -1,5 +1,7 @@
 #include "MessageHandle.h"
 #include "RTC_Format.h"
+
+
 const char* strRxKey[] = {
 	// Receive message
 	"DoNothing",
@@ -16,6 +18,9 @@ const char* strRxKey[] = {
 	"Time: ",
 };
 
+/**
+ *  Tập lệnh gửi đi thông số board để phản hồi 
+*/
 const char* strTxKey[] = {
 	// Transmit message
 	"DoNothing",
