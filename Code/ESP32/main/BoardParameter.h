@@ -39,7 +39,7 @@ typedef enum {
     INDEX_SERV_RUN_HOURS,
     INDEX_SERV_RUN_HOURS_ALARM,
     // special param to handle with string value
-    STRING_PARAM_OFFSET,
+    INDEX_STRING_PARAM_OFFSET,
     INDEX_LANGUAGE,
     INDEX_DISPLAY_RANGE,
     INDEX_PARAM_CODE,
@@ -56,6 +56,7 @@ typedef struct BoardParameter
     uint8_t downTimeCycle;
     uint8_t cleanMode;
     uint8_t contrast;
+    uint8_t testMode;
     uint16_t dpHigh;
     uint16_t dpLow;
     uint16_t dpWarn;
@@ -69,7 +70,6 @@ typedef struct BoardParameter
     uint16_t servAlarm;
     char *language;
     char *disRange;
-    char *testMode;
     char *paramCode;
     char *techCode;
     char *dpMode;
@@ -78,10 +78,13 @@ typedef struct BoardParameter
 }BoardParameter;
 
 
+
 uint16_t Brd_ParamGetMaxLimit(uint8_t index);
 uint16_t Brd_ParamGetMinLimit(uint8_t index);
 uint16_t Brd_ParamGetValueInt(uint8_t index);
 
+
+uint8_t Brd_GetTestMode();
 uint8_t Brd_GetTotalVan();
 uint8_t Brd_GetDownTimeCycle();
 uint8_t Brd_GetCleanMode();
@@ -101,20 +104,21 @@ uint16_t Brd_GetServiceRunHours();
 uint16_t Brd_GetServiceAlarm();
 
 
+
+
 const char* Brd_ParamGetValueString(uint8_t index);
 const char* Brd_GetParamText(uint8_t index); 
 const char* Brd_GetUnit(uint8_t index);
 char* Brd_GetParamString(ParamIndex index);
 char* Brd_GetLanguage();
 char* Brd_GetDisplayRange();
-char* Brd_GetTestMode();
 char* Brd_GetParamCode();
 char* Brd_GetTechCode();
 char* Brd_GetDPMode();
 RTC_t Brd_GetRTC();
 
 void Brd_PrintAllParameter();
-
+void Brd_LoadDefaultValue();
 esp_err_t Brd_WriteParamToFlash();
 esp_err_t Brd_ReadParamFromFlash();
 
@@ -138,5 +142,5 @@ esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr);
  * @param outputStr result of this function
  * @return int32_t -1 if error, return 0 if OK
  */
-esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr);
+esp_err_t Brd_SetParamString(ParamIndex index, char* valStr, char *outputStr);
 #endif

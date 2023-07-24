@@ -32,7 +32,7 @@
 #define EVT_PARAM_SCOLL_UP (1<<10)
 #define EVT_PARAM_SCOLL_DOWN (1<<1)
 
-#define LENGTH_OF_PARAM     12 //length of paramText
+#define LENGTH_OF_PARAM     11 //length of paramText
 
 typedef struct {
     void* Value;    

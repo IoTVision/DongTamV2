@@ -11,31 +11,43 @@ nvs_handle_t brdNVS_Storage;
 extern const char *paramText[];
 
 char *Brd_NVS_Key[] = {
-    "TotalVan",
-    "DownCycT",
-    "CleanMode",
-    "DisContrast",
-    "DPlow",
-    "DPhigh",
-    "DPwarn",
-    "ODChigh",
-    "ODClow",
-    "PulseTime",
-    "IntvTime",
-    "CycIntvTime",
-    "OperHour",
-    "TestMode",
-    "SevRunHour",
-    "SevRunHAlarm",
+    "StartParam", //not use
+    "TotalVan:",
+    "DownCycT:",
+    "CleanMode:",
+    "TestMode:",
+    "DisContrast:",
+    "DPlow:",
+    "DPhigh:",
+    "DPwarn:",
+    "ODChigh:",
+    "ODClow:",
+    "PulseTime:",
+    "IntvTime:",
+    "CycIntvTime:",
+    "OperHour:",
+    "SevRunHour:",
+    "SevRunHAlarm:",
+    "StringOffset",//not use
+    "Language:",
+    "DisplayRange:",
+    "ParamCode:",
+    "TechCode:",
+    "DPMode:",
+
 };
 
 uint16_t paramMaxLimit[] = {
+        // nothing
+        0,
         //total
         16,
         //down cyc
         32,
         //clean mode
         5,
+        //test mode
+        7,
         //contrast
         200, 
         //dp low
@@ -56,8 +68,6 @@ uint16_t paramMaxLimit[] = {
         100,
         //oper h
         25000,
-        //test mode
-        7,
         //serv run
         25000,
         //serv alarm
@@ -65,12 +75,16 @@ uint16_t paramMaxLimit[] = {
 };
 
 uint16_t paramMinLimit[] ={
+        // nothing
+        0,
         //total
         0,
         //down cyc
         0,
         //clean mode
         1,
+        //test mode
+        0,
         //contrast
         10,
         //dp low
@@ -91,8 +105,6 @@ uint16_t paramMinLimit[] ={
         2,
         //oper h
         0,
-        //test mode
-        0,
         //serv run
         0,
         //serv alarm
@@ -100,11 +112,15 @@ uint16_t paramMinLimit[] ={
 };
 
 uint16_t paramValInt[]= {
+        // Nothing
+        0,
         //total
         0,
         //down cyc
         6,
         // clean mode
+        3,
+        // test mode
         3,
         // contrast
         50,
@@ -181,7 +197,11 @@ const char* paramUnit[] = {
  */
 const char* Brd_GetUnit(uint8_t index){
         if(index <= INDEX_DISPLAY_CONTRAST){
-                return 0;
+                /*
+                    Lưu ý đây là trả về 0, nếu giá trị là NULL thì không thể truy cập và sẽ báo lỗi
+                    vì vậy cần phải kiểm tra giá trị trả về có khác 0 hay không trước khi sử dụng
+                */ 
+                return 0; 
         } else if (index <= INDEX_ODC_LOW){
                 return paramUnit[1];
         } else if (index == INDEX_PULSE_TIME){
@@ -196,15 +216,25 @@ const char* Brd_GetUnit(uint8_t index){
 
 void Brd_SendResponeInt(uint8_t index, uint32_t val, char* outputStr)
 {
-    strcpy(outputStr,paramText[index]);
-    sprintf((outputStr+strlen(outputStr)),"%lu",val);
+    if(index >= INDEX_STRING_PARAM_OFFSET){
+        strcpy(outputStr,"Not index int range\n");
+        return;
+    }
+    strcpy(outputStr,Brd_NVS_Key[index]);
+    sprintf((outputStr+strlen(outputStr)),"%lu ",val);
+    // if parameter has NULL unit, must be returned
+    if(!Brd_GetUnit(index)) return;
     strcat(outputStr,Brd_GetUnit(index));
 }
 
 void Brd_SendResponeString(uint8_t index, char *valStr, char* outputStr)
 {
-    strcpy(outputStr,paramText[index]);
-    sprintf((outputStr+strlen(outputStr)),"%s",valStr);
+    if(index < INDEX_STRING_PARAM_OFFSET) {
+        strcpy(outputStr,"Not index string range\n");
+        return;
+    }
+    strcpy(outputStr,Brd_NVS_Key[index]);
+    sprintf((outputStr+strlen(outputStr)),"%s ",valStr);
 }
 
 esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr){
@@ -259,6 +289,9 @@ esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr){
                 break;
                 case INDEX_SERV_RUN_HOURS_ALARM:
                     brdParam.servAlarm =(uint16_t)val;
+                break;
+                case INDEX_TEST_MODE:
+                    brdParam.testMode = (uint8_t)val;
                 break;
                 default:
                     break;
@@ -319,6 +352,9 @@ uint32_t Brd_GetParamInt(ParamIndex index)
             case INDEX_SERV_RUN_HOURS_ALARM:
                 return brdParam.servAlarm ;
                 break;
+            case INDEX_TEST_MODE:
+                return brdParam.testMode;
+                break;
             default:
                 break;
             }
@@ -327,27 +363,28 @@ uint32_t Brd_GetParamInt(ParamIndex index)
 }
 
 
-esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr)
+esp_err_t Brd_SetParamString(ParamIndex index, char* valStr, char *outputStr)
 {
         if (!valStr) {
             strcpy(outputStr,"valStr NULL");
             return ESP_ERR_INVALID_ARG;
         } 
         if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
-                index -= STRING_PARAM_OFFSET; // offset it to 1
+                index -= INDEX_STRING_PARAM_OFFSET; // offset it to 1
                 char start[5] = {0};
                 char end[5] = {0};
                 uint8_t startIndex = 0;
                 strcpy(start,paramValString[0]); // Get the "S"
                 strcpy(end,paramValString[1]); // Get the "E"
                 sprintf(start+strlen(start),"%d",index); // combine with number, Ex: S1 and E1
-                sprintf(end+strlen(end),"%d",index);
+                sprintf(end+strlen(end),"%d",index); 
+                ESP_LOGI("SetParamString","start:%s, end:%s,valStr:%s",start,end,valStr);
                 for(uint8_t i = 0; i < sizeof(paramValString);i++){
                     if(!strcmp(start,paramValString[i])){
                         startIndex = i;
                     }  
                     if(!strcmp(valStr,paramValString[i]) && startIndex){
-                        index += STRING_PARAM_OFFSET; // return it to original index
+                        index += INDEX_STRING_PARAM_OFFSET; // return it to original index
                         switch (index)
                         {
                         case INDEX_LANGUAGE:
@@ -356,11 +393,8 @@ esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr)
                         case INDEX_DISPLAY_RANGE:
                             brdParam.disRange = valStr;
                             break;
-                        case INDEX_TEST_MODE:
-                            brdParam.testMode = valStr;
-                            break;
                         case INDEX_PARAM_CODE:
-                            brdParam.language = valStr;
+                            brdParam.paramCode = valStr;
                             break;
                         case INDEX_TECH_CODE:
                             brdParam.techCode = valStr;
@@ -376,7 +410,7 @@ esp_err_t Brd_SetParamString(uint8_t index, char* valStr, char *outputStr)
                         return ESP_OK;
                     }
                     if(!strcmp(end,paramValString[i])){
-                        index += STRING_PARAM_OFFSET; // return it to original index
+                        index += INDEX_STRING_PARAM_OFFSET; // return it to original index
                         if(outputStr) Brd_SendResponeString(index,"Set Error\n",outputStr);
                         return ESP_ERR_INVALID_ARG; // if searching to the end, return error
                     }
@@ -416,7 +450,10 @@ char* Brd_GetParamString(ParamIndex index)
 void Brd_PrintAllParameter()
 {
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){
-		ESP_LOGI("brdParamPrint","[%d]:%lu",i,Brd_GetParamInt(i));
+		ESP_LOGI("brdParamPrint","%s[%d]:%lu",Brd_NVS_Key[i],i,Brd_GetParamInt(i));
+	}
+    for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE; i++){
+		ESP_LOGI("brdParamPrint","[%d]:%s",i,Brd_GetParamString(i));
 	}
 }
 
@@ -456,6 +493,52 @@ esp_err_t Brd_ReadParamFromFlash()
 
 }
 
+void Brd_LoadDefaultValue()
+{
+	esp_err_t err = ESP_OK;
+	uint32_t valArray[] = {
+        0,//nothing, it is the begin of param
+		10,
+		8,
+		2,
+		6,
+		55,
+        // unit is Pa
+		550,
+		1210,
+		2250,
+		2080,
+		2240,
+		160,
+		400,
+		6,
+		18000,
+		18650,
+		24540,
+	};
+	char *valueStr[]={
+        "Offset",
+        "Eng",
+        "Pa",
+        "F2",
+        "F0",
+        "Off",
+    };
+	char s[50];
+	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){
+		err = Brd_SetParamInt(i,valArray[i],s);
+		if(err == ESP_OK) ESP_LOGI("LoadValueBoardInt","%s",s);
+		else ESP_LOGE("LoadValueBoardInt","%s",s);
+		memset(s,0,strlen(s));
+	}
+    for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE; i++){
+		err = Brd_SetParamString(i,valueStr[i - INDEX_STRING_PARAM_OFFSET],s);
+		if(err == ESP_OK) ESP_LOGI("LoadValueBoardString","%s",s);
+		else ESP_LOGE("LoadValueBoardString","%s",s);
+		memset(s,0,strlen(s));
+	}
+}
+
 RTC_t Brd_GetRTC(){return brdParam.RTCtime;}
 
 
@@ -463,6 +546,7 @@ uint8_t Brd_GetTotalVan(){return brdParam.totalVan;}
 uint8_t Brd_GetDownTimeCycle(){return brdParam.downTimeCycle;}
 uint8_t Brd_GetCleanMode(){return brdParam.cleanMode;}
 uint8_t Brd_GetContrast(){return brdParam.contrast;}
+uint8_t Brd_GetTestMode(){return brdParam.testMode;}
 
 uint16_t Brd_ParamGetMaxLimit(uint8_t index){return paramMaxLimit[index];}
 uint16_t Brd_ParamGetMinLimit(uint8_t index){return paramMinLimit[index];}
@@ -482,7 +566,6 @@ const char* Brd_ParamGetValueString(uint8_t index){return paramValString[index];
 const char* Brd_GetParamText(uint8_t index){return paramText[index];}
 char* Brd_GetLanguage(){return brdParam.language;}
 char* Brd_GetDisplayRange(){return brdParam.disRange;}
-char* Brd_GetTestMode(){return brdParam.testMode;}
 char* Brd_GetParamCode(){return brdParam.paramCode;}
 char* Brd_GetTechCode(){return brdParam.techCode;}
 char* Brd_GetDPMode(){return brdParam.dpMode;}

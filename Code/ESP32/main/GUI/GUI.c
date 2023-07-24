@@ -13,6 +13,7 @@ TaskHandle_t* GUI_GetTaskHandle(){
     return &taskGUIHandle;
 }
 const char *paramText[]={
+    "StartParam", //not use
     "Total Van :",
     "Down T Cyc:",
     "Clean Mode:",
@@ -29,6 +30,7 @@ const char *paramText[]={
     "Serv Run H:",
     "SerH Alarm:",
     // special param to handle
+    "StringOffset",//not use
     "Language  :",
     "dpDisRange:",
     "Test Mode :",
@@ -226,13 +228,27 @@ void GUI_GetParam(GUIParam_t *gp, ParamIndex paramNO)
 
 void GUI_PrintParam(uint8_t index, uint8_t row)
 {
-    char unit[3] = {0};
-    strcpy(unit,Brd_GetUnit(index)); 
+    ESP_LOGI("PrintParam","Index is:%u,row:%u",index,row);
+    char unit[5] = {0};
+    // check if unit is NULL or not, if not then copy it to unit array variable
+    if(Brd_GetUnit(index)) {
+        strcpy(unit,Brd_GetUnit(index)); 
+        ESP_LOGI("PrintParam","Unit: %s",Brd_GetUnit(index));
+    }
     LCDI2C_Print(paramText[index],POINTER_SLOT,row);
     char StringValue[20];
     // if no string is copied to unit, strlen would be zero
-    if(!strlen(unit)) sprintf(StringValue,"%lu",Brd_GetParamInt(index));
-    else sprintf(StringValue,"%lu%s",Brd_GetParamInt(index),unit);
+    if(!strlen(unit)) {
+        // handle string value
+        if(index > INDEX_STRING_PARAM_OFFSET && index <= INDEX_DP_MODE){
+            sprintf(StringValue,"%s",Brd_GetParamString(index));
+        }
+        // handle int value non unit
+        else {
+            sprintf(StringValue,"%lu",Brd_GetParamInt(index));
+        }
+    }
+    else sprintf(StringValue,"%lu %s",Brd_GetParamInt(index),unit);
     // pointer slot for pointer of text and slot for point of value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
 }
@@ -256,7 +272,6 @@ void GUI_LoadPage()
  */
 void GUI_LoadPageAtInit()
 {
-    GUINAV_GetCurrentSelected();
     // each parameter will be placed in each rows of LCD
     for(uint8_t i=0;i<LCD_ROWS;i++){
         GUI_PrintParam(orderToDisplay[i],i);

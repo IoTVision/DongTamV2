@@ -1,5 +1,5 @@
 #include "./UART.h"
-QueueHandle_t qUART_STM32_event,qLOG_event,qUART_BigSize;
+QueueHandle_t qSTM32_event,qLOG_event,qUART_BigSize;
 uint8_t countQueueBigSize=0;
 EventGroupHandle_t evgUART;
 TaskHandle_t TaskHandleBigSize;
@@ -43,7 +43,7 @@ void TaskUart(void *pvParameters)
     char *s;
     EventBits_t e;
     for(;;) {
-        if(xQueueReceive(qUART_STM32_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
+        if(xQueueReceive(qSTM32_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
             switch(event.type) {
                 case UART_DATA:
                     char *dtmp = (char *) malloc(event.size + 1);
@@ -127,7 +127,7 @@ void UARTConfig()
     };
     qUART_BigSize = xQueueCreate(QUEUE_SIZE_OF_QBIG_SIZE,sizeof(char*));
     evgUART = xEventGroupCreate();
-    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, UART_BUFFER_EVENT_SIZE, UART_BUFFER_EVENT_SIZE, UART_QUEUE_EVENT_SIZE, &qUART_STM32_event, 0));
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, UART_BUFFER_EVENT_SIZE, UART_BUFFER_EVENT_SIZE, UART_QUEUE_EVENT_SIZE, &qSTM32_event, 0));
     ESP_ERROR_CHECK(uart_param_config(UART_NUM_2, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_TX, UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 

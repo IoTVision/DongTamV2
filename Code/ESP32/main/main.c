@@ -23,6 +23,12 @@ void SendStringToUART(QueueHandle_t q,char *s);
 void InitProcess();
 esp_err_t TestFlashNVS();
 
+/**
+ * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ nên sử dụng hàm uart_write_bytes để gửi,
+ * Item trong Queue qLogTx là một con trỏ char* trỏ tới chuỗi cần gửi lên máy tính, 
+ * sau đó free bộ nhớ mà con trỏ char* đó trỏ tớiv bnv    
+ * 
+ */
 void app_main(void)
 {
     Setup();
@@ -35,6 +41,13 @@ void app_main(void)
     }
 }
 
+/**
+ * @brief Task dùng để phản hồi lại(echo) chuỗi nhận được từ máy tính(UART 0) 
+ * hoặc nhận chuỗi từ STM32(UART 2), sau đó gửi lên UART 0 về máy tính, 
+ * dùng để debug 
+ * 
+ * @param pvParameter Không dùng
+ */
 void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
@@ -49,6 +62,13 @@ void UartHandleString(void *pvParameter)
 }
 
 
+/**
+ * @brief Khởi tạo bộ nhớ flash, khởi tạo vùng nhớ Queue, 
+ * khởi tạo các ngoại vi liên quan tới GUI như LCD I2C, 
+ * cấu hình chân HC595 cho LED bar hiển thị áp suất, 
+ * cấu hình chân giao tiếp UART
+ * Load các thông số board mặc định vào struct BoardParamter
+ */
 void InitProcess()
 {
     // Initialize NVS
@@ -67,10 +87,20 @@ void InitProcess()
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
     evg1 = xEventGroupCreate();
+    Brd_LoadDefaultValue();
+    Brd_PrintAllParameter();
     UARTConfig();
     GuiInit();
 }
 
+
+/**
+ * @brief Cấp phát vùng nhớ chứa chuỗi s cần gửi qua UART
+ * 
+ * @param q Hàng đợi tương ứng với bộ UART cần gửi, ví dụ qLogTx gửi lên UART để log data, 
+ * qSTM32Tx để gửi xuống STM32
+ * @param s Con trỏ trỏ tới chuỗi ký tự cần gửi đi
+ */
 void SendStringToUART(QueueHandle_t q,char *s)
 {
     char *a = (char *) malloc(strlen(s) + cJSON_OFFSET_BYTES);
@@ -91,6 +121,8 @@ void Setup()
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
+
+
 }
 
 
