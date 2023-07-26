@@ -120,6 +120,12 @@ const uint32_t paramStepChange[] = {
     100, //operate hours
     100, //serv run
     100, //serv run alarm
+    0, // offset
+    1,// language
+    1,// display range
+    1,// param code
+    1,// tech code
+    1,// dp mode
 };
 
 const char* paramValString[]={
@@ -129,18 +135,28 @@ const char* paramValString[]={
         // Language
         "S1", //start
         "Eng",
+        "Jan",
+        "Fra",
+        "Vie",
+        "US", 
+        "UK",
         "E1", // end
 
         // Display range
         "S2", //start
         "Pa",
         "InWc",
+        "mmHg",
         "E2", // end
 
 
         // Param code
         "S3", //start
+        "F1",
         "F2",
+        "F3",
+        "F4",
+        "F5",
         "E3", // end
 
         // Tech code
@@ -337,57 +353,64 @@ uint32_t Brd_GetParamIntValue(ParamIndex index)
 }
 
 
-esp_err_t Brd_SetParamString(ParamIndex index, char* valStr, char *outputStr)
+esp_err_t Brd_SetParamString(ParamIndex index,uint8_t indexStringValue, char *outputStr)
 {
-        if (!valStr) {
-            strcpy(outputStr,"valStr NULL");
-            return ESP_ERR_INVALID_ARG;
-        } 
         if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
                 index -= INDEX_STRING_PARAM_OFFSET; // offset it to 1
                 char start[5] = {0};
                 char end[5] = {0};
                 uint8_t startIndex = 0;
+                uint8_t endIndex = 0;
                 strcpy(start,paramValString[0]); // Get the "S"
                 strcpy(end,paramValString[1]); // Get the "E"
-                sprintf(start+strlen(start),"%d",index); // combine with number, Ex: S1 and E1
+                sprintf(start+strlen(start),"%d",index); // combine with number index, Ex: S1 and E1
                 sprintf(end+strlen(end),"%d",index); 
-                ESP_LOGI("SetParamString","start:%s, end:%s,valStr:%s",start,end,valStr);
+                // Find startIndex (Sx) and endIndex(Ex) using for loop
                 for(uint8_t i = 0; i < sizeof(paramValString);i++){
                     if(!strcmp(start,paramValString[i])){
                         startIndex = i;
-                    }  
-                    if(!strcmp(valStr,paramValString[i]) && startIndex){
-                        index += INDEX_STRING_PARAM_OFFSET; // return it to original index
-                        switch (index)
-                        {
+                    }
+                    if(!strcmp(end,paramValString[i])){
+                        endIndex = i;
+                        break;
+                    }
+                }
+                if((startIndex && endIndex) && (startIndex < endIndex)){
+                    uint8_t resultIndex = startIndex + indexStringValue;
+                    // Checking limit and wrapping selection
+                    if(resultIndex >= endIndex){
+                        ESP_LOGW("SetString","reaching end, wrap around");
+                        resultIndex = startIndex + 1;
+                    } else if (resultIndex <= startIndex){
+                        ESP_LOGW("SetString","reaching start, wrap around");
+                        resultIndex = endIndex - 1;
+                    }
+                    index += INDEX_STRING_PARAM_OFFSET; // return it to original index to use for switch case 
+                    switch (index){
                         case INDEX_LANGUAGE:
-                            brdParam.language = valStr;
+                            brdParam.language = (char*)paramValString[resultIndex];
                             break; 
                         case INDEX_DISPLAY_RANGE:
-                            brdParam.disRange = valStr;
+                            brdParam.disRange = (char*)paramValString[resultIndex];
                             break;
                         case INDEX_PARAM_CODE:
-                            brdParam.paramCode = valStr;
+                            brdParam.paramCode = (char*)paramValString[resultIndex];
                             break;
                         case INDEX_TECH_CODE:
-                            brdParam.techCode = valStr;
+                            brdParam.techCode = (char*)paramValString[resultIndex];
                             break;
                         case INDEX_DP_MODE:
-                            brdParam.dpMode = valStr;
+                            brdParam.dpMode = (char*)paramValString[resultIndex];
                             break;
                         default:
                         return ESP_ERR_INVALID_ARG;
                             break;
-                        }
-                        if(outputStr) Brd_SendResponeString(index,"Set OK\n",outputStr);
-                        return ESP_OK;
                     }
-                    if(!strcmp(end,paramValString[i])){
-                        index += INDEX_STRING_PARAM_OFFSET; // return it to original index
-                        if(outputStr) Brd_SendResponeString(index,"Set Error\n",outputStr);
-                        return ESP_ERR_INVALID_ARG; // if searching to the end, return error
-                    }
+                    Brd_SendResponeString(index,"Set OK\n",outputStr);
+                } else {
+                    index += INDEX_STRING_PARAM_OFFSET; // return it to original index to use for switch case 
+                    Brd_SendResponeString(index,"Set Error\n",outputStr);
+                    return ESP_ERR_INVALID_ARG;
                 }
                 return ESP_OK;
         }       
@@ -426,8 +449,9 @@ void Brd_PrintAllParameter()
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){
 		ESP_LOGI("brdParamPrint","%s[%d]:%lu",Brd_NVS_Key[i],i,Brd_GetParamIntValue(i));
 	}
-    for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE; i++){
-		ESP_LOGI("brdParamPrint","[%d]:%s",i,Brd_GetParamString(i));
+    for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE + 1; i++){
+		if(Brd_GetParamString(i)) ESP_LOGI("brdParamPrint","[%d]:%s",i,Brd_GetParamString(i));
+        else ESP_LOGE("brdParamPrint","Not found string");
 	}
 }
 
@@ -490,13 +514,13 @@ void Brd_LoadDefaultValue()
 		18650,
 		24540,
 	};
-	char *valueStr[]={
-        "Offset",
-        "Eng",
-        "Pa",
-        "F2",
-        "F0",
-        "Off",
+	uint8_t valueStr[]={
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
     };
 	char s[50];
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){

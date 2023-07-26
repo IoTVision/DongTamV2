@@ -87,6 +87,7 @@ void GUI_ScrollUpDown(uint8_t paramNO);
 
 void GUI_LCD_DeletePreviousValue(char *strToPrint,uint8_t lengthOfValue);
 void GUI_ShowValueInt();
+void GUI_ShowValueString();
 
 /**
  * @brief Mỗi khi nhận được thông báo từ task khác gửi qua (ví dụ như task đọc nút nhấn và gửi sự kiện nhấn nút)
@@ -120,11 +121,8 @@ void GUI_Manage()
         GUI_ScrollUpDown(paramNO);
         GUI_ShowPointer();
     } else if (pNow == IS_VALUE){
-        if(paramNO < INDEX_STRING_PARAM_OFFSET){
-            GUI_ShowValueInt();
-        } else if (paramNO >= INDEX_LANGUAGE){
-            ESP_LOGE("IDX_STRING","nothing change");
-        }
+        GUI_ShowValueInt();
+        GUI_ShowValueString();
     }
 }
 
@@ -135,6 +133,12 @@ void GUI_Manage()
  */
 
 
+void GUI_ShowValueString()
+{
+    ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
+    if(paramNO < INDEX_STRING_PARAM_OFFSET) return;
+}
+
 /**
  * @brief Dùng để xử lý thông số có kiểu dữ liệu integer trên màn hình
  * 
@@ -142,6 +146,7 @@ void GUI_Manage()
 void GUI_ShowValueInt()
 {
         ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
+        if(paramNO >= INDEX_STRING_PARAM_OFFSET) return;
         uint8_t pY = GUINAV_GetPointerPosY();
         uint8_t pX = GUINAV_GetPointerPosX();
         uint32_t stepChange = Brd_GetParamStepChange(paramNO);
@@ -149,15 +154,16 @@ void GUI_ShowValueInt()
         uint16_t valHighLimit = Brd_GetMaxLimit(paramNO);
         uint32_t value = Brd_GetParamIntValue(paramNO);
         char s[8]={0};
+        // Clear previous value
         memset(s,(int)" ",(size_t)CountLengthPreviousValue(value));
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+        // Waiting for event increase and decrease value 
         EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
         EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
         if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=stepChange;
         if(CHECKFLAG(e,EVT_DECREASE_VALUE)) value -=stepChange;
         sprintf(s,"%lu",value);
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-        ESP_LOGW("GUI ShowInt","Min:%u,Value:%lu,Max:%u",valLowLimit,value,valHighLimit);
         CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
         Brd_SetParamInt(paramNO,value,NULL);
 }
@@ -281,7 +287,8 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
     if(!strlen(unit)) {
         // handle string value
         if(index > INDEX_STRING_PARAM_OFFSET && index <= INDEX_DP_MODE){
-            sprintf(StringValue,"%s",Brd_GetParamString(index));
+            if(Brd_GetParamString(index)) sprintf(StringValue,"%s",Brd_GetParamString(index));
+            else ESP_LOGE("PrintParam","No string found ");
         }
         // handle int value non unit
         else {

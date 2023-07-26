@@ -99,21 +99,22 @@ esp_err_t Brd_ReadParamFromFlash();
 uint32_t Brd_GetParamIntValue(ParamIndex index);
 
 /**
- * @brief Set value of integer for parameter
+ * @brief Cài giá trị integer cho thông số 
  * 
- * @param index index of parameter string (from INDEX_TOTAL_VAN to INDEX_SERV_RUN_HOURS_ALARM)
- * @param val value need to be set, must be smaller of equal uint32_t 
- * @param outputStr result of this function
- * @return int32_t -1 if error, return 0 if OK
+ * @param index thứ tự thông số trong BoardParameter
+ * @param val giá trị cần cài đặt
+ * @param outputStr chuỗi kết quả sau khi xử lý thành công hoặc lỗi 
+ * @return esp_err_t 
  */
 esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr);
+
 /**
- * @brief Set value of string for parameter 
+ * @brief Cài đặt các thông số sử dụng giá trị là kiểu string
  * 
- * @param index index of parameter string (from INDEX_LANGUAGE to INDEX_DP_MODE)
- * @param valStr value need to be set
- * @param outputStr result of this function
- * @return int32_t -1 if error, return 0 if OK
+ * @param index thứ tự thông số trong BoardParameter
+ * @param indexStringValue 
+ * @param outputStr 
+ * @return esp_err_t 
  */
-esp_err_t Brd_SetParamString(ParamIndex index, char* valStr, char *outputStr);
+esp_err_t Brd_SetParamString(ParamIndex index,uint8_t indexStringValue, char *outputStr);
 #endif
