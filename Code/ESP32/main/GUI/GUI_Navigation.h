@@ -20,6 +20,10 @@ typedef enum {
     IS_VALUE,
 }PointerNow; 
 
+/**
+ * @brief Trang hiển thị, hiện tại không dùng
+ * 
+ */
 typedef enum {
     PAGE_START,
     PAGE_SETTING,
@@ -45,8 +49,17 @@ typedef struct GUI_NAV{
 }GUI_NAV;
 
 uint8_t GUINAV_GetPage();
-// Trả về thứ tự(index) của thông số đang hiển thị
-uint8_t GUINAV_GetParamNum();
+/**
+ * @brief Trả về thứ tự (index) của biến orderToDisplay trong GUI.c mà con trỏ đang trỏ tới, 
+ * không phải thứ tự các thông số trong BoardParameter
+ * Ví dụ: con trỏ GUI đang trỏ tới phần tử thứ 0 trong orderToDisplay của GUI.c 
+ * thì có giá trị là INDEX_PARAM_CODE trong BoardPameter.h vì đây là giá trị mapping 
+ * cho giống với bảng điều khiển của Đồng Tâm, còn 
+ * Để lấy được thông số thực sự mà con trỏ đang trỏ tới thì phải viết như sau:
+ * orderToDisplay[GUINAV_GetOrderToDisplayIndex]
+ */
+ 
+ParamIndex GUINAV_GetOrderToDisplayIndex();
 // Vị trí con trỏ trên màn hình LCD theo cột
 uint8_t GUINAV_GetPointerPosX();
 // Vị trí con trỏ trên màn hình LCD theo hàng 

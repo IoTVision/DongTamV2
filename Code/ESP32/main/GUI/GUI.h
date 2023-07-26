@@ -29,8 +29,8 @@
 #define EVT_VALUE_BELOW_THRESHOLD (1<<7)
 #define EVT_INCREASE_VALUE (1<<8)
 #define EVT_DECREASE_VALUE (1<<9)
-#define EVT_PARAM_SCOLL_UP (1<<10)
-#define EVT_PARAM_SCOLL_DOWN (1<<1)
+#define EVT_PARAM_SCROLL_UP (1<<10)
+#define EVT_PARAM_SCROLL_DOWN (1<<1)
 
 #define LENGTH_OF_PARAM     11 //length of paramText
 

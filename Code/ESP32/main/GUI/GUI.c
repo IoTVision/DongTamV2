@@ -7,11 +7,20 @@
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
 TaskHandle_t taskGUIHandle;
-GUIParam_t param[LCD_ROWS];
+GUIParam_t guiParam[LCD_ROWS];
 
-TaskHandle_t* GUI_GetTaskHandle(){
-    return &taskGUIHandle;
-}
+/**
+ * @brief Dùng để nhận thông tin từ các task khác thông qua phương pháp TaskNotify
+ * Đây là đối số truyền vào khi khởi tạo GUITask dùng hàm xTaskCreate
+ * 
+ * @return TaskHandle_t* 
+ */
+TaskHandle_t* GUI_GetTaskHandle(){ return &taskGUIHandle;}
+
+/**
+ * @brief Tên thông số sẽ hiển thị trên màn hình LCD
+ * 
+ */
 const char *paramText[]={
     "StartParam", //not use
     "Total Van :",
@@ -39,8 +48,13 @@ const char *paramText[]={
     "DP Mode   :",
 };
 
-// to map ParamIndex with real param setting table
-ParamIndex orderToDisplay[21] = {
+/**
+ * @brief Thứ tự hiển thị các thông số trên màn hình khớp với giao diện gốc của Đồng Tâm
+ * Đây không phải thứ tự thực sự của thông số trong BoardParameter.h mà là thứ tự đã được mapping lại
+ * 
+ */
+ParamIndex orderToDisplay[] = {
+    INDEX_START_PARAM,//nothing to do with this
     INDEX_PARAM_CODE,
     INDEX_DP_LOW,
     INDEX_DP_HIGH,
@@ -62,6 +76,7 @@ ParamIndex orderToDisplay[21] = {
     INDEX_SERV_RUN_HOURS_ALARM,
     INDEX_TECH_CODE,
     INDEX_DP_MODE,
+    INDEX_END_PARAM,
 };
 
 
@@ -70,6 +85,16 @@ uint8_t CountLengthPreviousValue(uint32_t value);
 uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHighLimit, EventGroupHandle_t *eventLimit);
 void GUI_ScrollUpDown(uint8_t paramNO);
 
+void GUI_LCD_DeletePreviousValue(char *strToPrint,uint8_t lengthOfValue);
+void GUI_ShowValueInt();
+
+/**
+ * @brief Mỗi khi nhận được thông báo từ task khác gửi qua (ví dụ như task đọc nút nhấn và gửi sự kiện nhấn nút)
+ * thì task này sẽ chạy các hàm bên dưới để điều khiển giao diện màn hình
+ * GUINAV_GetEvent: đảm nhận việc xử lý sự kiện nút nhấn
+ * 
+ * @param pvParameter 
+ */
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
@@ -85,47 +110,22 @@ void GUITask(void *pvParameter)
     }
 }
 
-
-
 void GUI_Manage()
 {
-    // uint8_t pNow = GUINAV_GetCurrentSelected();
-    // uint8_t pY = GUINAV_GetPointerPosY();
-    // uint8_t pX = GUINAV_GetPointerPosX();
-    // uint8_t paramNO = GUINAV_GetParamNum();
-    // if(pNow == IS_KEYWORD){
-    //     #if defined(USE_LOAD_NEW_SCREEN) 
-    //     #elif defined(USE_SCROLL_SCREEN) 
-    //     GUI_ScrollUpDown(paramNO);
-    //     #endif
-    //     GUI_ShowPointer();
-    // }
-    // else if (pNow == IS_VALUE){
-    //     uint16_t valLowLimit = param[pY].lowLimit;
-    //     uint16_t valHighLimit = param[pY].highLimit;
-    //     uint16_t scale =  param[pY].scaleValue;
-    //     uint32_t value = param[pY].Value;// save previous value to clear value slot before print new value to slot
-    //     uint8_t lenPrevVal = CountLengthPreviousValue(value);
-    //     char unit[4];
-    //     if(param[pY].unit) {strcpy(unit,param[pY].unit);lenPrevVal += strlen(unit);}
-    //     EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
-    //     EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
-    //     if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=scale;
-    //     if(CHECKFLAG(e,EVT_DECREASE_VALUE))value -=scale;
-    //     CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
-    //     char s[8]={0};
-    //     uint8_t i=0;
-    //     do{
-    //         strcat(s," ");
-    //         i++;
-    //     } while(i < lenPrevVal);
-    //     ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-    //     if(!param[pY].unit) sprintf(s,"%lu",value);
-    //     else sprintf(s,"%lu%s",value,param[pY].unit);
-    //     ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-    //     param[pY].Value = value;
-    //     GUI_SetGuiInfoValue(&guiInfo,paramNO,value);
-    // }
+    uint8_t pNow = GUINAV_GetCurrentSelected();
+    //Get the true value of index in BoardParameter, not the table show
+    ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
+    ESP_LOGE("paramNO","%d",paramNO);
+    if(pNow == IS_KEYWORD){
+        GUI_ScrollUpDown(paramNO);
+        GUI_ShowPointer();
+    } else if (pNow == IS_VALUE){
+        if(paramNO < INDEX_STRING_PARAM_OFFSET){
+            GUI_ShowValueInt();
+        } else if (paramNO >= INDEX_LANGUAGE){
+            ESP_LOGE("IDX_STRING","nothing change");
+        }
+    }
 }
 
 
@@ -135,32 +135,65 @@ void GUI_Manage()
  */
 
 
+/**
+ * @brief Dùng để xử lý thông số có kiểu dữ liệu integer trên màn hình
+ * 
+ */
+void GUI_ShowValueInt()
+{
+        ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
+        uint8_t pY = GUINAV_GetPointerPosY();
+        uint8_t pX = GUINAV_GetPointerPosX();
+        uint32_t stepChange = Brd_GetParamStepChange(paramNO);
+        uint16_t valLowLimit = Brd_GetMinLimit(paramNO);
+        uint16_t valHighLimit = Brd_GetMaxLimit(paramNO);
+        uint32_t value = Brd_GetParamIntValue(paramNO);
+        char s[8]={0};
+        memset(s,(int)" ",(size_t)CountLengthPreviousValue(value));
+        ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+        EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
+        EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
+        if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=stepChange;
+        if(CHECKFLAG(e,EVT_DECREASE_VALUE)) value -=stepChange;
+        sprintf(s,"%lu",value);
+        ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+        ESP_LOGW("GUI ShowInt","Min:%u,Value:%lu,Max:%u",valLowLimit,value,valHighLimit);
+        CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
+        Brd_SetParamInt(paramNO,value,NULL);
+}
+
 void GUI_ScrollUpDown(uint8_t paramNO)
 {
-    // // if current pointer pointed to the last row and param is not the last param
-    // EventBits_t e = xEventGroupGetBits(evgGUI);
-    // if((CHECKFLAG(e,EVT_PARAM_SCOLL_DOWN))){
-    //     for(int8_t i = (LCD_ROWS -1) ;i > - 1;i--) {
-    //         if((paramNO -(LCD_ROWS - 1 - i)) <= SETTING_NO_PARAM_START) break;
-    //         ESP_LOGI("DOWN","%d",i);
-    //         GUI_GetParam(param+i,paramNO -(LCD_ROWS - 1 - i));
-    //     }
-    //     GUI_LoadPage();
-    //     for(uint8_t i = 0;i < LCD_ROWS;i++){
-    //         ESP_LOGW("GUI_Manage","Down:[%u]:txt:%s",i,param[i].text_on_screen);
-    //     }
-    // }// if current pointer pointed to the first row and param is not the first param
-    // else if((CHECKFLAG(e,EVT_PARAM_SCOLL_UP))){
-    //     for(int8_t i = 0; i < LCD_ROWS ;i++) {
-    //         if(i >= SETTING_NO_PARAM_END) break;
-    //         GUI_GetParam(param+i,paramNO + i);
-    //     }
-    //     GUI_LoadPage();
-    //     for(uint8_t i = 0;i < LCD_ROWS;i++){
-    //         ESP_LOGW("GUI_Manage","Up:[%u]:txt:%s",i,param[i].text_on_screen);
-    //     }
-    // }
+    EventBits_t e = xEventGroupGetBits(evgGUI);
+    if((CHECKFLAG(e,EVT_PARAM_SCROLL_UP))){
+        for(int8_t i = 0; i < LCD_ROWS ;i++) {
+            // GUI_GetParam(param+i,paramNO + i);
+        }
+        GUI_LoadPage();
+    }
+    // if current pointer pointed to the last row and param is not the last param
+    else if((CHECKFLAG(e,EVT_PARAM_SCROLL_DOWN))){
+        // for(int8_t i = (LCD_ROWS -1) ;i > - 1;i--) {
+        //     if((paramNO -(LCD_ROWS - 1 - i)) <= INDEX_) break;
+        //     GUI_GetParam(param+i,paramNO -(LCD_ROWS - 1 - i));
+        // }
+        GUI_LoadPage();
+    }// if current pointer pointed to the first row and param is not the first param
+   
 }
+
+void GUI_LCD_DeletePreviousValue(char *strToPrint,uint8_t lengthOfValue)
+{
+    uint8_t pY = GUINAV_GetPointerPosY();
+    uint8_t pX = GUINAV_GetPointerPosX();
+    uint8_t i=0;
+    do{
+        strcat(strToPrint," ");
+        i++;
+    } while(i < lengthOfValue);
+    ESP_ERROR_CHECK(LCDI2C_Print(strToPrint,pX+POINTER_SLOT,pY));
+}
+
 
 /**
  * @brief Tính toán số ô cần xóa giá trị value trước đó, xóa tới 6 hàng
@@ -218,6 +251,13 @@ uint8_t CheckValueIsLimit(uint32_t *value, uint32_t valLowLimit, uint32_t valHig
     }
     return 0;
 }
+
+/**
+ * @brief Load giá trị của thông số vào trong GUIParam 
+ * 
+ * @param gp 
+ * @param paramNO 
+ */
 void GUI_GetParam(GUIParam_t *gp, ParamIndex paramNO)
 {
     //Get value integer
@@ -245,10 +285,10 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
         }
         // handle int value non unit
         else {
-            sprintf(StringValue,"%lu",Brd_GetParamInt(index));
+            sprintf(StringValue,"%lu",Brd_GetParamIntValue(index));
         }
     }
-    else sprintf(StringValue,"%lu %s",Brd_GetParamInt(index),unit);
+    else sprintf(StringValue,"%lu %s",Brd_GetParamIntValue(index),unit);
     // pointer slot for pointer of text and slot for point of value
     LCDI2C_Print(StringValue,POINTER_SLOT + LENGTH_OF_PARAM + POINTER_SLOT,row);
 }
@@ -272,9 +312,9 @@ void GUI_LoadPage()
  */
 void GUI_LoadPageAtInit()
 {
-    // each parameter will be placed in each rows of LCD
+    // each parameter will be placed in each rows of LCD, avoid i=0 
     for(uint8_t i=0;i<LCD_ROWS;i++){
-        GUI_PrintParam(orderToDisplay[i],i);
+        GUI_PrintParam(orderToDisplay[i+1],i);
     }
 }
 
@@ -294,11 +334,11 @@ void GUI_ClearPointer(){LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPoint
 
 void PrintNavigation()
 {
-    // ESP_LOGI("GUI_NAV","page: %u",GUINAV_GetPage());
-    // ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParamNum());
-    // ESP_LOGI("GUI_NAV","pNow: %u",GUINAV_GetCurrentSelected());
-    // ESP_LOGI("GUI_NAV","x: %u",GUINAV_GetPointerPosX());
-    // ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
+    ESP_LOGI("GUI_NAV","page: %u",GUINAV_GetPage());
+    ESP_LOGI("GUI_NAV","paramMappingIndex: %u",GUINAV_GetOrderToDisplayIndex());
+    ESP_LOGI("GUI_NAV","pNow: %u",GUINAV_GetCurrentSelected());
+    ESP_LOGI("GUI_NAV","x: %u",GUINAV_GetPointerPosX());
+    ESP_LOGI("GUI_NAV","y: %u",GUINAV_GetPointerPosY());
 }
 /*
     End Debug section

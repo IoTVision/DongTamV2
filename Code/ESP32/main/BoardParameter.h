@@ -21,6 +21,7 @@ typedef enum {
     INDEX_TOTAL_VAN,
     INDEX_DOWN_TIME_CYCLE,
     INDEX_ODC_CLEAN_MODE,
+    INDEX_TEST_MODE,
     INDEX_DISPLAY_CONTRAST,
     // unit is Pa
     INDEX_DP_LOW,
@@ -35,7 +36,6 @@ typedef enum {
     INDEX_CYCLE_INTERVAL_TIME,
     // unit is h
     INDEX_OPERATE_HOURS,
-    INDEX_TEST_MODE,
     INDEX_SERV_RUN_HOURS,
     INDEX_SERV_RUN_HOURS_ALARM,
     // special param to handle with string value
@@ -79,42 +79,15 @@ typedef struct BoardParameter
 
 
 
-uint16_t Brd_ParamGetMaxLimit(uint8_t index);
-uint16_t Brd_ParamGetMinLimit(uint8_t index);
-uint16_t Brd_ParamGetValueInt(uint8_t index);
-
-
-uint8_t Brd_GetTestMode();
-uint8_t Brd_GetTotalVan();
-uint8_t Brd_GetDownTimeCycle();
-uint8_t Brd_GetCleanMode();
-uint8_t Brd_GetContrast();
-
-uint16_t Brd_GetDPHigh();
-uint16_t Brd_GetDPLow();
-uint16_t Brd_GetDPWarn();
-uint16_t Brd_GetODCLow();
-uint16_t Brd_GetODCHigh();
-
-uint16_t Brd_GetPulseTime();
-uint16_t Brd_GetIntervalTime();
-uint16_t Brd_GetCycleIntervalTime();
-
-uint16_t Brd_GetServiceRunHours();
-uint16_t Brd_GetServiceAlarm();
+uint16_t Brd_GetMaxLimit(uint8_t index);
+uint16_t Brd_GetMinLimit(uint8_t index);
+uint32_t Brd_GetParamStepChange(uint8_t index);
 
 
 
 
-const char* Brd_ParamGetValueString(uint8_t index);
-const char* Brd_GetParamText(uint8_t index); 
 const char* Brd_GetUnit(uint8_t index);
 char* Brd_GetParamString(ParamIndex index);
-char* Brd_GetLanguage();
-char* Brd_GetDisplayRange();
-char* Brd_GetParamCode();
-char* Brd_GetTechCode();
-char* Brd_GetDPMode();
 RTC_t Brd_GetRTC();
 
 void Brd_PrintAllParameter();
@@ -123,7 +96,7 @@ esp_err_t Brd_WriteParamToFlash();
 esp_err_t Brd_ReadParamFromFlash();
 
 
-uint32_t Brd_GetParamInt(ParamIndex index);
+uint32_t Brd_GetParamIntValue(ParamIndex index);
 
 /**
  * @brief Set value of integer for parameter

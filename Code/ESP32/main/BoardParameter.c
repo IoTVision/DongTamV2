@@ -38,114 +38,88 @@ char *Brd_NVS_Key[] = {
 };
 
 uint16_t paramMaxLimit[] = {
-        // nothing
-        0,
-        //total
-        16,
-        //down cyc
-        32,
-        //clean mode
-        5,
-        //test mode
-        7,
-        //contrast
-        200, 
-        //dp low
-        4000,
-        //dp high
-        4000,
-        //warn
-        5000,
-        //odc high
-        4000,
-        //odc low
-        4000,
-        //pulse
-        300,
-        //interval
-        500,
-        //cyc
-        100,
-        //oper h
-        25000,
-        //serv run
-        25000,
-        //serv alarm
-        25000,
+    0,// nothing
+    16,//total
+    32,//down cyc
+    5,//clean mode
+    7,//test mode
+    200, //contrast
+    4000,//dp low
+    4000,//dp high
+    5000,//warn
+    4000,//odc high
+    4000,//odc low
+    300,//pulse
+    500,//interval
+    100,//cyc
+    25000,//oper h
+    25000,//serv run
+    25000,//serv alarm
 };
 
 uint16_t paramMinLimit[] ={
-        // nothing
-        0,
-        //total
-        0,
-        //down cyc
-        0,
-        //clean mode
-        1,
-        //test mode
-        0,
-        //contrast
-        10,
-        //dp low
-        250,
-        //dp high
-        250,
-        //warn
-        300,
-        //odc high
-        250,
-        //odc low
-        250,
-        //pulse
-        30,
-        //interval
-        4,
-        //cyc
-        2,
-        //oper h
-        0,
-        //serv run
-        0,
-        //serv alarm
-        0,
+    0,// nothing
+    0,//total
+    0,//down cyc
+    1,//clean mode
+    0,//test mode
+    10,//contrast
+    250,//dp low
+    250,//dp high
+    300,//dp warn
+    250,//odc high
+    250,//odc low
+    30,//pulse time
+    4,//interval time
+    2,//cyc time
+    0,//oper h
+    0,//serv run
+    0,//serv alarm
 };
 
 uint16_t paramValInt[]= {
-        // Nothing
-        0,
-        //total
-        0,
-        //down cyc
-        6,
-        // clean mode
-        3,
-        // test mode
-        3,
-        // contrast
-        50,
-        //dp low
-        700,
-        //dp high
-        1300,
-        //warn
-        2300,
-        //odc high
-        1000,
-        //odc low
-        250,
-        //pulse
-        60,
-        //interval
-        10,
-        //cyc
-        6,
-        //oper h
-        0,
-        // serv run
-        3000,
-        // serv alarm
-        0,
+    0,// Nothing
+    0,//total
+    6,//down cyc
+    3,// clean mode
+    3,// test mode
+    50,// contrast
+    700,//dp low
+    1300,//dp high
+    2300,//warn
+    1000,//odc high
+    250,//odc low
+    60,//pulse
+    10,//interval
+    6,//cyc
+    0,//oper h
+    3000,// serv run
+    0,// serv alarm
+};
+
+/**
+ * @brief Khi nhấn nút UP, DOWN trên màn hình thì giá trị thông số sẽ tăng và giảm
+ * paramStepChange là các nấc thay đổi giá trị của thông số tương ứng
+ * 
+ */
+const uint32_t paramStepChange[] = {
+    0, // nothing
+    1, // total
+    1, // down cyc
+    1, // clean mode
+    1, // test mode
+    5, //constrast
+    50,//dp low
+    50,//dp high
+    50,//dp warn
+    50, //odc high
+    50, //odc low
+    10,//pulse time
+    2, //interval time
+    1, //cycle time
+    100, //operate hours
+    100, //serv run
+    100, //serv run alarm
 };
 
 const char* paramValString[]={
@@ -302,7 +276,7 @@ esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr){
         return ESP_ERR_INVALID_ARG; 
 }
 
-uint32_t Brd_GetParamInt(ParamIndex index)
+uint32_t Brd_GetParamIntValue(ParamIndex index)
 {
         if(index >= INDEX_TOTAL_VAN && index <= INDEX_SERV_RUN_HOURS_ALARM){
             switch (index)
@@ -450,7 +424,7 @@ char* Brd_GetParamString(ParamIndex index)
 void Brd_PrintAllParameter()
 {
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){
-		ESP_LOGI("brdParamPrint","%s[%d]:%lu",Brd_NVS_Key[i],i,Brd_GetParamInt(i));
+		ESP_LOGI("brdParamPrint","%s[%d]:%lu",Brd_NVS_Key[i],i,Brd_GetParamIntValue(i));
 	}
     for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE; i++){
 		ESP_LOGI("brdParamPrint","[%d]:%s",i,Brd_GetParamString(i));
@@ -475,7 +449,7 @@ esp_err_t Brd_WriteParamToFlash(){
 
 esp_err_t Brd_ReadParamFromFlash()
 {
-        esp_err_t err;
+    esp_err_t err;
     err = nvs_open("Board", NVS_READONLY, &brdNVS_Storage);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -487,8 +461,8 @@ esp_err_t Brd_ReadParamFromFlash()
         err = nvs_get_blob(brdNVS_Storage,"Parameter",&brdParam,&sz);
         if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
     }
-	ESP_LOGI("BoardReadFlash","Read success");
     nvs_close(brdNVS_Storage);
+	ESP_LOGI("BoardReadFlash","Read success");
     return err;
 
 }
@@ -542,30 +516,9 @@ void Brd_LoadDefaultValue()
 RTC_t Brd_GetRTC(){return brdParam.RTCtime;}
 
 
-uint8_t Brd_GetTotalVan(){return brdParam.totalVan;}
-uint8_t Brd_GetDownTimeCycle(){return brdParam.downTimeCycle;}
-uint8_t Brd_GetCleanMode(){return brdParam.cleanMode;}
-uint8_t Brd_GetContrast(){return brdParam.contrast;}
-uint8_t Brd_GetTestMode(){return brdParam.testMode;}
 
-uint16_t Brd_ParamGetMaxLimit(uint8_t index){return paramMaxLimit[index];}
-uint16_t Brd_ParamGetMinLimit(uint8_t index){return paramMinLimit[index];}
-uint16_t Brd_ParamGetValueInt(uint8_t index){return paramValInt[index];}
-uint16_t Brd_GetDPHigh(){return brdParam.dpHigh;}
-uint16_t Brd_GetDPLow(){return brdParam.dpLow;}
-uint16_t Brd_GetDPWarn(){return brdParam.dpWarn;}
-uint16_t Brd_GetODCLow(){return brdParam.odcLow;}
-uint16_t Brd_GetODCHigh(){return brdParam.odcHigh;}
-uint16_t Brd_GetPulseTime(){return brdParam.pulseTime;}
-uint16_t Brd_GetIntervalTime(){return brdParam.intervalTime;}
-uint16_t Brd_GetCycleIntervalTime(){return brdParam.cycIntvTime;}
-uint16_t Brd_GetServiceRunHours(){return brdParam.servRunHours;}
-uint16_t Brd_GetServiceAlarm(){return brdParam.servAlarm;}
 
-const char* Brd_ParamGetValueString(uint8_t index){return paramValString[index];}
-const char* Brd_GetParamText(uint8_t index){return paramText[index];}
-char* Brd_GetLanguage(){return brdParam.language;}
-char* Brd_GetDisplayRange(){return brdParam.disRange;}
-char* Brd_GetParamCode(){return brdParam.paramCode;}
-char* Brd_GetTechCode(){return brdParam.techCode;}
-char* Brd_GetDPMode(){return brdParam.dpMode;}
+uint16_t Brd_GetMaxLimit(uint8_t index){return paramMaxLimit[index];}
+uint16_t Brd_GetMinLimit(uint8_t index){return paramMinLimit[index];}
+uint32_t Brd_GetParamStepChange(uint8_t index){return paramStepChange[index];}
+

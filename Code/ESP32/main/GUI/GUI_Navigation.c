@@ -26,8 +26,8 @@ static inline void NextPage(){
  * 
  */
 static inline void PointToNextParam(){
-    xEventGroupClearBits(evgGUI,EVT_PARAM_SCOLL_UP);
-    uint8_t paramNO = GUINAV_GetParamNum();
+    xEventGroupClearBits(evgGUI,EVT_PARAM_SCROLL_UP);
+    ParamIndex paramNO = GUINAV_GetOrderToDisplayIndex();
     int8_t pY = (int8_t) GUINAV_GetPointerPosY();
     paramNO ++;
     if(paramNO == INDEX_END_PARAM) return;
@@ -35,7 +35,7 @@ static inline void PointToNextParam(){
     // if param reach the end of the list, keep the same value
     // not roll back pointer, keep it at the latest row
     if(pY == LCD_ROWS - 1) {
-        xEventGroupSetBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
+        xEventGroupSetBits(evgGUI,EVT_PARAM_SCROLL_DOWN);
         return;
     } else pY++;
     guiNav.pY = (uint8_t)pY;
@@ -47,15 +47,15 @@ static inline void PointToNextParam(){
  * 
  */
 static inline void PointToPrevParam(){
-    xEventGroupClearBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
-    uint8_t paramNO = GUINAV_GetParamNum();
+    xEventGroupClearBits(evgGUI,EVT_PARAM_SCROLL_DOWN);
+    uint8_t paramNO = GUINAV_GetOrderToDisplayIndex();
     int pY = (int) GUINAV_GetPointerPosY();
     paramNO --;
     if(paramNO == INDEX_START_PARAM) return;
     guiNav.param = paramNO;
     // if param reach the start of the list, keep the same value
     if(!pY) {
-        xEventGroupSetBits(evgGUI,EVT_PARAM_SCOLL_DOWN);
+        xEventGroupSetBits(evgGUI,EVT_PARAM_SCROLL_UP);
         return;
     } else pY--;
     guiNav.pY = (uint8_t)pY;
@@ -115,6 +115,6 @@ void GUINAV_GetEvent(EventBits_t e)
 
 uint8_t GUINAV_GetCurrentSelected(){return guiNav.pNow;} 
 uint8_t GUINAV_GetPage(){return guiNav.page;}
-uint8_t GUINAV_GetParamNum(){return guiNav.param;} 
+ParamIndex GUINAV_GetOrderToDisplayIndex(){return guiNav.param;} 
 uint8_t GUINAV_GetPointerPosX(){return guiNav.pX;}
 uint8_t GUINAV_GetPointerPosY(){return guiNav.pY;} 
