@@ -52,11 +52,13 @@ typedef enum {
 
 typedef struct BoardParameter
 {
+    //Handle with integer, no unit
     uint8_t totalVan;
     uint8_t downTimeCycle;
     uint8_t cleanMode;
     uint8_t contrast;
     uint8_t testMode;
+    //Handle with integer, have unit
     uint16_t dpHigh;
     uint16_t dpLow;
     uint16_t dpWarn;
@@ -68,11 +70,12 @@ typedef struct BoardParameter
 	uint16_t operateHours;
     uint16_t servRunHours;
     uint16_t servAlarm;
-    char *language;
-    char *disRange;
-    char *paramCode;
-    char *techCode;
-    char *dpMode;
+    //Handle with string, no unit
+    uint8_t language;
+    uint8_t disRange;
+    uint8_t paramCode;
+    uint8_t techCode;
+    uint8_t dpMode;
     float pressure;
     RTC_t RTCtime;
 }BoardParameter;
@@ -87,7 +90,6 @@ uint32_t Brd_GetParamStepChange(uint8_t index);
 
 
 const char* Brd_GetUnit(uint8_t index);
-char* Brd_GetParamString(ParamIndex index);
 RTC_t Brd_GetRTC();
 
 void Brd_PrintAllParameter();
@@ -96,7 +98,6 @@ esp_err_t Brd_WriteParamToFlash();
 esp_err_t Brd_ReadParamFromFlash();
 
 
-uint32_t Brd_GetParamIntValue(ParamIndex index);
 
 /**
  * @brief Cài giá trị integer cho thông số 
@@ -107,14 +108,18 @@ uint32_t Brd_GetParamIntValue(ParamIndex index);
  * @return esp_err_t 
  */
 esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr);
+uint32_t Brd_GetParamIntValue(ParamIndex index);
 
 /**
  * @brief Cài đặt các thông số sử dụng giá trị là kiểu string
  * 
  * @param index thứ tự thông số trong BoardParameter
- * @param indexStringValue 
+ * @param stringValueIndex thứ tự(index) trong paramValString
+ * Ví dụ "Eng" có thứ tự là 3 -> stringValueIndex = 3
  * @param outputStr 
  * @return esp_err_t 
  */
-esp_err_t Brd_SetParamString(ParamIndex index,uint8_t indexStringValue, char *outputStr);
+esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *stringValueIndex, char *outputStr);
+uint8_t Brd_GetParamStringValueIndex(ParamIndex index);
+char* Brd_ConvertStringValueIndexToString(uint8_t stringValueIndex);
 #endif

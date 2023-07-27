@@ -30,8 +30,8 @@ const char *paramText[]={
     "DP-Low    :",
     "DP-High   :",
     "DP-Alarm  :",
-    "OCD High  :",
-    "OCD Low   :",
+    "ODC High  :",
+    "ODC Low   :",
     "Pulse Time:",
     "Inter Time:",
     "Cycle Time:",
@@ -137,6 +137,23 @@ void GUI_ShowValueString()
 {
     ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
     if(paramNO < INDEX_STRING_PARAM_OFFSET) return;
+    uint8_t pY = GUINAV_GetPointerPosY();
+    uint8_t pX = GUINAV_GetPointerPosX();
+    uint32_t stepChange = Brd_GetParamStepChange(paramNO);
+    uint8_t valueStringIndex = Brd_GetParamStringValueIndex(paramNO);
+    char s[10] = {0};
+    // Remove old valueString
+    strncpy(s," ",strlen(Brd_ConvertStringValueIndexToString(valueStringIndex)));
+    ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+    // Waiting for event increase and decrease value 
+    EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
+    EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
+    if(CHECKFLAG(e,EVT_INCREASE_VALUE)) valueStringIndex +=stepChange;
+    if(CHECKFLAG(e,EVT_DECREASE_VALUE)) valueStringIndex -=stepChange;
+    Brd_SetParamStringValueIndex(paramNO,&valueStringIndex,NULL);
+    ESP_LOGW("ShowValueString","stepChange:%lu,valStrIdx:%u,strConv:%s",stepChange,valueStringIndex,Brd_ConvertStringValueIndexToString(valueStringIndex));
+    strcpy(s,Brd_ConvertStringValueIndexToString(valueStringIndex));
+    ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
 }
 
 /**
@@ -145,27 +162,27 @@ void GUI_ShowValueString()
  */
 void GUI_ShowValueInt()
 {
-        ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
-        if(paramNO >= INDEX_STRING_PARAM_OFFSET) return;
-        uint8_t pY = GUINAV_GetPointerPosY();
-        uint8_t pX = GUINAV_GetPointerPosX();
-        uint32_t stepChange = Brd_GetParamStepChange(paramNO);
-        uint16_t valLowLimit = Brd_GetMinLimit(paramNO);
-        uint16_t valHighLimit = Brd_GetMaxLimit(paramNO);
-        uint32_t value = Brd_GetParamIntValue(paramNO);
-        char s[8]={0};
-        // Clear previous value
-        memset(s,(int)" ",(size_t)CountLengthPreviousValue(value));
-        ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-        // Waiting for event increase and decrease value 
-        EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
-        EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
-        if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=stepChange;
-        if(CHECKFLAG(e,EVT_DECREASE_VALUE)) value -=stepChange;
-        sprintf(s,"%lu",value);
-        ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
-        CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
-        Brd_SetParamInt(paramNO,value,NULL);
+    ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
+    if(paramNO >= INDEX_STRING_PARAM_OFFSET) return;
+    uint8_t pY = GUINAV_GetPointerPosY();
+    uint8_t pX = GUINAV_GetPointerPosX();
+    uint32_t stepChange = Brd_GetParamStepChange(paramNO);
+    uint16_t valLowLimit = Brd_GetMinLimit(paramNO);
+    uint16_t valHighLimit = Brd_GetMaxLimit(paramNO);
+    uint32_t value = Brd_GetParamIntValue(paramNO);
+    char s[8]={0};
+    // Clear previous value
+    memset(s,(int)" ",(size_t)CountLengthPreviousValue(value));
+    ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+    // Waiting for event increase and decrease value 
+    EventBits_t BitToWait = EVT_INCREASE_VALUE|EVT_DECREASE_VALUE ;
+    EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
+    if(CHECKFLAG(e,EVT_INCREASE_VALUE)) value +=stepChange;
+    if(CHECKFLAG(e,EVT_DECREASE_VALUE)) value -=stepChange;
+    sprintf(s,"%lu",value);
+    ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
+    CheckValueIsLimit(&value,valLowLimit,valHighLimit,&evgGUI);
+    Brd_SetParamInt(paramNO,value,NULL);
 }
 
 void GUI_ScrollUpDown(uint8_t paramNO)
@@ -185,7 +202,6 @@ void GUI_ScrollUpDown(uint8_t paramNO)
         // }
         GUI_LoadPage();
     }// if current pointer pointed to the first row and param is not the first param
-   
 }
 
 void GUI_LCD_DeletePreviousValue(char *strToPrint,uint8_t lengthOfValue)
@@ -287,7 +303,7 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
     if(!strlen(unit)) {
         // handle string value
         if(index > INDEX_STRING_PARAM_OFFSET && index <= INDEX_DP_MODE){
-            if(Brd_GetParamString(index)) sprintf(StringValue,"%s",Brd_GetParamString(index));
+            if(Brd_GetParamStringValueIndex(index)) sprintf(StringValue,"%s",Brd_ConvertStringValueIndexToString(Brd_GetParamStringValueIndex(index)));
             else ESP_LOGE("PrintParam","No string found ");
         }
         // handle int value non unit
