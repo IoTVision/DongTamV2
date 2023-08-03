@@ -8,18 +8,20 @@ uint8_t PI_HandlePressureFromUART();
 
 const char* strRxKey[] = {
 	// Receive message
-	"DoNothing",
+	" ",//START_INT_VALUE
 	"VanState",
-	"P",
 	"TotalVan",
-	"PulseTime",
-	"IntervalTime",
 	"dpHigh",
 	"dpLow",
 	"dpWarn",
+	"PulseTime",
+	"IntervalTime",
+	"CycleIntervalTime",
 	"ReadFlash",
 	"SaveFlash",
-	"CycleIntervalTime",
+	" ",//START_FLOAT_VALUE
+	"P",
+	" ",//START_TIME_FORMAT
 	"Time: ",
 };
 
@@ -30,6 +32,7 @@ const char* strTxKey[] = {
 	// Transmit message
 	"DoNothing",
 	"SetVan: ",
+	"SetMultiVan",
 	"ClearVan: ",
 	"SetPulseTime: ",
 	"SetTotalVan: ",
@@ -40,7 +43,7 @@ const char* strTxKey[] = {
 	"GetTime: ",
 };
 
-/**
+/**	
  * @brief Xử lý chuỗi nhận được, so sánh với các chuỗi đã có trong strRxKey
  * @param inputStr chuỗi cần xử lý
  * @param outputStr chuỗi trả về để thông báo kết quả xử lý
@@ -65,15 +68,19 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
 	uint32_t val=0;
+	float pVal=0;
 	uint8_t itemConverted = 0;
-	if(mesgValRX >= RX_VANSTATE && mesgValRX <= RX_CYC_INTV_TIME){
+	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_FLOAT_VALUE){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
-		ESP_LOGI("GetVal","val:%lu,mesg:%d",val,mesgValRX);
-		// check if value can be obtained from string
-		if(itemConverted != 1) {
-			strcpy(outputStr,"--->Cannot parse value\n");
-			return ESP_ERR_INVALID_ARG;
-		}
+		ESP_LOGI("GetValInt","val:%lu,mesg:%d",val,mesgValRX);	
+	} else if (mesgValRX > RX_START_FLOAT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
+		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_FLOAT,&pVal);
+		ESP_LOGI("GetValFloat","pVal:%.2f,mesg:%d",pVal,mesgValRX);	
+	}
+	// check if value can be obtained from string
+	if(itemConverted != 1) {
+		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+		return ESP_ERR_INVALID_ARG;
 	}
 	switch (mesgValRX)
 	{
@@ -111,9 +118,8 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	break;
 	case RX_TIME:
 	break;
-	case RX_PRESSURE:
-	PI_HandlePressureFromUART(val);
-	PI_SetLevel(PI_HandlePressureFromUART(val));
+	case RX_PRESSURE: 
+	PI_SetLevel(PI_HandlePressureFromUART(pVal));
 	break;
 	case RX_READ_FLASH:
 	if(val) {
@@ -150,7 +156,7 @@ uint8_t PI_HandlePressureFromUART(uint32_t val)
 			a += dpStep;
 		}
 		if(a > dpHigh) return i;
-		else if(a<dpLow) return 1;
+		else if(a < dpLow) return 1;
 	} 
 	return 1;
 }

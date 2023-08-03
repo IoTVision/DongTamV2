@@ -24,9 +24,10 @@ void InitProcess();
 esp_err_t TestFlashNVS();
 
 /**
- * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ nên sử dụng hàm uart_write_bytes để gửi,
+ * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ, ảnh hưởng đến tốc độ chạy của task nên gửi sang task IDLE để 
+ * giảm thiểu xử lý, sử dụng hàm uart_write_bytes để gửi,
  * Item trong Queue qLogTx là một con trỏ char* trỏ tới chuỗi cần gửi lên máy tính, 
- * sau đó free bộ nhớ mà con trỏ char* đó trỏ tớiv bnv    
+ * sau đó free bộ nhớ mà con trỏ char* đó trỏ tới 
  * 
  */
 void app_main(void)

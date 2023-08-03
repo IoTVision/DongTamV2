@@ -27,17 +27,20 @@ typedef enum MesgValTX{
 
 
 typedef enum MesgValRX{
+	RX_START_INT_VALUE,//mark from this to below will get integer value
 	RX_VANSTATE = 1,
-	RX_PRESSURE,
 	RX_TOTAL_VAN,
-	RX_PULSE_TIME,
-	RX_INTERVAL_TIME,
 	RX_DP_HIGH,
 	RX_DP_LOW,
 	RX_DP_WARN,
+	RX_PULSE_TIME,
+	RX_INTERVAL_TIME,
+	RX_CYC_INTV_TIME,
 	RX_READ_FLASH,
 	RX_SAVE_FLASH,
-	RX_CYC_INTV_TIME,
+	RX_START_FLOAT_VALUE,//mark from this to below will get float value
+	RX_PRESSURE,
+	RX_START_TIME_FORMAT,//mark from this to below will get time format
 	RX_TIME,
 }MesgValRX;
 
