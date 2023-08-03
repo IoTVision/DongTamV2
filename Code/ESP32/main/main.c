@@ -42,9 +42,8 @@ void app_main(void)
 }
 
 /**
- * @brief Task dùng để phản hồi lại(echo) chuỗi nhận được từ máy tính(UART 0) 
- * hoặc nhận chuỗi từ STM32(UART 2), sau đó gửi lên UART 0 về máy tính, 
- * dùng để debug 
+ * @brief Task xử lý chuỗi từ bên file UART.c gửi sang thông qua qUARTHandle,
+ * các thao tác xử lý chuỗi sẽ thực hiện tại đây 
  * 
  * @param pvParameter Không dùng
  */
@@ -55,7 +54,8 @@ void UartHandleString(void *pvParameter)
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
             ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-            SendStringToUART(qLogTx,s);
+            MessageRxHandle(s,NULL);
+            // SendStringToUART(qLogTx,s);
             free(s);
         }
     }

@@ -27,18 +27,18 @@ typedef enum MesgValTX{
 
 
 typedef enum MesgValRX{
-	RX_VAN = 1,
-	RX_VANSTATE,
+	RX_VANSTATE = 1,
+	RX_PRESSURE,
 	RX_TOTAL_VAN,
 	RX_PULSE_TIME,
-	RX_CYC_INTV_TIME,
-	RX_CYCLE_TIME,
+	RX_INTERVAL_TIME,
 	RX_DP_HIGH,
 	RX_DP_LOW,
 	RX_DP_WARN,
-	RX_INTERVAL_TIME,
+	RX_READ_FLASH,
+	RX_SAVE_FLASH,
+	RX_CYC_INTV_TIME,
 	RX_TIME,
-	RX_PRESSURE,
 }MesgValRX;
 
 
@@ -52,7 +52,8 @@ typedef enum MesgValRX{
 typedef esp_err_t (*pValueHandle)(void *pvParameter);
 
 esp_err_t MessageRxHandle(char *inputStr, char* outputStr);
-esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
+esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
+// esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
 
 
 #endif /* INC_MESSAGEHANDLE_H_ */

@@ -371,11 +371,9 @@ esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *indexStringValu
                 for(uint8_t i = 0; i < sizeof(paramValString);i++){
                     if(!strcmp(start,paramValString[i])){
                         startIndex = i;
-                        ESP_LOGI("StartIndex","%u",startIndex);
                     }
                     if(!strcmp(end,paramValString[i])){
                         endIndex = i;
-                        ESP_LOGI("EndIndex","%u",endIndex);
                         break;
                     }
                 }
@@ -500,7 +498,11 @@ esp_err_t Brd_ReadParamFromFlash()
 void Brd_LoadDefaultValue()
 {
 	esp_err_t err = ESP_OK;
-	uint32_t valArray[] = {
+    if(Brd_ReadParamFromFlash() != ESP_OK){
+        ESP_LOGW("LoadParam","This board does not have parameters store in Flash, load default value in factory setup");
+    } 
+    else return ;
+	const uint32_t valArray[] = {
         0,//nothing, it is the begin of param
 		10,
 		8,
@@ -508,25 +510,25 @@ void Brd_LoadDefaultValue()
 		6,
 		55,
         // unit is Pa
-		550,
-		1210,
+		1000,
+		1500,
+		3000,
+		2050,
 		2250,
-		2080,
-		2240,
-		160,
+		150,
 		400,
 		6,
 		18000,
 		18650,
 		24540,
 	};
-	uint8_t valueStr[]={
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
+	const uint8_t valueStr[]={
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
     };
 	char s[50];
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){

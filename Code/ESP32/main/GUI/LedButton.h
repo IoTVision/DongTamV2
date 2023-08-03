@@ -18,4 +18,6 @@
 #define BT2_MASK (1ULL<<GPIO_NUM_39)
 #define BT3_MASK (1ULL<<GPIO_NUM_34)
 #define BT4_MASK (1ULL<<GPIO_NUM_35)
+void LedErrorWrite(bool ledState);
+void LedStatusWrite(bool ledState);
 #endif

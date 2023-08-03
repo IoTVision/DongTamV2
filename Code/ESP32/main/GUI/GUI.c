@@ -26,6 +26,7 @@ const char *paramText[]={
     "Total Van :",
     "Down T Cyc:",
     "Clean Mode:",
+    "TestMode  :",
     "Contrast  :",
     "DP-Low    :",
     "DP-High   :",
@@ -151,7 +152,6 @@ void GUI_ShowValueString()
     if(CHECKFLAG(e,EVT_INCREASE_VALUE)) valueStringIndex +=stepChange;
     if(CHECKFLAG(e,EVT_DECREASE_VALUE)) valueStringIndex -=stepChange;
     Brd_SetParamStringValueIndex(paramNO,&valueStringIndex,NULL);
-    ESP_LOGW("ShowValueString","stepChange:%lu,valStrIdx:%u,strConv:%s",stepChange,valueStringIndex,Brd_ConvertStringValueIndexToString(valueStringIndex));
     strcpy(s,Brd_ConvertStringValueIndexToString(valueStringIndex));
     ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
 }
@@ -188,6 +188,7 @@ void GUI_ShowValueInt()
 void GUI_ScrollUpDown(uint8_t paramNO)
 {
     EventBits_t e = xEventGroupGetBits(evgGUI);
+    // ParamIndex paramNO = orderToDisplay[GUINAV_GetOrderToDisplayIndex()];
     if((CHECKFLAG(e,EVT_PARAM_SCROLL_UP))){
         for(int8_t i = 0; i < LCD_ROWS ;i++) {
             // GUI_GetParam(param+i,paramNO + i);

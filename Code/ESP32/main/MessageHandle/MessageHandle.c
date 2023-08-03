@@ -1,20 +1,25 @@
 #include "MessageHandle.h"
 #include "RTC_Format.h"
+#include "../GUI/PressureIndicator.h"
+#include "../GUI/LedButton.h"
+#include "../BoardParameter.h"
 
+uint8_t PI_HandlePressureFromUART();
 
 const char* strRxKey[] = {
 	// Receive message
 	"DoNothing",
-	"Van",
 	"VanState",
-	"Pressure",
+	"P",
 	"TotalVan",
 	"PulseTime",
 	"IntervalTime",
+	"dpHigh",
+	"dpLow",
+	"dpWarn",
+	"ReadFlash",
+	"SaveFlash",
 	"CycleIntervalTime",
-	"DP-High",
-	"DP-Low",
-	"DP-Warn",
 	"Time: ",
 };
 
@@ -35,23 +40,35 @@ const char* strTxKey[] = {
 	"GetTime: ",
 };
 
-// esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
-// {
-// 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
-// 	for(uint8_t i=0;i < indexKey;i++){
-// 		if(strstr(inputStr,strRxKey[i]))
-// 			return MesgGetValue(i,inputStr,outputStr);
-// 	}
-// 	return ESP_OK;
-// }
+/**
+ * @brief Xử lý chuỗi nhận được, so sánh với các chuỗi đã có trong strRxKey
+ * @param inputStr chuỗi cần xử lý
+ * @param outputStr chuỗi trả về để thông báo kết quả xử lý
+ * @return HAL_OK nếu xử lý thành công, HAL_ERROR nếu có lỗi xảy ra
+ */
+esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
+{
+	ESP_LOGI("RxHandle","PassHere");
+	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
+	for(uint8_t i=1;i < indexKey;i++){
+		if(strstr(inputStr,strRxKey[i])){
+			ESP_LOGI("RxHandle","i:%u",i);
+			return MesgGetValue(i,inputStr,outputStr);
+		}
+	}
+	return ESP_OK;
+}
+
+
 
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
-	uint32_t val;
+	uint32_t val=0;
 	uint8_t itemConverted = 0;
-	if(mesgValRX >= RX_VAN && mesgValRX <= RX_INTERVAL_TIME){
+	if(mesgValRX >= RX_VANSTATE && mesgValRX <= RX_CYC_INTV_TIME){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
+		ESP_LOGI("GetVal","val:%lu,mesg:%d",val,mesgValRX);
 		// check if value can be obtained from string
 		if(itemConverted != 1) {
 			strcpy(outputStr,"--->Cannot parse value\n");
@@ -60,32 +77,80 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	}
 	switch (mesgValRX)
 	{
-	case RX_VAN:
-	break;
 	case RX_VANSTATE:
+	if(!val) {
+		LedErrorWrite(1);
+		LedStatusWrite(0);
+		HC595_ShiftOut(NULL,2,1);
+	}
+	else {
+		LedErrorWrite(0);
+		LedStatusWrite(1);
+		HC595_ShiftOut(NULL,2,1);
+	}
 	break;
 	case RX_TOTAL_VAN:
+	Brd_SetParamInt(INDEX_TOTAL_VAN,val,NULL);
 	break;
 	case RX_PULSE_TIME:
+	Brd_SetParamInt(INDEX_PULSE_TIME,val,NULL);
 	break;
 	case RX_CYC_INTV_TIME:
-	break;
-	case RX_CYCLE_TIME:
+	Brd_SetParamInt(INDEX_CYCLE_INTERVAL_TIME,val,NULL);
 	break;
 	case RX_DP_HIGH:
+	Brd_SetParamInt(INDEX_DP_HIGH,val,NULL);
 	break;
 	case RX_DP_LOW:
+	Brd_SetParamInt(INDEX_DP_LOW,val,NULL);
 	break;
 	case RX_DP_WARN:
+	Brd_SetParamInt(INDEX_DP_WARN,val,NULL);
 	break;
 	case RX_INTERVAL_TIME:
 	break;
 	case RX_TIME:
 	break;
 	case RX_PRESSURE:
+	PI_HandlePressureFromUART(val);
+	PI_SetLevel(PI_HandlePressureFromUART(val));
+	break;
+	case RX_READ_FLASH:
+	if(val) {
+		Brd_ReadParamFromFlash();
+		Brd_PrintAllParameter();
+	}
+	break;
+	case RX_SAVE_FLASH:
+	if(val) {
+		esp_err_t err = ESP_OK;
+		err = Brd_WriteParamToFlash();
+		if(err != ESP_OK) ESP_LOGE("GetVal","err:%d",err);
+		else ESP_LOGI("GetVal","err:%d",err);
+	}
+	else ESP_LOGI("GetVal","Are you kidding me?");
 	break;
 	default:
 		break;
 	}
 	return ESP_ERR_INVALID_ARG;
+}
+
+
+uint8_t PI_HandlePressureFromUART(uint32_t val)
+{
+	uint32_t dpHigh = Brd_GetParamIntValue(INDEX_DP_HIGH);
+	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);
+	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
+	uint32_t a = dpLow + dpStep;
+	for(uint8_t i=1; i <= 10;i++){
+		if(a > val){
+			return i; // return level of pressure indicator
+		} else {
+			a += dpStep;
+		}
+		if(a > dpHigh) return i;
+		else if(a<dpLow) return 1;
+	} 
+	return 1;
 }
