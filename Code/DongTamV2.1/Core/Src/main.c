@@ -25,14 +25,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-#include "74HC595.h"
-#include "74HC165.h"
-#include "PCF8563.h"
-#include "string.h"
-#include "AMS5915.h"
-#include "Flag.h"
-#include "cJSON.h"
-#include "ShareVar.h"
+#include "BoardParameter.h"
+#include "MessageHandle.h"
 
 /* USER CODE END Includes */
 
@@ -54,45 +48,48 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart3_rx;
 
-///* USER CODE BEGIN PV */
+/* USER CODE BEGIN PV */
 
-cJSON *cjsCommon;
-FlagGroup_t fUART,f1 = 0,fJS;
+FlagGroup_t fUART,fMesg,f1;
 int SetVan,ClearVan;
 char uartEsp32Buffer[MAX_MESSAGE],uartLogBuffer[MAX_MESSAGE];
 uint16_t uartEsp32RxSize,uartLogRxSize;
-BoarParam brdParam;
 UART_HandleTypeDef *uartTarget;
-float p;
+char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
+MesgValRX mesgRxRet;
+uint16_t timerArray[2];
+char outputStr[50];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
-void GetUartMessage();
-void PackageMessage(cJSON *cjs);
-void UnpackMessage(cJSON *cjs);
 void ProcedureVan();
+HAL_StatusTypeDef GetUartMessage(char *outputStr);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+const char *TAG = "MAIN";
+
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	if(hi2c->Instance == I2C1){
+
 	}
 }
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
@@ -109,6 +106,38 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 }
 
 
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim->Instance == TIM2){
+		VanProcedure state = Brd_GetVanProcState();
+		uint32_t tArray;
+		switch(state){
+			case BRD_PULSE_TIME:
+				tArray = Brd_GetTimerArray(0);
+				tArray++;
+				Brd_SetTimerArray(0, tArray);
+			break;
+			case BRD_INTERVAL_TIME:
+				tArray = Brd_GetTimerArray(1);
+				tArray++;
+				Brd_SetTimerArray(1, tArray);
+			break;
+			case BRD_CYCLE_INTERVAL_TIME:
+//				tArray = Brd_GetTimerArray(2);
+//				tArray++;
+//				Brd_SetTimerArray(2, tArray);
+			break;
+			default:
+
+			break;
+		}
+	}
+}
+
+
+
+extern BoardParameter brdParam;
 /* USER CODE END 0 */
 
 /**
@@ -124,8 +153,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-
-	HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -141,24 +169,45 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_I2C1_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
+  MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(1000);
   SetUp();
-  cjsCommon = cJSON_CreateObject();
   HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
+  HAL_TIM_Base_Start_IT(&htim2);
+  uartTarget = &huart3;
+  while(!uartTarget);
+  brdParam.cycIntvTime = 2;
+  brdParam.intervalTime = 10;
+  brdParam.pulseTime = 60;
+  Brd_SetTotalVan(2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  GetUartMessage();
-	  UnpackMessage(cjsCommon);
-	  PackageMessage(cjsCommon);
-	  ProcedureVan();
+	  if(!GetUartMessage(mesgRX)){
+		  mesgRxRet = MessageRxHandle(mesgRX,mesgTX);
+		  if((HAL_StatusTypeDef)mesgRxRet != HAL_OK) {
+			  HAL_UART_Transmit(uartTarget,(uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
+			  char *s = "Invalid message, do nothing\n";
+			  HAL_UART_Transmit(uartTarget,(uint8_t*) s, strlen(s), HAL_MAX_DELAY);
+		  }
+		  else HAL_UART_Transmit(uartTarget, (uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
+	  }
+	  ProcedureTriggerVan(outputStr);
+	  if(Brd_GetVanProcState() == BRD_PULSE_TIME){
+		  // log pressure
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+	  }
+	  if(Brd_GetVanProcState() == BRD_INTERVAL_TIME && Brd_GetHC165State()){
+		  // log VanState
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+		  Brd_SetHC165State(false);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -178,13 +227,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -194,12 +240,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -239,7 +285,50 @@ static void MX_I2C1_Init(void)
 
 }
 
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
 
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 8-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10000-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
 
 /**
   * @brief USART1 Initialization Function
@@ -336,7 +425,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -345,53 +433,21 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, _74HC595_CLK_Pin|_74HC595_DATA_Pin|_74HC165_LOAD_Pin|OE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, _74HC595_STORE_Pin|UserLED_Pin|_74HC165_CLK_Pin
-                          |GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, _74HC595_STORE_Pin|UserLED_Pin|_74HC165_CLK_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC13 PC14 PC15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA0 PA4 PA6 PA8
-                           PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8
-                          |GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : _74HC595_CLK_Pin _74HC595_DATA_Pin */
-  GPIO_InitStruct.Pin = _74HC595_CLK_Pin|_74HC595_DATA_Pin;
+  /*Configure GPIO pins : _74HC595_CLK_Pin _74HC595_DATA_Pin _74HC165_LOAD_Pin OE_Pin */
+  GPIO_InitStruct.Pin = _74HC595_CLK_Pin|_74HC595_DATA_Pin|_74HC165_LOAD_Pin|OE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : _74HC595_STORE_Pin LED_Pin MCP41010_CS_Pin _74HC165_CLK_Pin */
+  /*Configure GPIO pins : _74HC595_STORE_Pin UserLED_Pin _74HC165_CLK_Pin */
   GPIO_InitStruct.Pin = _74HC595_STORE_Pin|UserLED_Pin|_74HC165_CLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB2 PB14 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_14|GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : _74HC165_LOAD_Pin */
-  GPIO_InitStruct.Pin = _74HC165_LOAD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(_74HC165_LOAD_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : OE_Pin */
-  GPIO_InitStruct.Pin = OE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(OE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : _74HC165_DATA_Pin */
   GPIO_InitStruct.Pin = _74HC165_DATA_Pin;
@@ -399,72 +455,36 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(_74HC165_DATA_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
 
 
 
-void ProcedureVan(){
-	static uint32_t delayAfterVanOn = 0;
-	// turn on valve
-	if(CHECKFLAG(f1, FLAG_TRIG_VAN_PROCEDURE)){
-		if(!CHECKFLAG(f1,FLAG_AFTER_TRIG_VAN_ON)){
-			HC595_ShiftOut(NULL, 2, 1);
-			SETFLAG(f1,FLAG_AFTER_TRIG_VAN_ON);
-			delayAfterVanOn = HAL_GetTick();
-			// Delay 500ms, read van state then turn off
-		}
-		else if(CHECKFLAG(f1,FLAG_AFTER_TRIG_VAN_ON) && (HAL_GetTick() - delayAfterVanOn >= 500)){
-			brdParam.VanState = HC165_ReadState(2);
-			HC595_ClearByteOutput(brdParam.hc595.data);
-			HC595_ShiftOut(NULL, 2, 1);
-			SETFLAG(fJS, FLAG_JSON_READ_HC165);
-			CLEARFLAG(f1,FLAG_AFTER_TRIG_VAN_ON);
-			CLEARFLAG(f1, FLAG_TRIG_VAN_PROCEDURE);
-		}
-	}
-}
 
 
-void GetUartMessage()
+/**
+ * @brief Nếu có chuỗi nhận được từ port UART (ESP hoặc máy tính), copy chuỗi nhận được ra outputStr và reset bộ đệm
+ * @param outputStr mảng chứa thông tin nhận được từ UART
+ * @return
+ */
+HAL_StatusTypeDef GetUartMessage(char *outputStr)
 {
 	if(CHECKFLAG(fUART,FLAG_UART_ESP_RX_DONE)){
-		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 0);
 		uartTarget = &huart1;
-		char *s = uartEsp32Buffer;
-		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartEsp32Buffer);}
-		else HAL_UART_Transmit(uartTarget, (uint8_t*)"OK", strlen("OK"), HAL_MAX_DELAY);
+		strcpy(mesgRX,uartEsp32Buffer);
 		memset(uartEsp32Buffer,0,uartEsp32RxSize);
-		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_ESP_RX_DONE);
-		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
+		return HAL_OK;
 	}
 	if(CHECKFLAG(fUART,FLAG_UART_LOG_RX_DONE)){
-		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 0);
 		uartTarget = &huart3;
-		char *s = uartLogBuffer;
-		if (strstr(s,"{") && strstr(s,"}")) {cjsCommon = cJSON_Parse(uartLogBuffer);}
-		else HAL_UART_Transmit(uartTarget, (uint8_t*)uartLogBuffer, strlen(uartLogBuffer), HAL_MAX_DELAY);
+		strcpy(mesgRX,uartLogBuffer);
 		memset(uartLogBuffer,0,uartLogRxSize);
-		SETFLAG(fJS,FLAG_JSON_UNPACK_MESSAGE);
 		CLEARFLAG(fUART,FLAG_UART_LOG_RX_DONE);
-		HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
+		return HAL_OK;
 	}
+	return HAL_ERROR;
 }
 
 
@@ -479,13 +499,12 @@ void UartIdle_Init()
 
 void hc595_SetUp()
 {
-
-
-	HC595_AssignPin(&brdParam.hc595, GPIOA, GPIO_PIN_5, HC595_CLK);
-	HC595_AssignPin(&brdParam.hc595, GPIOA, GPIO_PIN_7, HC595_DS);
-	HC595_AssignPin(&brdParam.hc595, GPIOB, GPIO_PIN_0, HC595_LATCH);
-	HC595_AssignPin(&brdParam.hc595, GPIOA, GPIO_PIN_12,HC595_OE);
-	HC595_SetTarget(&brdParam.hc595);
+	HC595* p595 = Brd_GetAddress_HC595();
+	HC595_AssignPin(p595, GPIOA, GPIO_PIN_5, HC595_CLK);
+	HC595_AssignPin(p595, GPIOA, GPIO_PIN_7, HC595_DS);
+	HC595_AssignPin(p595, GPIOB, GPIO_PIN_0, HC595_LATCH);
+	HC595_AssignPin(p595, GPIOA, GPIO_PIN_12,HC595_OE);
+	HC595_SetTarget(p595);
 
 	HC595_ClearByteOutput(0xffffffff);
 	HC595_ShiftOut(NULL, 2, 1);
@@ -494,17 +513,20 @@ void hc595_SetUp()
 
 void hc165_SetUp()
 {
-	HC165_AssignPin(&brdParam.hc165, GPIOA, GPIO_PIN_11, HC165_PL);
-	HC165_AssignPin(&brdParam.hc165, GPIOB, GPIO_PIN_3, HC165_DATA);
-	HC165_AssignPin(&brdParam.hc165, GPIOA, GPIO_PIN_12, HC165_CE);
-	HC165_AssignPin(&brdParam.hc165, GPIOB, GPIO_PIN_4, HC165_CP);
+	HC165* p165 = Brd_GetAddress_HC165();
+	HC165_AssignPin(p165, GPIOA, GPIO_PIN_11, HC165_PL);
+	HC165_AssignPin(p165, GPIOB, GPIO_PIN_3, HC165_DATA);
+	HC165_AssignPin(p165, GPIOA, GPIO_PIN_12, HC165_CE);
+	HC165_AssignPin(p165, GPIOB, GPIO_PIN_4, HC165_CP);
 }
 
 void SetUp()
 {
-	AMS5915_Init(&brdParam.ams,&hi2c1);
-	PCF8563_Init(&brdParam.pcf,&hi2c1);
+	AMS5915_Init(Brd_GetAddress_AMS5915(),&hi2c1);
+	PCF8563_Init(Brd_GetAddress_PCF8563(),&hi2c1);
 	PCF8563_StartClock();
+	PCF8563_CLKOUT_SetFreq(CLKOUT_1_Hz);
+	PCF8563_CLKOUT_Enable(1);
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
