@@ -46,30 +46,36 @@ typedef struct GUI_NAV{
     Page page;
     PointerNow pNow;
     ParamIndex param;
+    uint8_t orderDisplayIndex;
 }GUI_NAV;
 
 uint8_t GUINAV_GetPage();
 /**
  * @brief Trả về thứ tự (index) của biến orderToDisplay trong GUI.c mà con trỏ đang trỏ tới, 
- * không phải thứ tự các thông số trong BoardParameter
- * Ví dụ: con trỏ GUI đang trỏ tới phần tử thứ 0 trong orderToDisplay của GUI.c 
- * thì có giá trị là INDEX_PARAM_CODE trong BoardPameter.h vì đây là giá trị mapping 
- * cho giống với bảng điều khiển của Đồng Tâm, còn 
+ * không phải thứ tự (index) các thông số trong BoardParameter
+ * Ví dụ: con trỏ GUI đang trỏ tới phần tử (index) thứ 0 trong mảng orderToDisplay của GUI.c 
+ * thì có giá trị là INDEX_PARAM_CODE thuộc enum ParamIndex trong BoardPameter.h, đây là giá trị mapping 
+ * cho giống với bảng điều khiển của Đồng Tâm.
  * Để lấy được thông số thực sự mà con trỏ đang trỏ tới thì phải viết như sau:
  * orderToDisplay[GUINAV_GetOrderToDisplayIndex]
  */
- 
-ParamIndex GUINAV_GetOrderToDisplayIndex();
+ParamIndex GUINAV_GetOrderDisplayIndex();
 // Vị trí con trỏ trên màn hình LCD theo cột
 uint8_t GUINAV_GetPointerPosX();
 // Vị trí con trỏ trên màn hình LCD theo hàng 
 uint8_t GUINAV_GetPointerPosY();
-// Cho biết con trỏ đang trỏ tới tên thông số hay giá trị thông số
-uint8_t GUINAV_GetCurrentSelected();
-void GUINAV_GetEvent(EventBits_t e);
-void GUI_LoadPageSetting();
-void GUI_Manage();
 
+/**
+ * @brief Cho biết hiện tại con trỏ đang trỏ tới tên thông số hay giá trị của nó
+ * 
+ * @return uint8_t 
+ */
+PointerNow GUINAV_GetCurrentSelected();
+void GUINAV_GetEvent(EventBits_t e);
+esp_err_t GUINAV_SetPointerPosX(uint8_t X);
+esp_err_t GUINAV_SetPointerPosY(uint8_t Y);
+void GUINAV_SetCurrentSelected(PointerNow pNow);
+ParamIndex GUINAV_GetParam(uint8_t DisplayIndex);
 
 
 #endif

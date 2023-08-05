@@ -30,9 +30,9 @@ const char* strRxKey[] = {
 */
 const char* strTxKey[] = {
 	// Transmit message
-	"DoNothing",
+	" ",
 	"SetVan: ",
-	"SetMultiVan",
+	"SetMultiVan: ",
 	"ClearVan: ",
 	"SetPulseTime: ",
 	"SetTotalVan: ",
@@ -59,14 +59,14 @@ esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
 			return MesgGetValue(i,inputStr,outputStr);
 		}
 	}
-	return ESP_OK;
+	return ESP_ERR_INVALID_ARG;
 }
 
 
 
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
-	RTC_t t;
+	// RTC_t t;
 	uint32_t val=0;
 	float pVal=0;
 	uint8_t itemConverted = 0;
@@ -139,7 +139,7 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	default:
 		break;
 	}
-	return ESP_ERR_INVALID_ARG;
+	return ESP_OK;
 }
 
 

@@ -14,6 +14,7 @@
 
 typedef enum MesgValTX{
 	TX_SET_VAN = 1,
+	TX_SET_MULTIVAN,
 	TX_CLEAR_VAN,
 	TX_PULSE_TIME,
 	TX_CYCLE_TIME,

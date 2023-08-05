@@ -51,12 +51,13 @@ void app_main(void)
 void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
+    esp_err_t err;
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
             ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-            MessageRxHandle(s,NULL);
-            // SendStringToUART(qLogTx,s);
+            if(MessageRxHandle(s,NULL) != ESP_OK)
+            SendStringToUART(qLogTx,s);
             free(s);
         }
     }

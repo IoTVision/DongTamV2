@@ -23,14 +23,14 @@
 #define EVT_BTN_UP (1<<2)
 #define EVT_BTN_DOWN_RIGHT (1<<3)
 
-#define EVT_SAVE_VALUE_TO_FLASH (1<<4)
+#define EVT_SET_VALUE_TO_FLASH (1<<4)
 #define EVT_GET_VALUE_FROM_FLASH (1<<5)
 #define EVT_VALUE_ABOVE_THRESHOLD (1<<6)
 #define EVT_VALUE_BELOW_THRESHOLD (1<<7)
 #define EVT_INCREASE_VALUE (1<<8)
 #define EVT_DECREASE_VALUE (1<<9)
 #define EVT_PARAM_SCROLL_UP (1<<10)
-#define EVT_PARAM_SCROLL_DOWN (1<<1)
+#define EVT_PARAM_SCROLL_DOWN (1<<11)
 
 #define LENGTH_OF_PARAM     11 //length of paramText
 
