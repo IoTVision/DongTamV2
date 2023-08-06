@@ -45,6 +45,7 @@ typedef enum {
     INDEX_PARAM_CODE,
     INDEX_TECH_CODE,
     INDEX_DP_MODE,
+    INDEX_TRIG_VAN,
     INDEX_END_PARAM,
 }ParamIndex;
 
@@ -76,6 +77,7 @@ typedef struct BoardParameter
     uint8_t paramCode;
     uint8_t techCode;
     uint8_t dpMode;
+    uint8_t trigVan;
     float pressure;
     RTC_t RTCtime;
 }BoardParameter;

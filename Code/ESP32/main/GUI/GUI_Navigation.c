@@ -11,6 +11,7 @@ ParamIndex paramOrderToDisplay[] = {
     INDEX_LANGUAGE,
     INDEX_PARAM_CODE,
     INDEX_DISPLAY_RANGE,
+    INDEX_TRIG_VAN,
     INDEX_DP_LOW,
     INDEX_DP_HIGH,
     INDEX_DP_WARN,
@@ -132,6 +133,7 @@ static inline void SaveValue()
  */
 void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),void(*fVALUE)()){
     if(eventToHandle == eventName){
+        ESP_LOGI("HandleEvent","%lu",eventName);
         //function pointer to handle pNow
         if(guiNav.pNow == IS_KEYWORD) fKEY();
         else if(guiNav.pNow == IS_VALUE) fVALUE();

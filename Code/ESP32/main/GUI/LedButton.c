@@ -81,7 +81,7 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
 void ReadGuiButton(gpio_num_t gpio, EventBits_t e)
 {
     if(!gpio_get_level(gpio)){
-        vTaskDelay(100/portTICK_PERIOD_MS);
+        vTaskDelay(400/portTICK_PERIOD_MS);
         while (!gpio_get_level(gpio)){
             // do things while holding button, i.e count UP and DOWN continously
             BtnHandleWhenHolding(gpio,e);

@@ -57,7 +57,7 @@ uint8_t GUINAV_GetPage();
  * thì có giá trị là INDEX_PARAM_CODE thuộc enum ParamIndex trong BoardPameter.h, đây là giá trị mapping 
  * cho giống với bảng điều khiển của Đồng Tâm.
  * Để lấy được thông số thực sự mà con trỏ đang trỏ tới thì phải viết như sau:
- * orderToDisplay[GUINAV_GetOrderToDisplayIndex]
+ * paramOrderToDisplay[GUINAV_GetOrderToDisplayIndex]
  */
 ParamIndex GUINAV_GetOrderDisplayIndex();
 // Vị trí con trỏ trên màn hình LCD theo cột

@@ -46,6 +46,8 @@ const char *paramText[]={
     "Param code:",
     "Tech code :",
     "DP Mode   :",
+    "Trig Van  :",
+    " ",
 };
 
 
@@ -310,7 +312,7 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
     // if no string is copied to unit, strlen would be zero
     if(!strlen(unit)) {
         // handle string value
-        if(index > INDEX_STRING_PARAM_OFFSET && index <= INDEX_DP_MODE){
+        if(index > INDEX_STRING_PARAM_OFFSET && index < INDEX_END_PARAM){
             if(Brd_GetParamStringValueIndex(index)) sprintf(StringValue,"%s",Brd_ConvertStringValueIndexToString(Brd_GetParamStringValueIndex(index)));
             else ESP_LOGE("PrintParam","No string found ");
         }
@@ -346,10 +348,11 @@ void GUI_LoadPage()
  */
 void GUI_LoadPageAtInit()
 {
-    ParamIndex paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex());
+    ParamIndex paramNO;
     // each parameter will be placed in each rows of LCD, avoid i=0 
     for(uint8_t i=0;i<LCD_ROWS;i++){
-        GUI_PrintParam(paramNO+i,i);
+        paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex()+i); 
+        GUI_PrintParam(paramNO,i);
     }
 }
 

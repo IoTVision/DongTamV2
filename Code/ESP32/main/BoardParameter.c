@@ -34,7 +34,8 @@ char *Brd_NVS_Key[] = {
     "ParamCode:",
     "TechCode:",
     "DPMode:",
-
+    "TrigVan:",
+    " ",
 };
 
 uint16_t paramMaxLimit[] = {
@@ -126,6 +127,7 @@ const uint32_t paramStepChange[] = {
     1,// param code
     1,// tech code
     1,// dp mode
+    1,// trig van
 };
 
 const char* paramValString[]={
@@ -169,6 +171,12 @@ const char* paramValString[]={
         "On",
         "Off",
         "E5", // end
+
+        //Trig Van
+        "S6",
+        "Off",
+        "On",
+        "E6",
 };
 
 const char* paramUnit[] = {
@@ -349,7 +357,7 @@ uint32_t Brd_GetParamIntValue(ParamIndex index)
                 break;
             }
         } else {
-            ESP_LOGE("GetParamString","Not found index");
+            ESP_LOGE("GetParamInt","Not found index %d",index);
         }   
         return ESP_ERR_INVALID_ARG; 
 }
@@ -357,7 +365,7 @@ uint32_t Brd_GetParamIntValue(ParamIndex index)
 
 esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *indexStringValue, char *outputStr)
 {
-        if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
+        if(index > INDEX_STRING_PARAM_OFFSET && index < INDEX_END_PARAM){
                 index -= INDEX_STRING_PARAM_OFFSET; // offset it to 1
                 char start[5] = {0};
                 char end[5] = {0};
@@ -403,13 +411,16 @@ esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *indexStringValu
                         case INDEX_DP_MODE:
                             brdParam.dpMode = *indexStringValue;
                             break;
+                        case INDEX_TRIG_VAN:
+                            brdParam.trigVan = *indexStringValue;
+                            break;
                         default:
                         return ESP_ERR_INVALID_ARG;
                             break;
                     }
                     if(outputStr) Brd_SendResponeString(index,outputStr);
                 } else {
-                    index += INDEX_STRING_PARAM_OFFSET; // return it to original index to use for switch case 
+                    index += INDEX_STRING_PARAM_OFFSET;
                     if(outputStr) Brd_SendResponeString(index,outputStr);
                     return ESP_ERR_INVALID_ARG;
                 }
@@ -420,7 +431,7 @@ esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *indexStringValu
 
 uint8_t Brd_GetParamStringValueIndex(ParamIndex index)
 {
-        if(index >= INDEX_LANGUAGE && index <= INDEX_DP_MODE){
+        if(index > INDEX_STRING_PARAM_OFFSET && index < INDEX_END_PARAM){
             switch(index){
             case INDEX_LANGUAGE:
                 return brdParam.language;
@@ -437,12 +448,14 @@ uint8_t Brd_GetParamStringValueIndex(ParamIndex index)
             case INDEX_DP_MODE:
                 return brdParam.dpMode ;
                 break;
+            case INDEX_TRIG_VAN:
+                return brdParam.trigVan ;
             default:
                 return 0;
                 break;
             }
         } else {
-            ESP_LOGE("GetParamString","Not found index");
+            ESP_LOGE("GetParamString","Not found index %d",index);
         }
         return 0;
 }
@@ -495,14 +508,10 @@ esp_err_t Brd_ReadParamFromFlash()
 
 }
 
-void Brd_LoadDefaultValue()
+esp_err_t Brd_FactoryReset()
 {
-	esp_err_t err = ESP_OK;
-    if(Brd_ReadParamFromFlash() != ESP_OK){
-        ESP_LOGW("LoadParam","This board does not have parameters store in Flash, load default value in factory setup");
-    } 
-    else return ;
-	const uint32_t valArray[] = {
+    esp_err_t err = ESP_OK;
+    uint32_t valArray[] = {
         0,//nothing, it is the begin of param
 		10,
 		8,
@@ -519,10 +528,11 @@ void Brd_LoadDefaultValue()
 		400,
 		6,
 		18000,
-		18650,
-		24540,
+		18000,
+		15000,
 	};
-	const uint8_t valueStr[]={
+	uint8_t valueStr[]={
+        1,
         1,
         1,
         1,
@@ -537,12 +547,29 @@ void Brd_LoadDefaultValue()
 		else ESP_LOGE("LoadValueBoardInt","%s",s);
 		memset(s,0,strlen(s));
 	}
-    for(uint8_t i = INDEX_LANGUAGE; i <= INDEX_DP_MODE; i++){
+    for(uint8_t i = INDEX_LANGUAGE; i < INDEX_END_PARAM; i++){
 		err = Brd_SetParamStringValueIndex(i,&valueStr[i - INDEX_STRING_PARAM_OFFSET],s);
 		if(err == ESP_OK) ESP_LOGI("LoadValueBoardString","%s",s);
 		else ESP_LOGE("LoadValueBoardString","%s",s);
 		memset(s,0,strlen(s));
 	}
+    return ESP_OK;
+}
+
+void Brd_LoadDefaultValue()
+{
+	esp_err_t err = ESP_OK;
+    // nvs_flash_erase();
+    if(Brd_ReadParamFromFlash() != ESP_OK){
+        ESP_LOGW("LoadParam","This board does not have parameters store in Flash, load default value in factory setup");
+        Brd_FactoryReset();
+    } 
+    else {
+        // force this parameter to off value value when initialize
+        uint8_t trigVanValueOff = 1;
+        Brd_SetParamStringValueIndex(INDEX_TRIG_VAN,&trigVanValueOff,NULL);
+        return;
+    }
 }
 
 RTC_t Brd_GetRTC(){return brdParam.RTCtime;}
