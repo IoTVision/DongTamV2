@@ -51,7 +51,6 @@ void app_main(void)
 void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
-    esp_err_t err;
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {

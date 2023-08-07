@@ -73,14 +73,21 @@ void GUI_ShowValueString();
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
+    uint8_t blockNotify = 0;
     while(1){
-        if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
-            // ESP_LOGI("GUITask","Get notify");
-            GUI_ClearPointer();
-            GUINAV_GetEvent(e);
-            GUI_ShowPointer();
-            PrintNavigation();
-            GUI_Manage();
+        // to prevent multiple press button event
+        if(!blockNotify){
+            if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
+                blockNotify = 1;
+                ESP_LOGI("GUITask","Get notify");
+                GUI_ClearPointer();
+                GUINAV_GetEvent(e);
+                GUI_ShowPointer();
+                PrintNavigation();
+                GUI_Manage();
+                vTaskDelay(100/portTICK_PERIOD_MS);
+                blockNotify = 0;
+            }
         }
     }
 }
@@ -89,7 +96,7 @@ void GUI_Manage()
 {
     PointerNow pNow = GUINAV_GetCurrentSelected();
     //Get the true value of index in BoardParameter, not the table show
-    ParamIndex paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex());
+    ParamIndex paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex());
     ESP_LOGE("paramNO","%d",paramNO);
     if(pNow == IS_KEYWORD){
         GUI_ScrollUpDown(paramNO);
@@ -113,7 +120,6 @@ void GUI_SaveValueToFlash()
     EventBits_t e = xEventGroupGetBits(evgGUI);
     if(CHECKFLAG(e,EVT_SET_VALUE_TO_FLASH)){
         xEventGroupClearBits(evgGUI,EVT_SET_VALUE_TO_FLASH);
-        ESP_LOGI("GUISaveFlash","pass here");
         err = Brd_WriteParamToFlash();
         LCDI2C_Clear();
         vTaskDelay(20/portTICK_PERIOD_MS);
@@ -132,7 +138,7 @@ void GUI_SaveValueToFlash()
  */
 void GUI_ShowValueString()
 {
-    ParamIndex paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex());
+    ParamIndex paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex());
     if(paramNO < INDEX_STRING_PARAM_OFFSET) return;
     uint8_t pY = GUINAV_GetPointerPosY();
     uint8_t pX = GUINAV_GetPointerPosX();
@@ -165,7 +171,7 @@ void GUI_ShowValueInt()
     static uint8_t preValLen = 0;
     char s[8]={0};
     // check if unit is NULL or not, if not then copy it to unit array variable
-    ParamIndex paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex());
+    ParamIndex paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex());
     if(paramNO >= INDEX_STRING_PARAM_OFFSET) return;
     uint8_t pY = GUINAV_GetPointerPosY();
     uint8_t pX = GUINAV_GetPointerPosX();
@@ -174,15 +180,17 @@ void GUI_ShowValueInt()
     uint16_t valHighLimit = Brd_GetMaxLimit(paramNO);
     uint32_t value = Brd_GetParamIntValue(paramNO);
 
-    // delete only number if previous value length equal current value, else delete number and unit 
+    // Delete only number if previous value length equal current value, else delete number and unit 
     if(preValLen != CountLengthValue(value)) {
         if(Brd_GetUnit(paramNO)) strcpy(unit,Brd_GetUnit(paramNO));
         preValLen = CountLengthValue(value);
-        memset(s,(int)" ",(size_t)(LCD_COLS - (pX + POINTER_SLOT))); // delete all remain slot
+        strncpy(s,"       ",(LCD_COLS - (pX + POINTER_SLOT)));
+        ESP_LOGI("GUI_ShowInt","Delete all");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     } else {
         // Clear previous value
-        memset(s,(int)" ",(size_t)preValLen);
+        strncpy(s,"       ",preValLen);
+        ESP_LOGI("GUI_ShowInt","Delete number");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     }
 
@@ -198,11 +206,13 @@ void GUI_ShowValueInt()
     if(preValLen != CountLengthValue(value)) {
         if(Brd_GetUnit(paramNO)) strcpy(unit,Brd_GetUnit(paramNO));
         preValLen = CountLengthValue(value);
-        memset(s,(int)" ",(size_t)(LCD_COLS - (pX + POINTER_SLOT))); // delete all remain slot
+        strncpy(s,"       ",(LCD_COLS - (pX + POINTER_SLOT))); // delete all remain slot
+        ESP_LOGI("GUI_ShowInt","Delete all");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     } else {
         // Clear previous value
-        memset(s,(int)" ",(size_t)preValLen);
+        strncpy(s,"       ",preValLen);
+        ESP_LOGI("GUI_ShowInt","Delete number");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     }
 
@@ -332,7 +342,7 @@ void GUI_LoadPage()
     LCDI2C_Clear();
     vTaskDelay(20/portTICK_PERIOD_MS);
     for(uint8_t i=0;i<LCD_ROWS;i++){
-        paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex()+i);
+        paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex()+i);
         GUI_PrintParam(paramNO,i);
     }
     GUINAV_SetCurrentSelected(IS_KEYWORD);
@@ -351,7 +361,7 @@ void GUI_LoadPageAtInit()
     ParamIndex paramNO;
     // each parameter will be placed in each rows of LCD, avoid i=0 
     for(uint8_t i=0;i<LCD_ROWS;i++){
-        paramNO = GUINAV_GetParam(GUINAV_GetOrderDisplayIndex()+i); 
+        paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex()+i); 
         GUI_PrintParam(paramNO,i);
     }
 }
@@ -373,7 +383,7 @@ void GUI_ClearPointer(){LCDI2C_Print(" ",GUINAV_GetPointerPosX(),GUINAV_GetPoint
 void PrintNavigation()
 {
     ESP_LOGI("GUI_NAV","orderDisplayIndex: %u",GUINAV_GetOrderDisplayIndex());
-    ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParam(GUINAV_GetOrderDisplayIndex()));
+    ESP_LOGI("GUI_NAV","param: %u",GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex()));
 }
 /*
     End Debug section

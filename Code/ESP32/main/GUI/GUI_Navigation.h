@@ -75,7 +75,13 @@ void GUINAV_GetEvent(EventBits_t e);
 esp_err_t GUINAV_SetPointerPosX(uint8_t X);
 esp_err_t GUINAV_SetPointerPosY(uint8_t Y);
 void GUINAV_SetCurrentSelected(PointerNow pNow);
-ParamIndex GUINAV_GetParam(uint8_t DisplayIndex);
+/**
+ * @brief Lấy thông số được map trong bảng Đồng Tâm hay chính là paramOrderDisplay
+ * Để lấy giá trị của paramOrderDisplay hay index thực sự của BoardParameter thì dùng GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex());
+ * @param DisplayIndex Thứ tự hiển thị thông số của paramOrderDisplay
+ * @return ParamIndex 
+ */
+ParamIndex GUINAV_GetParamDisplay(uint8_t DisplayIndex);
 
 
 #endif

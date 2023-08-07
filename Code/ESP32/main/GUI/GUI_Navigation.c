@@ -47,7 +47,7 @@ GUI_NAV guiNav = {
 };
 
 // Hiện tại chưa sử dụng tính năng này
-static inline void NextPage(){
+void NextPage(){
     // guiNav.page++;
     // if(guiNav.page == PAGE_END) guiNav.page = PAGE_START + 1;
 }
@@ -57,7 +57,7 @@ static inline void NextPage(){
  * nằm ở hàng dưới cùng
  * 
  */
-static inline void PointToNextParam(){
+void PointToNextParam(){
     xEventGroupClearBits(evgGUI,EVT_PARAM_SCROLL_UP);
     ParamIndex orderDisplayIndex = GUINAV_GetOrderDisplayIndex(); 
     orderDisplayIndex ++;
@@ -80,7 +80,7 @@ static inline void PointToNextParam(){
  * nằm ở hàng trên cùng
  * 
  */
-static inline void PointToPrevParam(){
+void PointToPrevParam(){
     xEventGroupClearBits(evgGUI,EVT_PARAM_SCROLL_DOWN);
     ParamIndex orderDisplayIndex = GUINAV_GetOrderDisplayIndex(); 
     orderDisplayIndex --;
@@ -97,26 +97,26 @@ static inline void PointToPrevParam(){
     guiNav.pY = (uint8_t)pY;
 }
 
-static inline void SetPointerNowIsKeyword(){
+void SetPointerNowIsKeyword(){
     guiNav.pNow = IS_KEYWORD;
     guiNav.pX = 0;
 }
-static inline void SetPointerNowIsValue(){
+void SetPointerNowIsValue(){
     guiNav.pNow = IS_VALUE;
     guiNav.pX = LENGTH_OF_PARAM + 1;
 }
-static inline void IncreaseValue(){
+void IncreaseValue(){
     EventBits_t e = xEventGroupGetBits(evgGUI);
     // if not happen event above threshold, bit EVT_INCREASE_VALUE will be set
     if(!CHECKFLAG(e,EVT_VALUE_ABOVE_THRESHOLD)) xEventGroupSetBits(evgGUI,EVT_INCREASE_VALUE);
 }
-static inline void DecreaseValue(){
+void DecreaseValue(){
     EventBits_t e = xEventGroupGetBits(evgGUI);
     // if not happen event below threshold, bit EVT_DECREASE_VALUE will be set
     if(!CHECKFLAG(e,EVT_VALUE_BELOW_THRESHOLD)) xEventGroupSetBits(evgGUI,EVT_DECREASE_VALUE);
 }
 
-static inline void SaveValue()
+void SaveValue()
 {
     ESP_LOGI("NAVSaveVal","Pass");
     EventBits_t e = xEventGroupGetBits(evgGUI);
@@ -158,7 +158,7 @@ void GUINAV_GetEvent(EventBits_t e)
 PointerNow GUINAV_GetCurrentSelected(){return guiNav.pNow;} 
 uint8_t GUINAV_GetPage(){return guiNav.page;}
 ParamIndex GUINAV_GetOrderDisplayIndex(){return guiNav.orderDisplayIndex;}
-ParamIndex GUINAV_GetParam(uint8_t DisplayIndex){
+ParamIndex GUINAV_GetParamDisplay(uint8_t DisplayIndex){
     if(DisplayIndex >= INDEX_END_PARAM) return DisplayIndex;
     return paramOrderToDisplay[DisplayIndex];} 
 uint8_t GUINAV_GetPointerPosX(){return guiNav.pX;}
