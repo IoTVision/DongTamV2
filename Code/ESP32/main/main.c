@@ -13,6 +13,7 @@
 #include "MessageHandle/MessageHandle.h"
 #include "GUI/GUI.h"
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
+uart_port_t uartTarget;
 cJSON *cjsMain;
 EventGroupHandle_t evg1,evgJson;
 TaskHandle_t taskCommon,taskUartHandleString;
@@ -51,12 +52,22 @@ void app_main(void)
 void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
+    char sOutput[50] = {0};
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-            ESP_LOGI("UartHandleString","len of s:%d",strlen(s));
-            if(MessageRxHandle(s,NULL) != ESP_OK)
-            SendStringToUART(qLogTx,s);
+            if(MessageRxHandle(s,sOutput) == ESP_OK){
+                if(uartTarget == UART_NUM_0){
+                    SendStringToUART(qSTM32Tx,sOutput);
+                    memset(sOutput,0,strlen(sOutput));
+                } else if(uartTarget == UART_NUM_2) {
+                    SendStringToUART(qLogTx,sOutput);
+                    memset(sOutput,0,strlen(sOutput));
+                }
+                ESP_LOGI("HandleString","s:%s,sOutput:%s",s,sOutput);
+            } else {
+                SendStringToUART(qLogTx,s);
+            }
             free(s);
         }
     }

@@ -8,6 +8,7 @@
 #include "RTC_Format.h"
 #include "GUI/GUI.h"
 #include "nvs_flash.h"
+#include "driver/uart.h"
 #include "nvs.h"
 
 #define USE_SCROLL_SCREEN 
@@ -17,6 +18,7 @@
 #define EVT_UART_OVERSIZE_HW_FIFO (1<<2)
 extern LCDI2C lcdI2C;
 extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
+extern uart_port_t uartTarget;
 extern cJSON *cjsMain;
 extern EventGroupHandle_t evg1,evgJson,evgGUI;
 #endif

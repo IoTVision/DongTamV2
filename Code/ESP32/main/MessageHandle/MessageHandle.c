@@ -3,6 +3,7 @@
 #include "../GUI/PressureIndicator.h"
 #include "../GUI/LedButton.h"
 #include "../BoardParameter.h"
+#include "../ShareVar.h"
 
 uint8_t PI_HandlePressureFromUART();
 
@@ -19,10 +20,12 @@ const char* strRxKey[] = {
 	"CycleIntervalTime",
 	"ReadFlash",
 	"SaveFlash",
+	"TrigVan",
 	" ",//START_FLOAT_VALUE
 	"P",
 	" ",//START_TIME_FORMAT
 	"Time: ",
+	" ",//START_STRING
 };
 
 /**
@@ -37,8 +40,8 @@ const char* strTxKey[] = {
 	"SetPulseTime: ",
 	"SetTotalVan: ",
 	"SetCycleIntervalTime: ",
+	"TrigVan: ",
 	"SetIntervalTime: ",
-	"TrigVan:",
 	"SetTime: ",
 	"GetTime: ",
 };
@@ -51,15 +54,45 @@ const char* strTxKey[] = {
  */
 esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
 {
-	ESP_LOGI("RxHandle","PassHere");
+	ESP_LOGI("RxHandle1"," %s",inputStr);
 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
 	for(uint8_t i=1;i < indexKey;i++){
 		if(strstr(inputStr,strRxKey[i])){
-			ESP_LOGI("RxHandle","i:%u",i);
 			return MesgGetValue(i,inputStr,outputStr);
 		}
 	}
+	ESP_LOGI("RxHandle2","Not found string %s",inputStr);
 	return ESP_ERR_INVALID_ARG;
+}
+
+esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
+{
+	uint32_t val = 0;
+	char s[30] = {0};
+	switch (mesgValTX)
+	{
+	case TX_TOTAL_VAN:
+		val = Brd_GetParamIntValue(INDEX_TOTAL_VAN);
+		break;
+	case TX_INTERVAL_TIME:
+		val = Brd_GetParamIntValue(INDEX_INTERVAL_TIME);
+		break;
+	case TX_CYC_INTV_TIME:
+		val = Brd_GetParamIntValue(INDEX_CYCLE_INTERVAL_TIME);
+		break;
+	case TX_PULSE_TIME:
+		val = Brd_GetParamIntValue(INDEX_PULSE_TIME);
+		break;
+	case TX_TRIG_VAN:
+		val = Brd_GetParamStringValueIndex(INDEX_TRIG_VAN);
+		break;
+	default:
+		break;
+	}
+	sprintf(s,"%s%lu",strTxKey[mesgValTX],val);
+	if(outputStr) strcpy(outputStr,s);
+	else return ESP_ERR_INVALID_ARG;
+	return ESP_OK; 
 }
 
 
@@ -72,11 +105,11 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	uint8_t itemConverted = 0;
 	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_FLOAT_VALUE){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
-		ESP_LOGI("GetValInt","val:%lu,mesg:%d",val,mesgValRX);	
+		// ESP_LOGI("GetValInt","val:%lu,mesg:%d",val,mesgValRX);	
 	} else if (mesgValRX > RX_START_FLOAT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_FLOAT,&pVal);
-		ESP_LOGI("GetValFloat","pVal:%.2f,mesg:%d",pVal,mesgValRX);	
-	}
+		// ESP_LOGI("GetValFloat","pVal:%.2f,mesg:%d",pVal,mesgValRX);	
+	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX)
 	// check if value can be obtained from string
 	if(itemConverted != 1) {
 		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
@@ -98,12 +131,15 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	break;
 	case RX_TOTAL_VAN:
 	Brd_SetParamInt(INDEX_TOTAL_VAN,val,NULL);
+	MessageTxHandle(TX_TOTAL_VAN,outputStr);
 	break;
 	case RX_PULSE_TIME:
 	Brd_SetParamInt(INDEX_PULSE_TIME,val,NULL);
+	MessageTxHandle(TX_PULSE_TIME,outputStr);
 	break;
 	case RX_CYC_INTV_TIME:
 	Brd_SetParamInt(INDEX_CYCLE_INTERVAL_TIME,val,NULL);
+	MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 	break;
 	case RX_DP_HIGH:
 	Brd_SetParamInt(INDEX_DP_HIGH,val,NULL);
@@ -115,11 +151,8 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	Brd_SetParamInt(INDEX_DP_WARN,val,NULL);
 	break;
 	case RX_INTERVAL_TIME:
-	break;
-	case RX_TIME:
-	break;
-	case RX_PRESSURE: 
-	PI_SetLevel(PI_HandlePressureFromUART(pVal));
+	Brd_SetParamInt(INDEX_INTERVAL_TIME,val,NULL);
+	MessageTxHandle(TX_INTERVAL_TIME,outputStr);
 	break;
 	case RX_READ_FLASH:
 	if(val) {
@@ -136,12 +169,36 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	}
 	else ESP_LOGI("GetVal","Are you kidding me?");
 	break;
+	case RX_TRIG_VAN:
+		LedErrorWrite(0);
+		LedStatusWrite(1);
+		HC595_ShiftOut(NULL,2,1);
+		ESP_LOGI("GetValue","TrigVan");
+		TX_STM32_TrigVan(val);
+	break;
+	case RX_TIME:
+
+	break;
+	case RX_PRESSURE: 
+	PI_SetLevel(PI_HandlePressureFromUART(pVal));
+	break;
 	default:
 		break;
 	}
 	return ESP_OK;
 }
 
+void TX_STM32_TrigVan(uint8_t Trig)
+{
+	char s[20] = {0};
+	if(Trig) {
+		sprintf(s,"%s%u",strTxKey[TX_TRIG_VAN],Trig);
+		SendStringToUART(qSTM32Tx,s);
+	} else {
+		sprintf(s,"%s%u",strTxKey[TX_TRIG_VAN],Trig);
+		SendStringToUART(qSTM32Tx,s);
+	}
+}
 
 uint8_t PI_HandlePressureFromUART(uint32_t val)
 {

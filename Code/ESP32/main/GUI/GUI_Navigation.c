@@ -133,8 +133,6 @@ void SaveValue()
  */
 void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),void(*fVALUE)()){
     if(eventToHandle == eventName){
-        ESP_LOGI("HandleEvent","%lu",eventName);
-        //function pointer to handle pNow
         if(guiNav.pNow == IS_KEYWORD) {
             fKEY();
         }

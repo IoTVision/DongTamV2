@@ -44,6 +44,7 @@ void TaskUart(void *pvParameters)
     EventBits_t e;
     for(;;) {
         if(xQueueReceive(qSTM32_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
+            uartTarget = UART_NUM_2;
             switch(event.type) {
                 case UART_DATA:
                     char *dtmp = (char *) malloc(event.size + 1);
@@ -56,6 +57,7 @@ void TaskUart(void *pvParameters)
             }
         }
         if(xQueueReceive(qLOG_event, (void * )&event, (TickType_t)10/portTICK_PERIOD_MS)) {
+            uartTarget = UART_NUM_0;
             switch(event.type) {
                 case UART_DATA:{
                     if(event.size < 120){

@@ -17,11 +17,10 @@ typedef enum MesgValTX{
 	TX_SET_MULTIVAN,
 	TX_CLEAR_VAN,
 	TX_PULSE_TIME,
-	TX_CYCLE_TIME,
 	TX_TOTAL_VAN,
 	TX_CYC_INTV_TIME,
-	TX_INTERVAL_TIME,// below this is data type that not belong to integer, above this is integer
 	TX_TRIG_VAN,
+	TX_INTERVAL_TIME,// below this is data type that not belong to integer, above this is integer
 	TX_SET_TIME,
 	TX_GET_TIME,
 }MesgValTX;
@@ -39,6 +38,7 @@ typedef enum MesgValRX{
 	RX_CYC_INTV_TIME,
 	RX_READ_FLASH,
 	RX_SAVE_FLASH,
+	RX_TRIG_VAN,
 	RX_START_FLOAT_VALUE,//mark from this to below will get float value
 	RX_PRESSURE,
 	RX_START_TIME_FORMAT,//mark from this to below will get time format
@@ -57,6 +57,7 @@ typedef esp_err_t (*pValueHandle)(void *pvParameter);
 
 esp_err_t MessageRxHandle(char *inputStr, char* outputStr);
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
+void TX_STM32_TrigVan(uint8_t Trig);
 // esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
 
 
