@@ -135,8 +135,12 @@ void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),
     if(eventToHandle == eventName){
         ESP_LOGI("HandleEvent","%lu",eventName);
         //function pointer to handle pNow
-        if(guiNav.pNow == IS_KEYWORD) fKEY();
-        else if(guiNav.pNow == IS_VALUE) fVALUE();
+        if(guiNav.pNow == IS_KEYWORD) {
+            fKEY();
+        }
+        else if(guiNav.pNow == IS_VALUE) {
+            fVALUE();
+        }
     }
 }
 /**
@@ -148,7 +152,7 @@ void HandleEvent(EventBits_t eventToHandle, EventBits_t eventName,void(*fKEY)(),
  */
 void GUINAV_GetEvent(EventBits_t e)
 {
-    HandleEvent(e,EVT_BTN_MENU,NULL,&SetPointerNowIsKeyword);
+    HandleEvent(e,EVT_BTN_MENU,&NextPage,&SetPointerNowIsKeyword);
     HandleEvent(e,EVT_BTN_SET,&SetPointerNowIsValue,&SaveValue);
     HandleEvent(e,EVT_BTN_UP,&PointToPrevParam,&IncreaseValue);
     HandleEvent(e,EVT_BTN_DOWN_RIGHT,&PointToNextParam,&DecreaseValue);
