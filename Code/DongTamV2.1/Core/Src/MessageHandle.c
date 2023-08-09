@@ -31,7 +31,6 @@ const char* strTxKey[] = {
 	"PulseTime: ",
 	"IntervalTime: ",
 	"CycleIntervalTime: ",
-	"CycleTime: ",
 };
 
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
@@ -159,7 +158,14 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
 			break;
 		case RX_TRIG_VAN:
-			Brd_SetVanProcState(PROC_START);
+			if(val) {
+				Brd_SetVanProcState(PROC_START);
+				sprintf(outputStr,"TrigVan: On");
+			}
+			else {
+				Brd_SetVanProcState(PROC_END);
+				sprintf(outputStr,"TrigVan: Off");
+			}
 			break;
 		case RX_SET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);

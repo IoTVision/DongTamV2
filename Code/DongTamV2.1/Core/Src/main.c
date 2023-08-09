@@ -182,7 +182,7 @@ int main(void)
   uartTarget = &huart1;
   while(!uartTarget);
   brdParam.cycIntvTime = 2;
-  brdParam.intervalTime = 10;
+  brdParam.intervalTime = 4;
   brdParam.pulseTime = 60;
   Brd_SetTotalVan(2);
   /* USER CODE END 2 */

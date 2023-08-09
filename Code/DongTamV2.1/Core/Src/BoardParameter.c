@@ -61,7 +61,7 @@ void CheckCycleIntervalTime(uint16_t *cycleTime,uint16_t *currentVanOn)
 		Brd_SetVanProcState(BRD_VAN_ON);
 	}
 	else {
-		vanProcState = PROC_END;
+		vanProcState = PROC_START;
 	}
 }
 
