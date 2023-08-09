@@ -20,6 +20,7 @@
 #define MAX_NUM_VAN 16
 #define TIMER_PERIOD_MS 10
 
+
 typedef struct BoardParameter
 {
 	HC595 hc595;
@@ -38,16 +39,20 @@ typedef struct BoardParameter
 }BoardParameter;
 
 
-
+/**
+ * @enum VanProcedure
+ * @brief Thứ tự thực hiện chu trình kích van
+ *
+ */
 typedef enum {
-	PROC_IDLE,
-	PROC_START,
-	BRD_VAN_ON,
-	BRD_PULSE_TIME,
-	BRD_VAN_OFF,
-	BRD_INTERVAL_TIME,
-	BRD_CYCLE_INTERVAL_TIME,
-	PROC_END,
+	PROC_IDLE,              /**< PROC_IDLE */
+	PROC_START,             /**< PROC_START */
+	BRD_VAN_ON,             /**< BRD_VAN_ON */
+	BRD_PULSE_TIME,         /**< BRD_PULSE_TIME */
+	BRD_VAN_OFF,            /**< BRD_VAN_OFF */
+	BRD_INTERVAL_TIME,      /**< BRD_INTERVAL_TIME */
+	BRD_CYCLE_INTERVAL_TIME,/**< BRD_CYCLE_INTERVAL_TIME */
+	PROC_END,               /**< PROC_END */
 }VanProcedure;
 
 float Brd_GetPressure();

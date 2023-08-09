@@ -78,7 +78,6 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void SetUp();
-void ProcedureVan();
 HAL_StatusTypeDef GetUartMessage(char *outputStr);
 /* USER CODE END PFP */
 
@@ -106,7 +105,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 }
 
 
-
+/**
+ * Hàm ngắt timer đếm thời gian Pulse và thời gian nghỉ giữa 2 lần kích van
+ * @param htim bộ timer cần truyền vào để kiểm tra cờ ngắt
+ */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2){
@@ -177,7 +179,7 @@ int main(void)
   SetUp();
   HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
   HAL_TIM_Base_Start_IT(&htim2);
-  uartTarget = &huart3;
+  uartTarget = &huart1;
   while(!uartTarget);
   brdParam.cycIntvTime = 2;
   brdParam.intervalTime = 10;
@@ -189,7 +191,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(!GetUartMessage(mesgRX)){
+	  if(GetUartMessage(mesgRX) == HAL_OK){
 		  mesgRxRet = MessageRxHandle(mesgRX,mesgTX);
 		  if((HAL_StatusTypeDef)mesgRxRet != HAL_OK) {
 			  HAL_UART_Transmit(uartTarget,(uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
@@ -197,6 +199,7 @@ int main(void)
 			  HAL_UART_Transmit(uartTarget,(uint8_t*) s, strlen(s), HAL_MAX_DELAY);
 		  }
 		  else HAL_UART_Transmit(uartTarget, (uint8_t*) mesgTX, strlen(mesgTX), HAL_MAX_DELAY);
+		  memset(mesgRX,0,sizeof(mesgRX));
 	  }
 	  ProcedureTriggerVan(outputStr);
 	  if(Brd_GetVanProcState() == BRD_PULSE_TIME){
@@ -423,6 +426,8 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -455,6 +460,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(_74HC165_DATA_GPIO_Port, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

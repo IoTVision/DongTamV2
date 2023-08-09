@@ -13,16 +13,18 @@
 #include "main.h"
 
 typedef enum MesgValRX{
-	SET_VAN = 1,
-	SET_MULTI_VAN,
-	CLEAR_VAN,
-	PULSE_TIME,
-	TOTAL_VAN,
-	CYC_INTV_TIME,
-	INTERVAL_TIME,
-	TRIG_VAN,
-	SET_TIME,
-	GET_TIME,
+	RX_START_INT_VALUE,//mark from this to below will get integer value
+	RX_SET_VAN = 1,
+	RX_SET_MULTI_VAN,
+	RX_CLEAR_VAN,
+	RX_PULSE_TIME,
+	RX_TOTAL_VAN,
+	RX_CYC_INTV_TIME,
+	RX_INTERVAL_TIME,
+	RX_TRIG_VAN,
+	RX_GET_TIME,
+	RX_START_TIME_FORMAT,
+	RX_SET_TIME,
 }MesgValRX;
 
 

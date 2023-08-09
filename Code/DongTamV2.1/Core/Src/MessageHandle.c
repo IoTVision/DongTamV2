@@ -6,7 +6,7 @@
 
 const char* strRxKey[] = {
 	// Receive message
-	"DoNothing",
+	" ",
 	"SetVan",
 	"SetMultiVan",
 	"ClearVan",
@@ -15,17 +15,18 @@ const char* strRxKey[] = {
 	"SetCycleIntervalTime",
 	"SetIntervalTime",
 	"TrigVan",
-	"SetTime",
 	"GetTime",
+	" ",
+	"SetTime",
 };
 
 const char* strTxKey[] = {
 	// Transmit message
-	"DoNothing",
+	" ",
 	"Van: ",
 	"VanState: ",
 	"Time: ",
-	"Pressure: ",
+	"P: ",
 	"TotalVan: ",
 	"PulseTime: ",
 	"IntervalTime: ",
@@ -36,7 +37,7 @@ const char* strTxKey[] = {
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
 
 /**
- * @brief Lấy giá trị member trong BoardParameter tương ứng với mesgValTX, đóng gói và trả về chuỗi chứa giá trị member
+ * @brief Lấy giá trị các thông số trong BoardParameter tương ứng với mesgValTX, đóng gói và trả về chuỗi chứa giá trị các thông số
  * @param mesgValTX thứ tự param trong enum MesgValTX
  * @param outputStr chuỗi trả về để thông báo kết quả xử lý
  * @return HAL_OK nếu xử lý thành công, HAL_ERROR nếu có lỗi xảy ra
@@ -100,16 +101,12 @@ HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 	for(uint8_t i=1;i < indexKey;i++){
 		if(strstr(inputStr,strRxKey[i]))
 			return MesgGetValue(i,inputStr,outputStr);
-		else {
-			strcpy(outputStr,"--->No parameter found \n");
-			return HAL_ERROR;
-		}
 	}
 	return HAL_OK;
 }
 
 /**
- * @brief Tách lấy giá trị từ chuỗi inputStr, gán tương ứng vào các member của BoardParameter
+ * @brief Tách lấy giá trị từ chuỗi inputStr, gán tương ứng vào các thông số của BoardParameter
  * @param mesgValRX thứ tự param trong enum MesgValRX
  * @param inputStr chuỗi truyền vào để tách lấy giá trị
  * @param outputStr chuỗi trả về để thông báo kết quả xử lý
@@ -118,57 +115,57 @@ HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	RTC_t t;
-	uint32_t val;
+	uint32_t val=0;
 	uint8_t itemConverted = 0;
 	HAL_StatusTypeDef pValRet = HAL_OK;
-	if(mesgValRX >= SET_VAN && mesgValRX <= INTERVAL_TIME){
+	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
 		// check if value can be obtained from string
-		if(itemConverted != 1) {
-			strcpy(outputStr,"--->Cannot parse value\n");
-			return HAL_ERROR;
-		}
-	} else if (mesgValRX == SET_TIME){
+	} else if (mesgValRX > RX_START_TIME_FORMAT){
 		t = RTC_GetTimeFromString(inputStr);
 		if(Brd_SetRTC(t) == HAL_ERROR) return HAL_ERROR;
 	}
+	if(itemConverted != 1) {
+		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+		return HAL_ERROR;
+	}
 	switch(mesgValRX){
-		case SET_VAN:
+		case RX_SET_VAN:
 			pValRet = Brd_SetVanOn(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
-		case SET_MULTI_VAN:
+		case RX_SET_MULTI_VAN:
 			pValRet = Brd_SetMultiVan(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
-		case CLEAR_VAN:
+		case RX_CLEAR_VAN:
 			pValRet = Brd_SetVanOff(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
-		case PULSE_TIME:
+		case RX_PULSE_TIME:
 			pValRet = Brd_SetPulseTime(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_PULSE_TIME,outputStr);
 			break;
-		case TOTAL_VAN:
+		case RX_TOTAL_VAN:
 			pValRet = Brd_SetTotalVan(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_VAN,outputStr);
 			break;
-		case CYC_INTV_TIME:
+		case RX_CYC_INTV_TIME:
 			pValRet = Brd_SetCycleIntervalTime(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_CYC_INTV_TIME,outputStr);
 			break;
-		case INTERVAL_TIME:
+		case RX_INTERVAL_TIME:
 			pValRet = Brd_SetIntervalTime(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
 			break;
-		case TRIG_VAN:
+		case RX_TRIG_VAN:
 			Brd_SetVanProcState(PROC_START);
 			break;
-		case SET_TIME:
+		case RX_SET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
 			return HAL_OK;
 			break;
-		case GET_TIME:
+		case RX_GET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
 			return HAL_OK;
 		default:
@@ -176,7 +173,7 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			break;
 	}
 	if(pValRet != HAL_OK) {
-		strcpy(outputStr,"--->Value beyond limit\n");
+		if(outputStr) strcpy(outputStr,"--->Value beyond limit\n");
 		return HAL_ERROR;
 	}
 	return HAL_OK;
