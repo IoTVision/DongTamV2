@@ -126,9 +126,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				Brd_SetTimerArray(1, tArray);
 			break;
 			case BRD_CYCLE_INTERVAL_TIME:
-//				tArray = Brd_GetTimerArray(2);
-//				tArray++;
-//				Brd_SetTimerArray(2, tArray);
+				tArray = Brd_GetTimerArray(2);
+				tArray++;
+				Brd_SetTimerArray(2, tArray);
 			break;
 			default:
 

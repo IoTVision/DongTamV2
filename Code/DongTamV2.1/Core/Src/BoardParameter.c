@@ -118,6 +118,18 @@ void IntervalTimeHandle(uint16_t *currentVanOn)
 }
 
 /**
+ * @brief Thời gian nghỉ giữa 2 chu kỳ
+ */
+void CycleTimeHandle(void)
+{
+	if(Brd_GetTimerArray(2)*TIMER_PERIOD_MS >= Brd_GetCycleIntervalTime()*1000){
+		// reset cycle interval time
+		Brd_SetTimerArray(2, 0);
+		Brd_SetVanProcState(PROC_START);
+	}
+}
+
+/**
  * Thực thi chu trình kích van
  * @param outputStr chuỗi trả về tương ứng với các giai đoạn khác nhau trong chu trình
  */
@@ -154,8 +166,7 @@ void ProcedureTriggerVan(char *outputStr)
 			IntervalTimeHandle(&currentVanOn);
 			break;
 		case BRD_CYCLE_INTERVAL_TIME:
-			CheckCycleIntervalTime(&cycleTime,&currentVanOn);
-			LogDataValue("CycleInterval:", cycleTime);
+			CycleTimeHandle();
 			break;
 		case PROC_END:
 			vanProcState = PROC_IDLE;
