@@ -1,4 +1,5 @@
 #include "UART.h"
+#include "driver/uart.h"
 QueueHandle_t qUART_STM32_event,qLOG_event;
 void TaskUart(void *pvParameters)
 {
