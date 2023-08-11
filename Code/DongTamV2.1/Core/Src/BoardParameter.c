@@ -46,6 +46,7 @@ void VanOff(char *outputStr,uint8_t VanTrigger)
 	HC595_ClearBitOutput(VanTrigger);
 	HC595_ShiftOut(NULL, 2, 1);
 	vanProcState = BRD_INTERVAL_TIME;
+
 }
 
 /**
@@ -159,6 +160,7 @@ void ProcedureTriggerVan(char *outputStr)
 		case BRD_VAN_OFF:
 			VanOff(outputStr,VanToTrigger);
 			if(!Brd_GetHC165State()) Brd_SetHC165State(true);
+			if(!currentVanOn) Brd_SetVanProcState(BRD_CYCLE_INTERVAL_TIME);
 			break;
 		case BRD_PULSE_TIME:
 			PulseTimeHandle(outputStr);
@@ -270,7 +272,7 @@ HAL_StatusTypeDef Brd_SetRTC(RTC_t t){
 
 HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val)
 {
-    if(val > 2 && val <= 100){
+    if(val >= 2 && val <= 100){
         brdParam.cycIntvTime = val;
     	return HAL_OK;
     }
