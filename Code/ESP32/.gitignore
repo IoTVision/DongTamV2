@@ -2,7 +2,8 @@
 .vscode
 build
 *.py
-main/WebConfig
+
 *.log
 *.lock
 components
+!CMakeLists.txt
