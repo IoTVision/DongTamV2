@@ -181,7 +181,7 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);
   uartTarget = &huart1;
   while(!uartTarget);
-  brdParam.cycIntvTime = 2;
+  brdParam.cycIntvTime = 10;
   brdParam.intervalTime = 4;
   brdParam.pulseTime = 60;
   Brd_SetTotalVan(2);

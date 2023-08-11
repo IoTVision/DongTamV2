@@ -95,7 +95,7 @@ uint16_t CheckVanInUsed(uint16_t *currentVanOn)
 			}
 		}
 	}
-	return HAL_ERROR;
+	return 17;
 }
 
 /**
@@ -120,12 +120,13 @@ void IntervalTimeHandle(uint16_t *currentVanOn)
 /**
  * @brief Thời gian nghỉ giữa 2 chu kỳ
  */
-void CycleTimeHandle(void)
+void CycleTimeHandle()
 {
 	if(Brd_GetTimerArray(2)*TIMER_PERIOD_MS >= Brd_GetCycleIntervalTime()*1000){
 		// reset cycle interval time
-		Brd_SetTimerArray(2, 0);
 		Brd_SetVanProcState(PROC_START);
+		Brd_SetTimerArray(2, 0);
+
 	}
 }
 
@@ -135,14 +136,14 @@ void CycleTimeHandle(void)
  */
 void ProcedureTriggerVan(char *outputStr)
 {
-	static uint16_t cycleTime;
+//	static uint16_t cycleTime;
 	static uint16_t VanToTrigger;
 	static uint16_t currentVanOn;
 	switch(vanProcState){
 		case PROC_IDLE:
 			break;
 		case PROC_START:
-			cycleTime = Brd_GetCycleIntervalTime();
+//			cycleTime = Brd_GetCycleIntervalTime();
 			currentVanOn = Brd_GetVanOn();
 			vanProcState = BRD_VAN_ON;
 			break;
