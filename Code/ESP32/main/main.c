@@ -56,18 +56,21 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
+            if(uartTarget == UART_NUM_0){
+                ESP_LOGI("PC","%s",s);
+            }
+            else if (uartTarget == UART_NUM_2){
+                ESP_LOGI("STM32","%s",s);
+            }
             if(MessageRxHandle(s,sOutput) == ESP_OK){
                 if(uartTarget == UART_NUM_0){
                     SendStringToUART(qSTM32Tx,sOutput);
                     memset(sOutput,0,strlen(sOutput));
                 } else if(uartTarget == UART_NUM_2) {
-                    SendStringToUART(qLogTx,sOutput);
+                    SendStringToUART(qLogTx,s);
                     memset(sOutput,0,strlen(sOutput));
                 }
-                ESP_LOGI("HandleString","s:%s,sOutput:%s",s,sOutput);
-            } else {
-                SendStringToUART(qLogTx,s);
-            }
+            } 
             free(s);
         }
     }

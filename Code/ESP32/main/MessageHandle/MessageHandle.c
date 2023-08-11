@@ -5,27 +5,28 @@
 #include "../BoardParameter.h"
 #include "../ShareVar.h"
 
-uint8_t PI_HandlePressureFromUART();
+uint8_t PI_HandlePressureFromUART(float val);
 
 const char* strRxKey[] = {
 	// Receive message
-	" ",//START_INT_VALUE
-	"VanState",
-	"TotalVan",
+	"Start",//START_INT_VALUE
+	"VanState", // -> this is String match with STM32, do not modify
+	// String below receive from PC, can be change 
+	"totalVan",
 	"dpHigh",
 	"dpLow",
 	"dpWarn",
-	"PulseTime",
-	"IntervalTime",
-	"CycleIntervalTime",
-	"ReadFlash",
-	"SaveFlash",
-	"TrigVan",
-	" ",//START_FLOAT_VALUE
+	"pulseTime",
+	"intTime",
+	"cycIntTime",
+	"readFlash",
+	"saveFlash",
+	"trigVan",
+	"Float",//START_FLOAT_VALUE
 	"P",
-	" ",//START_TIME_FORMAT
+	"Time",//START_TIME_FORMAT
 	"Time: ",
-	" ",//START_STRING
+	"End",
 };
 
 /**
@@ -33,7 +34,7 @@ const char* strRxKey[] = {
 */
 const char* strTxKey[] = {
 	// Transmit message
-	" ",
+	"Start",
 	"SetVan: ",
 	"SetMultiVan: ",
 	"ClearVan: ",
@@ -54,14 +55,12 @@ const char* strTxKey[] = {
  */
 esp_err_t MessageRxHandle(char *inputStr, char* outputStr)
 {
-	ESP_LOGI("RxHandle1"," %s",inputStr);
 	uint8_t indexKey = sizeof(strRxKey)/sizeof(char*);
 	for(uint8_t i=1;i < indexKey;i++){
-		if(strstr(inputStr,strRxKey[i])){
+		if(strstr(inputStr,strRxKey[i])){	
 			return MesgGetValue(i,inputStr,outputStr);
 		}
 	}
-	ESP_LOGI("RxHandle2","Not found string %s",inputStr);
 	return ESP_ERR_INVALID_ARG;
 }
 
@@ -84,7 +83,18 @@ esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 		val = Brd_GetParamIntValue(INDEX_PULSE_TIME);
 		break;
 	case TX_TRIG_VAN:
-		val = Brd_GetParamStringValueIndex(INDEX_TRIG_VAN);
+		char *s;
+		s = Brd_ConvertStringValueIndexToString(Brd_GetParamStringValueIndex(INDEX_TRIG_VAN));
+		ESP_LOGI("TRIGVAN","ValStr:%s",s);
+		LedErrorWrite(0);
+		if(!strcmp(s,"On")){
+			val = 1;
+			LedStatusWrite(1);
+		} else if(!strcmp(s,"Off")){
+			val = 0;
+			LedStatusWrite(0);
+		} else return ESP_ERR_INVALID_ARG;
+		HC595_ShiftOut(NULL,2,1);
 		break;
 	default:
 		break;
@@ -101,15 +111,17 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
 	// RTC_t t;
 	uint32_t val=0;
-	float pVal=0;
+	float fVal=0;
 	uint8_t itemConverted = 0;
+	
 	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_FLOAT_VALUE){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
 		// ESP_LOGI("GetValInt","val:%lu,mesg:%d",val,mesgValRX);	
 	} else if (mesgValRX > RX_START_FLOAT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
-		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_FLOAT,&pVal);
-		// ESP_LOGI("GetValFloat","pVal:%.2f,mesg:%d",pVal,mesgValRX);	
-	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX)
+		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_FLOAT,&fVal);
+	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX){
+
+	}
 	// check if value can be obtained from string
 	if(itemConverted != 1) {
 		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
@@ -121,11 +133,6 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	if(!val) {
 		LedErrorWrite(1);
 		LedStatusWrite(0);
-		HC595_ShiftOut(NULL,2,1);
-	}
-	else {
-		LedErrorWrite(0);
-		LedStatusWrite(1);
 		HC595_ShiftOut(NULL,2,1);
 	}
 	break;
@@ -180,7 +187,7 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 
 	break;
 	case RX_PRESSURE: 
-	PI_SetLevel(PI_HandlePressureFromUART(pVal));
+	PI_SetLevel(PI_HandlePressureFromUART(fVal));
 	break;
 	default:
 		break;
@@ -200,7 +207,7 @@ void TX_STM32_TrigVan(uint8_t Trig)
 	}
 }
 
-uint8_t PI_HandlePressureFromUART(uint32_t val)
+uint8_t PI_HandlePressureFromUART(float val)
 {
 	uint32_t dpHigh = Brd_GetParamIntValue(INDEX_DP_HIGH);
 	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);

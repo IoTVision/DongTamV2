@@ -4,6 +4,7 @@
 #include "../BoardParameter.h"
 #include "GUI_Navigation.h"
 #include "LedButton.h"
+#include "../MessageHandle/MessageHandle.h"
 EventGroupHandle_t evgGUI;
 LCDI2C lcdI2C;
 TaskHandle_t taskGUIHandle;
@@ -114,6 +115,35 @@ void GUI_Manage()
  *  
  */
 
+
+void GUI_SendCommandToSTM32()
+{
+    ParamIndex paramNO = GUINAV_GetParamDisplay(GUINAV_GetOrderDisplayIndex());
+    char s[30] = {0};
+    switch (paramNO)
+    {
+        case INDEX_TRIG_VAN:
+        MessageTxHandle(TX_TRIG_VAN,s);    
+        break;
+        case INDEX_CYCLE_INTERVAL_TIME:
+        MessageTxHandle(TX_CYC_INTV_TIME,s);
+        break;
+        case INDEX_INTERVAL_TIME:
+        MessageTxHandle(TX_INTERVAL_TIME,s);
+        break;
+        case INDEX_TOTAL_VAN:
+        MessageTxHandle(TX_TOTAL_VAN,s);
+        break;
+        case INDEX_PULSE_TIME:
+        MessageTxHandle(TX_PULSE_TIME,s);
+        break;
+        default:
+            break;
+    }
+    ESP_LOGI("GUI_STM32","paramNO:%d,%s",paramNO,s);
+    SendStringToUART(qSTM32Tx,s);
+}
+
 void GUI_SaveValueToFlash()
 {
     esp_err_t err = ESP_OK;
@@ -126,8 +156,10 @@ void GUI_SaveValueToFlash()
         LCDI2C_Print("Save data",0,0);
         if(err == ESP_OK) LCDI2C_Print("OK",0,1);
         else LCDI2C_Print("FAILED",0,1);
+        GUI_SendCommandToSTM32();
         vTaskDelay(1500/portTICK_PERIOD_MS);
         GUI_LoadPage();
+
     }
 
 }
@@ -154,8 +186,8 @@ void GUI_ShowValueString()
     EventBits_t e = xEventGroupWaitBits(evgGUI,BitToWait, pdTRUE,pdFALSE,0);
     if(CHECKFLAG(e,EVT_INCREASE_VALUE)) valueStringIndex +=stepChange;
     if(CHECKFLAG(e,EVT_DECREASE_VALUE)) valueStringIndex -=stepChange;
-
     Brd_SetParamStringValueIndex(paramNO,&valueStringIndex,NULL);
+    ESP_LOGI("ShowValueString","currentVal:%u,BrdVal:%u",valueStringIndex,Brd_GetParamStringValueIndex(paramNO));
     strcpy(s,Brd_ConvertStringValueIndexToString(valueStringIndex));
     ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     
@@ -185,12 +217,10 @@ void GUI_ShowValueInt()
         if(Brd_GetUnit(paramNO)) strcpy(unit,Brd_GetUnit(paramNO));
         preValLen = CountLengthValue(value);
         strncpy(s,"       ",(LCD_COLS - (pX + POINTER_SLOT)));
-        ESP_LOGI("GUI_ShowInt","Delete all");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     } else {
         // Clear previous value
         strncpy(s,"       ",preValLen);
-        ESP_LOGI("GUI_ShowInt","Delete number");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     }
 
@@ -207,12 +237,10 @@ void GUI_ShowValueInt()
         if(Brd_GetUnit(paramNO)) strcpy(unit,Brd_GetUnit(paramNO));
         preValLen = CountLengthValue(value);
         strncpy(s,"       ",(LCD_COLS - (pX + POINTER_SLOT))); // delete all remain slot
-        ESP_LOGI("GUI_ShowInt","Delete all");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     } else {
         // Clear previous value
         strncpy(s,"       ",preValLen);
-        ESP_LOGI("GUI_ShowInt","Delete number");
         ESP_ERROR_CHECK(LCDI2C_Print(s,pX+POINTER_SLOT,pY));
     }
 

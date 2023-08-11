@@ -28,7 +28,7 @@ typedef enum MesgValTX{
 
 typedef enum MesgValRX{
 	RX_START_INT_VALUE,//mark from this to below will get integer value
-	RX_VANSTATE = 1,
+	RX_VANSTATE,
 	RX_TOTAL_VAN,
 	RX_DP_HIGH,
 	RX_DP_LOW,
@@ -58,7 +58,7 @@ typedef esp_err_t (*pValueHandle)(void *pvParameter);
 esp_err_t MessageRxHandle(char *inputStr, char* outputStr);
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
 void TX_STM32_TrigVan(uint8_t Trig);
-// esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
+esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
 
 
 #endif /* INC_MESSAGEHANDLE_H_ */

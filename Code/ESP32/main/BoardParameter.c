@@ -237,10 +237,10 @@ void Brd_SendResponeString(uint8_t index, char* outputStr)
 
 esp_err_t Brd_SetParamInt(ParamIndex index,uint32_t val,char *outputStr){
     if(val < paramMinLimit[index] || val > paramMaxLimit[index]) {
-        strcpy(outputStr,"Value beyond threshold");
+        if(outputStr) strcpy(outputStr,"Value beyond threshold");
         return ESP_ERR_INVALID_ARG;
     }
-        if(index >= INDEX_TOTAL_VAN && index <= INDEX_SERV_RUN_HOURS_ALARM){
+        if(index > INDEX_START_PARAM && index <= INDEX_SERV_RUN_HOURS_ALARM){
                 switch (index)
                 {
                 case INDEX_TOTAL_VAN:
