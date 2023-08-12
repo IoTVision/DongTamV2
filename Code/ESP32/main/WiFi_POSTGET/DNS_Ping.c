@@ -23,10 +23,10 @@ static void TestOnPingSuccess(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
     printf("Successfully get %lu bytes from %s icmp_seq=%d ttl=%d time=%ld ms\n",recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
     if(seqno >= TIME_TO_PING){
-        ESP_LOGI("PingSuccess","Stop ping");
         esp_ping_stop(ping);
         OnlEvt_SetBit(ONL_EVT_PING_SUCCESS);
         OnlEvt_ClearBit(ONL_EVT_PING_TIMEOUT);
+        ESP_LOGI("PingSuccess","Stop ping"); 
     }
 }
 

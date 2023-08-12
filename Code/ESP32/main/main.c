@@ -26,7 +26,9 @@ void app_main(void)
 {
     Setup();
     while (1) {
+        PostDataFromBoardToServer(1);       
         vTaskDelay(10/portTICK_PERIOD_MS);
+        
     }
 }
 
@@ -56,5 +58,5 @@ void Setup()
     ESP_ERROR_CHECK(ret);
 
     wifi_init_sta();
-    PostDataFromBoardToServer(1);
+   
 }
