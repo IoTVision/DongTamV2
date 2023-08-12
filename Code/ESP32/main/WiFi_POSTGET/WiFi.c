@@ -11,12 +11,17 @@
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "HTTP_POSTGET.h"
+#include "DNS_Ping.h"
+#include "OnlineStatusEvent.h"
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
 static int s_retry_num = 0;
 static EventGroupHandle_t s_wifi_event_group;
+extern EventGroupHandle_t evgOSE;
+
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -29,21 +34,21 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             s_retry_num++;
             ESP_LOGI("WiFi_Station", "retry to connect to the AP");
         } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+            OnlEvt_SetBit(ONL_EVT_WIFI_FAIL);
         }
         ESP_LOGI("WiFi_Station","connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI("WiFi_Station", "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+        OnlEvt_SetBit(ONL_EVT_WIFI_CONNECTED);
     }
 }
 
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
-
+    // OnlEvt_CreateEventGroup();
     ESP_ERROR_CHECK(esp_netif_init());
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -86,17 +91,14 @@ void wifi_init_sta(void)
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
-
+    OnlEvt_WaitBit(ONL_EVT_WIFI_CONNECTED | ONL_EVT_WIFI_FAIL,pdFALSE,pdFALSE,portMAX_DELAY);
+    // EventBits_t bits = xEventGroupWaitBits(evgOSE,ONL_EVT_WIFI_CONNECTED | ONL_EVT_WIFI_FAIL,pdFALSE,pdFALSE,portMAX_DELAY);
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
-    if (bits & WIFI_CONNECTED_BIT) {
+    if (OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED)) {
         ESP_LOGI("WiFi_Station", "connected to ap SSID:%s password:%s",USER_WIFI_SSID, USER_WIFI_PASS);
-    } else if (bits & WIFI_FAIL_BIT) {
+        DNS_Ping("app.iotvision.vn");
+    } else if(OnlEvt_CheckBit(ONL_EVT_WIFI_FAIL)){
         ESP_LOGI("WiFi_Station", "Failed to connect to SSID:%s, password:%s",
         USER_WIFI_SSID, USER_WIFI_PASS);
     } else {
