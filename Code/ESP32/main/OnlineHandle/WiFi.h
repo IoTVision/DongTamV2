@@ -7,7 +7,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "wifi_manager.h"
+// #include "wifi_manager.h"
 
 #include "esp_mac.h"
 #define USER_WIFI_SSID "SpiritBoi"

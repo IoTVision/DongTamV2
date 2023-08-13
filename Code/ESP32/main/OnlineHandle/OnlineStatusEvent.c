@@ -32,10 +32,7 @@ void OnlEvt_WaitBit(OnlineEventBit bit, BaseType_t ClearBit, BaseType_t WaitAll,
 bool OnlEvt_CheckBit(OnlineEventBit bit)
 {
     if(!evgOSE) OnlEvt_CreateEventGroup();
-    EventBits_t e = xEventGroupGetBits(evgOSE);
-    ESP_LOGI("CheckBit","%d,event:%lu",bit,e);
-    if((e & bit) == bit) {
-        ESP_LOGI("CheckBit","OK");
+    if((xEventGroupGetBits(evgOSE) & bit) == bit) {
         return 1;
     }
     return 0;
