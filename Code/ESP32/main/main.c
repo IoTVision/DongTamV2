@@ -5,14 +5,14 @@
 
 #include "./ShareVar.h"
 #include "./UART.h"
-#include "driver/dac.h"
+// #include "driver/dac.h"
 #include "cJSON.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "RTC_Format.h"
 #include "MessageHandle/MessageHandle.h"
 #include "GUI/GUI.h"
-QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
+QueueHandle_t qLogTx,qSTM32Tx,qUartHandle,qSTM32Ready;
 uart_port_t uartTarget;
 cJSON *cjsMain;
 EventGroupHandle_t evg1,evgJson;
@@ -35,10 +35,22 @@ void app_main(void)
 {
     Setup();
     char *s = NULL;
+    //char ready[] = "Hello ESP";
     while (1) {
         if(xQueueReceive(qLogTx,&s,10/portTICK_PERIOD_MS)){
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
+        }
+
+        if(xQueueReceive(qSTM32Ready,&s,portMAX_DELAY)){
+            ESP_LOGI("STM32","Queue STM32ready received");
+            ESP_LOGI("STM32","String is: %s", s);
+            ESP_LOGI("STM32","String compared with is: %s",MESG_READY_STM32 );
+            if(!strcmp(s, MESG_READY_STM32)){
+                ESP_LOGI("STM32","Compare succesfully");
+                xEventGroupSetBits(evgUART,EVT_UART_STM32_READY);
+            }
+            
         }
     }
 }
@@ -53,24 +65,40 @@ void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
     char sOutput[50] = {0};
+    EventBits_t e;
+    e = xEventGroupGetBits(evgUART);
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
+
             if(uartTarget == UART_NUM_0){
                 ESP_LOGI("PC","%s",s);
             }
             else if (uartTarget == UART_NUM_2){
                 ESP_LOGI("STM32","%s",s);
             }
-            if(MessageRxHandle(s,sOutput) == ESP_OK){
-                if(uartTarget == UART_NUM_0){
-                    SendStringToUART(qSTM32Tx,sOutput);
-                    memset(sOutput,0,strlen(sOutput));
-                } else if(uartTarget == UART_NUM_2) {
-                    SendStringToUART(qLogTx,s);
-                    memset(sOutput,0,strlen(sOutput));
-                }
-            } 
+
+            if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
+                xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
+                ESP_LOGE("STM32","Flag is empty");
+                xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,5000/portTICK_PERIOD_MS);
+                e = xEventGroupGetBits(evgUART);
+            }
+
+            if(CHECKFLAG(e, EVT_UART_STM32_READY)){
+                //ESP_LOGI("STM32","s:%s,event:0x%lu",s,e);
+                ESP_LOGE("STM32","Flag still there");
+                if(MessageRxHandle(s,sOutput) == ESP_OK){
+                    if(uartTarget == UART_NUM_0){
+                        SendStringToUART(qSTM32Tx,sOutput);
+                        memset(sOutput,0,strlen(sOutput));
+                    } else if(uartTarget == UART_NUM_2) {
+                        SendStringToUART(qLogTx,s);
+                        memset(sOutput,0,strlen(sOutput));
+                    }
+                } 
+            }
+            else ESP_LOGE("STM32","Failed");
             free(s);
         }
     }
@@ -97,15 +125,16 @@ void InitProcess()
     ESP_ERROR_CHECK( err );
 
 
-    cjsMain = cJSON_CreateObject();
+    // cjsMain = cJSON_CreateObject();
     qLogTx = xQueueCreate(3,sizeof(char *));
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
+    qSTM32Ready = xQueueCreate(1, strlen(MESG_READY_STM32));
     evg1 = xEventGroupCreate();
     Brd_LoadDefaultValue();
     Brd_PrintAllParameter();
     UARTConfig();
-    GuiInit();
+    // GuiInit();
 }
 
 
@@ -129,13 +158,13 @@ void SendStringToUART(QueueHandle_t q,char *s)
 
 void Setup()
 {
-    TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
+    // TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
     InitProcess();
     ESP_LOGI("Notify","pass InitProcess");
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
-    xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
-    xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
+    // xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
+    // xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
 
 
 }
