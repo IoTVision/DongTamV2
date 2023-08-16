@@ -20,7 +20,7 @@ void TimerOnline_Callback(TimerHandle_t xTimer)
     vTimerSetTimerID(xTimer,(void*)count);
 }
 
-void Onl_HandleReconnectSequence(){
+void onl_Handle_Reconnect_Sequence(){
     static bool IsTimerStop = 1; // set to 1 because it is stop at the initialize
     uint32_t countTimer = 0;
     if(OnlEvt_CheckBit(ONL_EVT_PING_SUCCESS | ONL_EVT_WIFI_CONNECTED)) {
@@ -37,7 +37,7 @@ void Onl_HandleReconnectSequence(){
     if(OnlEvt_CheckBit(ONL_EVT_WIFI_FAIL)){
         countTimer = (uint32_t)pvTimerGetTimerID(tOnl);
         ESP_LOGI("Reconnect","timer count:%lu",countTimer);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        vTaskDelay(3000/portTICK_PERIOD_MS);
         if(countTimer >= TIMER_COUNT_EXPIRE_TRIGGER_RECONNECT){
             vTimerSetTimerID(tOnl,0); // reset counter
             esp_wifi_connect();
@@ -46,15 +46,15 @@ void Onl_HandleReconnectSequence(){
     else if(OnlEvt_CheckBit(ONL_EVT_PING_TIMEOUT) || OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED)){
         if(!DNS_GetCurrentHost()) {
             if(DNS_PingToHost(DNS_GOOGLE) != ESP_OK) {
-                vTaskDelay(1000/portTICK_PERIOD_MS);
+                vTaskDelay(3000/portTICK_PERIOD_MS);
                 ESP_LOGE("Network","No internet");
                 return;
             }
         }
         countTimer = (uint32_t)pvTimerGetTimerID(tOnl);
-        ESP_LOGI("Ping","timer count:%lu",countTimer);
-        vTaskDelay(6000/portTICK_PERIOD_MS);
+        vTaskDelay(5000/portTICK_PERIOD_MS);
         if(countTimer >= TIMER_COUNT_EXPIRE_TRIGGER_PING){
+            ESP_LOGI("CheckDNS","Pinging");
             vTimerSetTimerID(tOnl,0);
             if(!DNS_IsPinging()) DNS_StartToPing();
         }
@@ -69,8 +69,8 @@ void TaskOnlManage(void *pvParameter)
     xTimerStop(tOnl,portMAX_DELAY);
     wifi_init_sta();
     while (1){
-        Onl_HandleReconnectSequence();
-        Onl_HTTP_SendToServer(1);
+        onl_Handle_Reconnect_Sequence();
+        onl_HTTP_SendToServer(1);
         vTaskDelay(10/portTICK_PERIOD_MS);
     }
     

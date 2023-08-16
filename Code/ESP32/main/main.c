@@ -1,23 +1,28 @@
 #include <stdio.h>
 #include "main.h"
-#include "UART.h"
 #include "driver/dac.h"
 #include "cJSON.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "freertos/FreeRTOS.h" 
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "freertos/FreeRTOS.h" 
 #include "esp_tls.h"
 #include "esp_http_client.h"
-#include "OnlineHandle/OnlineManage.h"
 #include "esp_mac.h"
+#include "OnlineHandle/OnlineManage.h"
+#include "JsonHandle/JsonHandle.h"
+#include "UART.h"
 
 
 #define MAC_ADDR_SIZE 6
 
 uint8_t mac_address[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 uint8_t MAC_WIFI[6];
+
+
+
+
 void Setup();
 
 void app_main(void)
@@ -49,11 +54,15 @@ void set_mac_address(uint8_t *mac){
 
 void Setup()
 {
+    char s[300] = {0};
+    jsHandle_Init(s);
+    ESP_LOGI("JSON","%s",s);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
+
     ESP_ERROR_CHECK(ret);
     TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);

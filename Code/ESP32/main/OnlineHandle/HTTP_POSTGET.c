@@ -8,7 +8,7 @@
 
 char data_send[MAX_HTTP_OUTPUT_BUFFER];
 
-HTTP_CODE_e Onl_HTTP_SendToServer(int a)
+HTTP_CODE_e onl_HTTP_SendToServer(int a)
 {
     if(!OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED) || !OnlEvt_CheckBit(ONL_EVT_PING_SUCCESS)) return 0;
     HTTP_CODE_e http_code = HTTP_INVALID;
