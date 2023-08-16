@@ -54,9 +54,7 @@ void set_mac_address(uint8_t *mac){
 
 void Setup()
 {
-    char s[300] = {0};
-    jsHandle_Init(s);
-    ESP_LOGI("JSON","%s",s);
+    jsHandle_Init(NULL);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());

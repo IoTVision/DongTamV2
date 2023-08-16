@@ -13,7 +13,7 @@ char* jsHandle_Key[] = {
     "DeltaPH",
     "DeltaP",
     "DeltaPL",
-    "LED10Bar"
+    "LED10Bar",
     "Time",
 };
 
@@ -28,11 +28,21 @@ void jsHandle_Init(char *outputStr)
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_ODC],1);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_VAN_ERROR],0);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_TRIGGER_VAN],0);
-    cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP_HIGH],2000);
-    cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP],7);
+    cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP_HIGH],3800);
+    cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP],250);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP_LOW],250);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_LED_BAR],5);
     if(outputStr) strcpy(outputStr,cJSON_Print(cJS));
+}
+
+char* jsHandle_PrintObject() 
+{
+    return cJSON_Print(cJS);
+}
+
+void jsHandle_DeleteObject()
+{
+    cJSON_Delete(cJS);
 }
 
 cJSON* getItem(JsonKey keyname){
@@ -45,6 +55,17 @@ char* jsHandle_GetIMEI(){return cJSON_GetStringValue(getItem(JSON_KEY_IMEI));}
 void jsHandle_SetDP(int DP){cJSON_SetIntValue(getItem(JSON_KEY_DP),DP);}
 int jsHandle_GetDP(){return cJSON_GetNumberValue(getItem(JSON_KEY_DP));}
 
+
+
+
+void jsHandle_Set_dpLow(int dpLow){if(dpLow < 250 || dpLow > 4000) return;cJSON_SetIntValue(getItem(JSON_KEY_DP_LOW),dpLow);}
+int jsHandle_Get_dpLow(){return cJSON_GetNumberValue(getItem(JSON_KEY_DP_LOW));}
+
+void jsHandle_Set_dpHigh(int dpHigh){if(dpHigh < 250 || dpHigh > 4000) return; cJSON_SetIntValue(getItem(JSON_KEY_DP_HIGH),dpHigh);}
+int jsHandle_Get_dpHigh() {return cJSON_GetNumberValue(getItem(JSON_KEY_DP_HIGH));}
+
+void jsHandle_Set_dpIndicatorBar(uint8_t level){if(level > 10) return;cJSON_SetIntValue(getItem(JSON_KEY_LED_BAR),(int)level);}
+int jsHandle_Get_dpIndicatorBar(){return cJSON_GetNumberValue(getItem(JSON_KEY_LED_BAR));}
 
 
 // void UpdateGetTime(cJSON *item,char *logMessage)

@@ -26,5 +26,13 @@ void jsHandle_SetIMEI(char *IMEI);
 char* jsHandle_GetIMEI();
 void jsHandle_SetDP(int DP);
 int jsHandle_GetDP();
+char* jsHandle_PrintObject();
+void jsHandle_DeleteObject();
+int jsHandle_Get_dpIndicatorBar();
+void jsHandle_Set_dpIndicatorBar(uint8_t level);
 
+void jsHandle_Set_dpLow(int dpLow);
+int jsHandle_Get_dpLow();
+void jsHandle_Set_dpHigh(int dpHigh);
+int jsHandle_Get_dpHigh();
 #endif
