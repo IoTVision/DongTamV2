@@ -14,7 +14,7 @@ char* jsHandle_Key[] = {
     "DeltaP",
     "DeltaPL",
     "LED10Bar",
-    "Time",
+    "RTC",
 };
 
 cJSON *cJS = NULL;
@@ -32,6 +32,7 @@ void jsHandle_Init(char *outputStr)
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP],250);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_DP_LOW],250);
     cJSON_AddNumberToObject(cJS,jsHandle_Key[JSON_KEY_LED_BAR],5);
+    cJSON_AddStringToObject(cJS,jsHandle_Key[JSON_KEY_TIME],"17/8/2023 11:57:00");
     if(outputStr) strcpy(outputStr,cJSON_Print(cJS));
 }
 

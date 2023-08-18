@@ -10,8 +10,8 @@
 // #include "wifi_manager.h"
 
 #include "esp_mac.h"
-#define USER_WIFI_SSID "SpiritBoi"
-#define USER_WIFI_PASS "248715121a"
+#define USER_WIFI_SSID "IoTVision_2.4GHz"
+#define USER_WIFI_PASS "iotvision@2022"
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
