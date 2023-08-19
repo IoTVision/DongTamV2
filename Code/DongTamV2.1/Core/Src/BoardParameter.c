@@ -12,8 +12,11 @@
 
 #include <stdlib.h>
 
+#define BRD_SENDING_PRESSURE_PERIODIC_MS 3000
+
 BoardParameter brdParam;
 extern UART_HandleTypeDef huart3;
+uint16_t rtcCount = 0;
 
 VanProcedure vanProcState;
 
@@ -96,6 +99,7 @@ uint16_t CheckVanInUsed(uint16_t *currentVanOn)
 			}
 		}
 	}
+	// if HAL_ERROR(which is 1), the valve need to trigger will be 1 instead of stopping trigger
 	return 17;
 }
 
@@ -129,6 +133,17 @@ void CycleTimeHandle()
 		Brd_SetTimerArray(2, 0);
 
 	}
+}
+
+HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* outputStr)
+{
+	if(Brd_GetTimerArray(3) * TIMER_PERIOD_MS < BRD_SENDING_PRESSURE_PERIODIC_MS) return HAL_ERROR;
+	char outputStr2[50] = {0};
+	Brd_SetTimerArray(3, 0);
+	MessageTxHandle(TX_PRESSURE, outputStr);
+	MessageTxHandle(TX_CURRENT_TIME_FROM_TICK, outputStr2);
+	strcat(outputStr,outputStr2);
+	return HAL_OK;
 }
 
 /**
@@ -185,6 +200,54 @@ uint16_t Brd_GetVanOn(){return brdParam.currentVanOn;}
 uint16_t Brd_GetIntervalTime(){return brdParam.intervalTime;}
 uint16_t Brd_GetPulseTime(){return brdParam.pulseTime;}
 uint16_t Brd_GetCycleIntervalTime(){return brdParam.cycIntvTime;}
+
+
+/**
+ * @fn RTC_t Brd_RTC_GetCurrentTimeFromTick()
+ * @brief  Convert ticks get from CLKOUT pin of RTC IC to hour, minute, second
+ * then plus each of them to brdParam.RTCtime
+ * example : 10000 ticks = 2hrs 46min 40sec
+ * brdParam.RTCtime.second = 0
+ * brdParam.RTCtime.minute = 10
+ * brdParam.RTCtime.hour = 2;
+ * Current time = 4hrs 56min 40sec
+ * @return RTC_t
+ */
+RTC_t Brd_RTC_GetCurrentTimeFromTick()
+{
+	/*
+	 * do not use Brd_GetRTC() because it request RTC IC to send time format
+	 */
+	RTC_t currentRTC;
+	currentRTC.second = brdParam.RTCtime.second;
+	currentRTC.minute = brdParam.RTCtime.minute;
+	currentRTC.hour = brdParam.RTCtime.hour;
+	currentRTC.day = brdParam.RTCtime.day;
+	currentRTC.month = brdParam.RTCtime.month;
+	currentRTC.year = brdParam.RTCtime.year;
+
+	currentRTC.second += RTC_ConvertTickElapsedToSecond(Brd_RTC_GetTickCount());
+	currentRTC.minute += RTC_ConvertTickElapsedToMinute(Brd_RTC_GetTickCount());
+	currentRTC.hour += RTC_ConvertTickElapsedToHour(Brd_RTC_GetTickCount());
+
+	if(currentRTC.second > 59){
+		currentRTC.second -=60;
+		currentRTC.minute ++;
+	}
+	if(currentRTC.minute > 59){
+		currentRTC.second -= 60;
+		currentRTC.minute -= 60;
+		currentRTC.hour ++;
+	}
+	if(currentRTC.hour > 23){
+		currentRTC.hour -= 24;
+		// new day need to refresh board time by request RTC IC to send new time format
+		Brd_RTC_SetTickCount(0);
+		return Brd_GetRTC();
+	}
+	return currentRTC;
+}
+
 RTC_t Brd_GetRTC()
 {
 	brdParam.RTCtime = PCF8563_ReadTimeRegisters();
@@ -196,7 +259,9 @@ float Brd_GetPressure()
 	brdParam.pressure = AMS5915_CalPressure(Brd_GetAddress_AMS5915());
 	return brdParam.pressure;
 }
+uint16_t Brd_RTC_GetTickCount(){return rtcCount;}
 
+void Brd_RTC_SetTickCount(uint16_t tick){rtcCount = tick;}
 HAL_StatusTypeDef Brd_SetTotalVan(uint8_t val)
 {
 

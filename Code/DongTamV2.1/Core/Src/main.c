@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RTC_RESET_COUNT 3600
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,6 +66,8 @@ char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
 MesgValRX mesgRxRet;
 uint16_t timerArray[2];
 char outputStr[50];
+
+//extern BoardParameter brdParam;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,6 +86,8 @@ HAL_StatusTypeDef GetUartMessage(char *outputStr);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 const char *TAG = "MAIN";
+
+
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
@@ -104,10 +108,21 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 	}
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if(GPIO_Pin == PCF8563_CLKOUT_Pin){
+		uint16_t rtcTick = Brd_RTC_GetTickCount();
+		if(rtcTick >= RTC_RESET_COUNT){
+			Brd_RTC_SetTickCount(0); // reset tick
+			Brd_GetRTC(); // refresh board time by request RTC IC to send new time format
+		}
+		else rtcTick++;
+		Brd_RTC_SetTickCount(rtcTick);
+	}
+}
 
 /**
- * Hàm ngắt timer đếm thời gian Pulse và thời gian nghỉ giữa 2 lần kích van
- * @param htim bộ timer cần truyền vào để kiểm tra cờ ngắt
+ * Hàm ngắt timer đếm th�?i gian Pulse và th�?i gian nghỉ giữa 2 lần kích van
+ * @param htim bộ timer cần truy�?n vào để kiểm tra c�? ngắt
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -134,12 +149,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 			break;
 		}
+		// this is not relative to VanProcState
+		tArray = Brd_GetTimerArray(3);
+		tArray++;
+		Brd_SetTimerArray(3, tArray);
 	}
 }
 
 
 
-extern BoardParameter brdParam;
 /* USER CODE END 0 */
 
 /**
@@ -177,13 +195,12 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   SetUp();
-  HAL_GPIO_WritePin(UserLED_GPIO_Port, UserLED_Pin, 1);
   HAL_TIM_Base_Start_IT(&htim2);
   uartTarget = &huart1;
   while(!uartTarget);
-  brdParam.cycIntvTime = 2;
-  brdParam.intervalTime = 4;
-  brdParam.pulseTime = 60;
+  Brd_SetCycleIntervalTime(2);
+  Brd_SetIntervalTime(4);
+  Brd_SetPulseTime(60);
   Brd_SetTotalVan(4);
   /* USER CODE END 2 */
 
@@ -210,6 +227,9 @@ int main(void)
 		  // log VanState
 		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
 		  Brd_SetHC165State(false);
+	  }
+	  if(Brd_SendingPressurePeriodicly(outputStr) == HAL_OK){
+		  HAL_UART_Transmit(&huart3,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
 	  }
     /* USER CODE END WHILE */
 
@@ -438,7 +458,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, _74HC595_CLK_Pin|_74HC595_DATA_Pin|_74HC165_LOAD_Pin|OE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, _74HC595_STORE_Pin|UserLED_Pin|_74HC165_CLK_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, _74HC595_STORE_Pin|_74HC165_CLK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : _74HC595_CLK_Pin _74HC595_DATA_Pin _74HC165_LOAD_Pin OE_Pin */
   GPIO_InitStruct.Pin = _74HC595_CLK_Pin|_74HC595_DATA_Pin|_74HC165_LOAD_Pin|OE_Pin;
@@ -447,18 +467,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : _74HC595_STORE_Pin UserLED_Pin _74HC165_CLK_Pin */
-  GPIO_InitStruct.Pin = _74HC595_STORE_Pin|UserLED_Pin|_74HC165_CLK_Pin;
+  /*Configure GPIO pins : _74HC595_STORE_Pin _74HC165_CLK_Pin */
+  GPIO_InitStruct.Pin = _74HC595_STORE_Pin|_74HC165_CLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PCF8563_CLKOUT_Pin */
+  GPIO_InitStruct.Pin = PCF8563_CLKOUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(PCF8563_CLKOUT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : _74HC165_DATA_Pin */
   GPIO_InitStruct.Pin = _74HC165_DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(_74HC165_DATA_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -534,9 +564,12 @@ void SetUp()
 	PCF8563_StartClock();
 	PCF8563_CLKOUT_SetFreq(CLKOUT_1_Hz);
 	PCF8563_CLKOUT_Enable(1);
+	Brd_GetRTC();
+	Brd_RTC_SetTickCount(0);
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
+
 	HAL_UART_Transmit(&huart1, (uint8_t*)"Hello ESP32\n", strlen("Hello ESP32\n"), HAL_MAX_DELAY);
 }
 

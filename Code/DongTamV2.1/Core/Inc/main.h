@@ -64,8 +64,9 @@ void Error_Handler(void);
 #define _74HC595_DATA_GPIO_Port GPIOA
 #define _74HC595_STORE_Pin GPIO_PIN_0
 #define _74HC595_STORE_GPIO_Port GPIOB
-#define UserLED_Pin GPIO_PIN_1
-#define UserLED_GPIO_Port GPIOB
+#define PCF8563_CLKOUT_Pin GPIO_PIN_1
+#define PCF8563_CLKOUT_GPIO_Port GPIOB
+#define PCF8563_CLKOUT_EXTI_IRQn EXTI1_IRQn
 #define _74HC165_LOAD_Pin GPIO_PIN_11
 #define _74HC165_LOAD_GPIO_Port GPIOA
 #define OE_Pin GPIO_PIN_12

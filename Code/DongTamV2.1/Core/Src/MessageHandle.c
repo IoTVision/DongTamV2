@@ -6,7 +6,7 @@
 
 const char* strRxKey[] = {
 	// Receive message
-	" ",
+	"Do nothing",
 	"SetVan",
 	"SetMultiVan",
 	"ClearVan",
@@ -16,7 +16,7 @@ const char* strRxKey[] = {
 	"SetIntervalTime",
 	"TrigVan",
 	"GetTime",
-	" ",
+	"Do nothing",
 	"SetTime",
 };
 
@@ -31,6 +31,7 @@ const char* strTxKey[] = {
 	"PulseTime: ",
 	"IntervalTime: ",
 	"CycleIntervalTime: ",
+	"CurrentTime: "
 };
 
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
@@ -63,6 +64,9 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 		break;
 	case TX_TIME:
 		RTC_PackTimeToString(Brd_GetRTC(),(s+len));
+		break;
+	case TX_CURRENT_TIME_FROM_TICK:
+		RTC_PackTimeToString(Brd_RTC_GetCurrentTimeFromTick(),(s+len));
 		break;
 	case TX_PRESSURE:
 		sprintf((s+len),"%.2f",Brd_GetPressure());
@@ -120,13 +124,13 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
 		// check if value can be obtained from string
+		if(itemConverted != 1) {
+			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+			return HAL_ERROR;
+		}
 	} else if (mesgValRX > RX_START_TIME_FORMAT){
 		t = RTC_GetTimeFromString(inputStr);
 		if(Brd_SetRTC(t) == HAL_ERROR) return HAL_ERROR;
-	}
-	if(itemConverted != 1) {
-		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
-		return HAL_ERROR;
 	}
 	switch(mesgValRX){
 		case RX_SET_VAN:

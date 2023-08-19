@@ -33,7 +33,7 @@ typedef struct BoardParameter
     uint16_t currentVanOn;
     float pressure;
     uint8_t totalVan;
-    uint16_t timerArray[3];// 1 for pulse time, 2 for interval time
+    uint16_t timerArray[4];// 1 for pulse time, 2 for interval time, 3 for Cycle interval time and 4 is sending pressure periodicly
     RTC_t RTCtime;
     bool HC165_state;
 }BoardParameter;
@@ -64,7 +64,10 @@ RTC_t Brd_GetRTC();
 uint16_t Brd_GetCycleIntervalTime();
 uint16_t Brd_GetTimerArray(uint8_t element);
 uint32_t Brd_GetVanState();
+RTC_t Brd_RTC_GetCurrentTimeFromTick();
+uint16_t Brd_RTC_GetTickCount();
 
+void Brd_RTC_SetTickCount(uint16_t tick);
 HAL_StatusTypeDef Brd_SetTotalVan(uint8_t val);
 HAL_StatusTypeDef Brd_SetVanOn(uint16_t val);
 HAL_StatusTypeDef Brd_SetMultiVan(uint16_t val);
@@ -75,6 +78,11 @@ HAL_StatusTypeDef Brd_SetRTC(RTC_t t);
 HAL_StatusTypeDef Brd_SetCycleTime(uint16_t val);
 HAL_StatusTypeDef Brd_SetTimerArray(uint8_t element, uint16_t val);
 HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val);
+
+
+HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* outputStr);
+
+
 void Brd_SetHC165State(bool state);
 
 HC595* Brd_GetAddress_HC595();
