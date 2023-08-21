@@ -164,5 +164,4 @@ void Setup()
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
-    xEventGroupWaitBits()
 }

@@ -4,6 +4,8 @@
 #include "../GUI/LedButton.h"
 #include "../BoardParameter.h"
 #include "../ShareVar.h"
+#include "OnlineHandle/OnlineManage.h"
+#include "freertos/FreeRTOS.h"
 
 uint8_t PI_HandlePressureFromUART(float val);
 
@@ -24,8 +26,8 @@ const char* strRxKey[] = {
 	"trigVan",
 	"Float",//START_FLOAT_VALUE
 	"P",
-	"Time",//START_TIME_FORMAT
-	"Time: ",
+	"DoNothing",//START_TIME_FORMAT
+	"CurrentTime",// -> this is String match with STM32, do not modify
 	"End",
 };
 
@@ -109,23 +111,26 @@ esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
-	// RTC_t t;
+	RTC_t t;
 	uint32_t val=0;
 	float fVal=0;
 	uint8_t itemConverted = 0;
-	
 	if(mesgValRX > RX_START_INT_VALUE && mesgValRX < RX_START_FLOAT_VALUE){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
-		// ESP_LOGI("GetValInt","val:%lu,mesg:%d",val,mesgValRX);	
+		// check if value can be obtained from string
+		if(itemConverted != 1) {
+			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+			return ESP_ERR_INVALID_ARG;
+		}
 	} else if (mesgValRX > RX_START_FLOAT_VALUE && mesgValRX < RX_START_TIME_FORMAT){
 		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_FLOAT,&fVal);
-	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX){
-
-	}
-	// check if value can be obtained from string
-	if(itemConverted != 1) {
-		if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
-		return ESP_ERR_INVALID_ARG;
+		// check if value can be obtained from string
+		if(itemConverted != 1) {
+			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+			return ESP_ERR_INVALID_ARG;
+		}
+	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX < RX_END_MESSAGE){
+		t = RTC_GetTimeFromString(inputStr);
 	}
 	switch (mesgValRX)
 	{
@@ -183,11 +188,14 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 		ESP_LOGI("GetValue","TrigVan");
 		TX_STM32_TrigVan(val);
 	break;
-	case RX_TIME:
-
+	case RX_CURRENT_TIME:
+		Brd_SetRTC(t);
+		TaskHandle_t *taskOnlHandle = TaskOnl_GetHandle();
+		xTaskNotify(*taskOnlHandle,0x01,eSetValueWithoutOverwrite);
 	break;
 	case RX_PRESSURE: 
-	PI_SetLevel(PI_HandlePressureFromUART(fVal));
+	PI_SetLevel(PI_CalcLevelFromPressure(fVal));
+	Brd_SetPressure(fVal);
 	break;
 	default:
 		break;
@@ -207,20 +215,3 @@ void TX_STM32_TrigVan(uint8_t Trig)
 	}
 }
 
-uint8_t PI_HandlePressureFromUART(float val)
-{
-	uint32_t dpHigh = Brd_GetParamIntValue(INDEX_DP_HIGH);
-	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);
-	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
-	uint32_t a = dpLow + dpStep;
-	for(uint8_t i=1; i <= 10;i++){
-		if(a > val){
-			return i; // return level of pressure indicator
-		} else {
-			a += dpStep;
-		}
-		if(a > dpHigh) return i;
-		else if(a < dpLow) return 1;
-	} 
-	return 1;
-}

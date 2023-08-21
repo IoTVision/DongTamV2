@@ -74,21 +74,15 @@ void GUI_ShowValueString();
 void GUITask(void *pvParameter)
 {
     EventBits_t e;
-    uint8_t blockNotify = 0;
     while(1){
-        // to prevent multiple press button event
-        if(!blockNotify){
-            if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
-                blockNotify = 1;
-                ESP_LOGI("GUITask","Get notify");
-                GUI_ClearPointer();
-                GUINAV_GetEvent(e);
-                GUI_ShowPointer();
-                PrintNavigation();
-                GUI_Manage();
-                vTaskDelay(100/portTICK_PERIOD_MS);
-                blockNotify = 0;
-            }
+        if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
+            ESP_LOGI("GUITask","Get notify");
+            GUI_ClearPointer();
+            GUINAV_GetEvent(e);
+            GUI_ShowPointer();
+            PrintNavigation();
+            GUI_Manage();
+            vTaskDelay(100/portTICK_PERIOD_MS);
         }
     }
 }
@@ -138,7 +132,7 @@ void GUI_SendCommandToSTM32()
         MessageTxHandle(TX_PULSE_TIME,s);
         break;
         default:
-            break;
+        break;
     }
     ESP_LOGI("GUI_STM32","paramNO:%d,%s",paramNO,s);
     SendStringToUART(qSTM32Tx,s);

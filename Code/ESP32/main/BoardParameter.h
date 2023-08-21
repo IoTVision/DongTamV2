@@ -93,6 +93,10 @@ uint32_t Brd_GetParamStepChange(uint8_t index);
 
 const char* Brd_GetUnit(uint8_t index);
 RTC_t Brd_GetRTC();
+esp_err_t Brd_SetRTC(RTC_t t);
+
+float Brd_GetPressure();
+void Brd_SetPressure(float pressure);
 
 void Brd_PrintAllParameter();
 void Brd_LoadDefaultValue();

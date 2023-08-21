@@ -42,7 +42,8 @@ typedef enum MesgValRX{
 	RX_START_FLOAT_VALUE,//mark from this to below will get float value
 	RX_PRESSURE,
 	RX_START_TIME_FORMAT,//mark from this to below will get time format
-	RX_TIME,
+	RX_CURRENT_TIME,
+	RX_END_MESSAGE,
 }MesgValRX;
 
 

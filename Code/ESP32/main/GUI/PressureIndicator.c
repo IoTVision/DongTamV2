@@ -1,4 +1,5 @@
 #include "PressureIndicator.h"
+#include "BoardParameter.h"
 HC595 LedBar;
 
 void PI_SetLevel(uint8_t level){
@@ -9,6 +10,24 @@ void PI_SetLevel(uint8_t level){
     HC595_SetByteOutput(indicator);
     HC595_ShiftOut(NULL,2,1);
     HC595_ClearByteOutput(INDICATOR_MAX_BITMASK);
+}
+
+uint8_t PI_CalcLevelFromPressure(float val)
+{
+	uint32_t dpHigh = Brd_GetParamIntValue(INDEX_DP_HIGH);
+	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);
+	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
+	uint32_t a = dpLow + dpStep;
+	for(uint8_t i=1; i <= 10;i++){
+		if(a > val){
+			return i; // return level of pressure indicator
+		} else {
+			a += dpStep;
+		}
+		if(a > dpHigh) return i;
+		else if(a < dpLow) return 1;
+	} 
+	return 1;
 }
 
 

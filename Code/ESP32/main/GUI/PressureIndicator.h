@@ -14,4 +14,5 @@
 
 void PI_SetLevel(uint8_t level);
 void PI_Init();
+uint8_t PI_CalcLevelFromPressure(float val);
 #endif

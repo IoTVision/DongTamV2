@@ -1,49 +1,30 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_log.h"
-#include "POSTGET.h"
-#include "HTTP_POSTGET.h"
 #include "esp_event.h"
 #include "OnlineStatusEvent.h"
 #include "JsonHandle/JsonHandle.h"
-char data_send[MAX_HTTP_OUTPUT_BUFFER];
-
-
-double dpPressure = 250;
-uint8_t dpIndicate = 1;
-
-uint8_t dpIndicatorBar_CalPressureLevel(int val)
-{
-    uint32_t dpHigh = jsHandle_Get_dpHigh();  
-	uint32_t dpLow = jsHandle_Get_dpLow();
-	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
-	uint32_t a = dpLow + dpStep;
-	for(uint8_t i=1; i <= 10;i++){
-		if(a > val){
-			return i; // return level of pressure indicator
-		} else {
-			a += dpStep;
-		}
-		if(a > dpHigh) return i;
-		else if(a < dpLow) return 1;
-	} 
-	return 1;
-}
-
+#include "BoardParameter.h"
+#include "POSTGET.h"
+#include "HTTP_POSTGET.h"
+#include "GUI/PressureIndicator.h"
 HTTP_CODE_e onl_HTTP_SendToServer(int a)
-{
-    if(!OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED) || !OnlEvt_CheckBit(ONL_EVT_PING_SUCCESS)) return 0;
-    char s[300] = {0};
+{//%d/%d/%d %d:%d:%d
+    uint32_t value;
     HTTP_CODE_e http_code = HTTP_INVALID;
-    snprintf(s,300,  
-    "{'IMEI': \"AC67B2F6E568\", 'Power':1, 'FAN':1, 'ODCMode':1, 'ValveError':0, 'VanKich':0, 'DeltaPH':%d, 'DeltaP':%.2f,'DeltaPL':250,'LED10Bar':%d,'RTC': \"17/8/2023 11:57:00\"}",
-    a + 3800,dpPressure,dpIndicate);
-    dpPressure +=100.1;
-    dpIndicate ++;
-    if(dpPressure >= 3800) dpPressure = 250;
-    if(dpIndicate >= 10) dpIndicate = 1;
-    http_code = http_post(URL_POST_IOTVISION_DONGTAM,s);
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    if(!OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED) || !OnlEvt_CheckBit(ONL_EVT_PING_SUCCESS)) return 0;
+    if(xTaskNotifyWait(pdFALSE,pdTRUE,&value,10/portTICK_PERIOD_MS)){
+        RTC_t t = Brd_GetRTC();
+        char s[300] = {0};
+        snprintf(s,300,  
+        "{'IMEI': \"AC67B2F6E568\", 'Power':1, 'FAN':1, 'ODCMode':1, 'ValveError':0, 'VanKich':0, 'DeltaPH':%ld, 'DeltaP':%.2f,'DeltaPL':%ld,'LED10Bar':%u,'RTC': \"%d/%d/%d %d:%d:%d\"}",
+        Brd_GetParamIntValue(INDEX_DP_HIGH),
+        Brd_GetPressure(),
+        Brd_GetParamIntValue(INDEX_DP_LOW),
+        PI_CalcLevelFromPressure(Brd_GetPressure()),
+        t.day,t.month,t.year+2000,t.hour,t.minute,t.second);
+        http_code = http_post(URL_POST_IOTVISION_DONGTAM,s);
+    }
     return http_code;
 }
 

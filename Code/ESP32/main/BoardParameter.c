@@ -460,6 +460,9 @@ uint8_t Brd_GetParamStringValueIndex(ParamIndex index)
         return 0;
 }
 
+
+
+
 void Brd_PrintAllParameter()
 {
 	for(uint8_t i = INDEX_TOTAL_VAN; i <= INDEX_SERV_RUN_HOURS_ALARM; i++){
@@ -574,7 +577,21 @@ void Brd_LoadDefaultValue()
 
 RTC_t Brd_GetRTC(){return brdParam.RTCtime;}
 
+esp_err_t Brd_SetRTC(RTC_t t)
+{
+    uint8_t indexT = sizeof(t) / (sizeof(int8_t));
+    int8_t *a = &t.year;
+    for(uint8_t i = 0; i < indexT; i++){
+        if(*(a+i) == -1) return ESP_ERR_INVALID_ARG;
+    }
+    brdParam.RTCtime = t;
+    return ESP_OK;
+    
+}
 
+void Brd_SetPressure(float pressure){brdParam.pressure = pressure;}
+
+float Brd_GetPressure(){return brdParam.pressure;}
 
 uint16_t Brd_GetMaxLimit(uint8_t index){return paramMaxLimit[index];}
 uint16_t Brd_GetMinLimit(uint8_t index){return paramMinLimit[index];}
