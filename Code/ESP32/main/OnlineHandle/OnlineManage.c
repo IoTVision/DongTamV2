@@ -124,7 +124,8 @@ void TaskOnlManage(void *pvParameter)
     while (1){
         onl_Handle_Reconnect_Sequence();
         onl_HTTP_SendToServer((int)resetTime);
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        printf("%lu\n",esp_get_free_heap_size());
+        vTaskDelay(2000/portTICK_PERIOD_MS);
     }
     
 }

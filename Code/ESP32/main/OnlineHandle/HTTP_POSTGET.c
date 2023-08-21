@@ -42,7 +42,6 @@ HTTP_CODE_e onl_HTTP_SendToServer(int a)
     dpIndicate ++;
     if(dpPressure >= 3800) dpPressure = 250;
     if(dpIndicate >= 10) dpIndicate = 1;
-    printf("%lu\n",esp_get_free_heap_size());
     http_code = http_post(URL_POST_IOTVISION_DONGTAM,s);
     vTaskDelay(1000/portTICK_PERIOD_MS);
     return http_code;

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include "./UART.h"
 QueueHandle_t qSTM32_event,qLOG_event,qUART_BigSize;
 uint8_t countQueueBigSize=0;
@@ -38,11 +37,6 @@ void TaskUartHandleBigSize(void *pvParameters){
     }
 }
 
-=======
-#include "UART.h"
-#include "driver/uart.h"
-QueueHandle_t qUART_STM32_event,qLOG_event;
->>>>>>> ESP32_JSON_POSTGET
 void TaskUart(void *pvParameters)
 {
     uart_event_t event;

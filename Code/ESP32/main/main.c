@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 
 #include "./main.h"
 
@@ -6,28 +5,12 @@
 
 #include "./ShareVar.h"
 #include "./UART.h"
-=======
-#include <stdio.h>
-#include "main.h"
->>>>>>> ESP32_JSON_POSTGET
 #include "driver/dac.h"
-#include "cJSON.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "RTC_Format.h"
 #include "MessageHandle/MessageHandle.h"
 #include "GUI/GUI.h"
-QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
-uart_port_t uartTarget;
-cJSON *cjsMain;
-EventGroupHandle_t evg1,evgJson;
-TaskHandle_t taskCommon,taskUartHandleString;
-
-
-void Setup();
-void SendStringToUART(QueueHandle_t q,char *s);
-void InitProcess();
-esp_err_t TestFlashNVS();
 #include "freertos/FreeRTOS.h" 
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -35,9 +18,17 @@ esp_err_t TestFlashNVS();
 #include "esp_http_client.h"
 #include "esp_mac.h"
 #include "OnlineHandle/OnlineManage.h"
-#include "JsonHandle/JsonHandle.h"
-#include "UART.h"
 
+QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
+uart_port_t uartTarget;
+EventGroupHandle_t evg1;
+TaskHandle_t taskCommon,taskUartHandleString;
+
+
+
+void Setup();
+void SendStringToUART(QueueHandle_t q,char *s);
+void InitProcess();
 
 #define MAC_ADDR_SIZE 6
 
@@ -59,10 +50,12 @@ void Setup();
 void app_main(void)
 {
     Setup();
+    char *s = NULL;
     while (1) {
-        // PostDataFromBoardToServer(1);     
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        
+        if(xQueueReceive(qLogTx,&s,10/portTICK_PERIOD_MS)){
+            uart_write_bytes(UART_NUM_0,s,strlen(s));
+            free(s);
+        }
     }
 }
 
@@ -114,7 +107,6 @@ void set_mac_address(uint8_t *mac){
 }
 
 
-<<<<<<< HEAD
 /**
  * @brief Khởi tạo bộ nhớ flash, khởi tạo vùng nhớ Queue, 
  * khởi tạo các ngoại vi liên quan tới GUI như LCD I2C, 
@@ -129,21 +121,9 @@ void InitProcess()
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
-=======
-
-void Setup()
-{
-    jsHandle_Init(NULL);
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
->>>>>>> ESP32_JSON_POSTGET
         ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
+        err = nvs_flash_init();
     }
-
-<<<<<<< HEAD
-
-    cjsMain = cJSON_CreateObject();
     qLogTx = xQueueCreate(3,sizeof(char *));
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
@@ -176,32 +156,13 @@ void SendStringToUART(QueueHandle_t q,char *s)
 void Setup()
 {
     TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
+    TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
     InitProcess();
     ESP_LOGI("Notify","pass InitProcess");
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
-    ESP_ERROR_CHECK(ret);
-    TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
+    xEventGroupWaitBits()
 }
->>>>>>> ESP32_JSON_POSTGET
