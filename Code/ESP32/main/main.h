@@ -10,7 +10,7 @@
 #define cJSON_OFFSET_BYTES 5
 #define NVS_SAVE_VAN_VALUE "FlashSaveVan" 
 #define NVS_GET_VAN_VALUE "FlashReadVan" 
-#define MESG_READY_STM32 "Hello ESP"
+#define MESG_READY_STM32 "Hello ESP32\n"
 
 
 #define CHECKFLAG(FlagGroup,FlagBit) ((((FlagGroup) & (FlagBit)) == (FlagBit)) ? 1 : 0) 

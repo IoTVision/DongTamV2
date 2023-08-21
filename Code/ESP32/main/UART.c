@@ -7,7 +7,11 @@ TaskHandle_t TaskHandleBigSize;
 
 #define QUEUE_SIZE_OF_QBIG_SIZE 10
 
-
+/**
+ * @brief 
+ * 
+ * @param pvParameters 
+ */
 void TaskUartHandleBigSize(void *pvParameters){
     ESP_LOGI("TaskUartHandleBigSize","Created");
     uint8_t *QueueAreWaiting = (uint8_t*)pvParameters;
@@ -137,6 +141,5 @@ void UARTConfig()
     uart_param_config(UART_NUM_0, &uart_config);
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    
 }
 

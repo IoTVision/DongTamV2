@@ -22,7 +22,9 @@ TaskHandle_t taskCommon,taskUartHandleString;
 void Setup();
 void SendStringToUART(QueueHandle_t q,char *s);
 void InitProcess();
+void STM32_Set_Default_Parameter(char *sOutput);
 esp_err_t TestFlashNVS();
+void STM32_Ready_GUI(char *s);
 
 /**
  * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ, ảnh hưởng đến tốc độ chạy của task nên gửi sang task IDLE để 
@@ -35,24 +37,37 @@ void app_main(void)
 {
     Setup();
     char *s = NULL;
-    //char ready[] = "Hello ESP";
+    char sOutput[50] = {0};
     while (1) {
         if(xQueueReceive(qLogTx,&s,10/portTICK_PERIOD_MS)){
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
         }
-
-        if(xQueueReceive(qSTM32Ready,&s,portMAX_DELAY)){
-            ESP_LOGI("STM32","Queue STM32ready received");
-            ESP_LOGI("STM32","String is: %s", s);
-            ESP_LOGI("STM32","String compared with is: %s",MESG_READY_STM32 );
+        if(xQueueReceive(qSTM32Ready,&s,10/portTICK_PERIOD_MS)){
+            ESP_LOGI("STM32 1st","%s",s);
             if(!strcmp(s, MESG_READY_STM32)){
-                ESP_LOGI("STM32","Compare succesfully");
+                STM32_Set_Default_Parameter(sOutput); 
+                STM32_Ready_GUI("STM32 ready");
                 xEventGroupSetBits(evgUART,EVT_UART_STM32_READY);
-            }
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                GUI_ShowPointer();
+                GUI_LoadPageAtInit();
+            } else {
+                STM32_Ready_GUI("STM32 not ready");
+            } 
             
         }
     }
+}
+
+/**
+ * @brief
+ * 
+*/
+void STM32_Ready_GUI(char *s){
+    LCDI2C_Clear();
+    vTaskDelay(5/portTICK_PERIOD_MS);
+    LCDI2C_Print(s,0,0);
 }
 
 /**
@@ -80,14 +95,10 @@ void UartHandleString(void *pvParameter)
 
             if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
                 xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
-                ESP_LOGE("STM32","Flag is empty");
-                xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,5000/portTICK_PERIOD_MS);
-                e = xEventGroupGetBits(evgUART);
+                e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,50/portTICK_PERIOD_MS);              
             }
 
             if(CHECKFLAG(e, EVT_UART_STM32_READY)){
-                //ESP_LOGI("STM32","s:%s,event:0x%lu",s,e);
-                ESP_LOGE("STM32","Flag still there");
                 if(MessageRxHandle(s,sOutput) == ESP_OK){
                     if(uartTarget == UART_NUM_0){
                         SendStringToUART(qSTM32Tx,sOutput);
@@ -98,7 +109,7 @@ void UartHandleString(void *pvParameter)
                     }
                 } 
             }
-            else ESP_LOGE("STM32","Failed");
+            else ESP_LOGE("STM32v","Event bit not received");
             free(s);
         }
     }
@@ -126,7 +137,7 @@ void InitProcess()
 
 
     // cjsMain = cJSON_CreateObject();
-    qLogTx = xQueueCreate(3,sizeof(char *));
+    qLogTx = xQueueCreate(6,sizeof(char *));
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
     qSTM32Ready = xQueueCreate(1, strlen(MESG_READY_STM32));
@@ -134,9 +145,23 @@ void InitProcess()
     Brd_LoadDefaultValue();
     Brd_PrintAllParameter();
     UARTConfig();
-    // GuiInit();
+    GuiInit();
 }
 
+void STM32_Set_Default_Parameter(char *sOutput){
+    MesgValTX paramToSendSTM32[] = {
+        TX_PULSE_TIME,
+        TX_TOTAL_VAN,
+        TX_CYC_INTV_TIME,
+        TX_INTERVAL_TIME,
+    };
+
+    for(uint8_t i = 0; i < sizeof(paramToSendSTM32)/sizeof(MesgValTX); i++){
+        MessageTxHandle(paramToSendSTM32[i], sOutput);
+        SendStringToUART(qSTM32Tx,sOutput);
+        ESP_LOGI("STM32v","%s",sOutput);
+    }
+}
 
 /**
  * @brief Cấp phát vùng nhớ chứa chuỗi s cần gửi qua UART
@@ -158,13 +183,13 @@ void SendStringToUART(QueueHandle_t q,char *s)
 
 void Setup()
 {
-    // TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
+    TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
     InitProcess();
     ESP_LOGI("Notify","pass InitProcess");
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
-    // xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
-    // xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
+    xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
+    xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
 
 
 }
