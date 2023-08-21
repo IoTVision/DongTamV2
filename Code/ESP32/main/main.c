@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 #include "./main.h"
 
@@ -5,6 +6,10 @@
 
 #include "./ShareVar.h"
 #include "./UART.h"
+=======
+#include <stdio.h>
+#include "main.h"
+>>>>>>> ESP32_JSON_POSTGET
 #include "driver/dac.h"
 #include "cJSON.h"
 #include "freertos/queue.h"
@@ -23,6 +28,26 @@ void Setup();
 void SendStringToUART(QueueHandle_t q,char *s);
 void InitProcess();
 esp_err_t TestFlashNVS();
+#include "freertos/FreeRTOS.h" 
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "esp_tls.h"
+#include "esp_http_client.h"
+#include "esp_mac.h"
+#include "OnlineHandle/OnlineManage.h"
+#include "JsonHandle/JsonHandle.h"
+#include "UART.h"
+
+
+#define MAC_ADDR_SIZE 6
+
+uint8_t mac_address[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+uint8_t MAC_WIFI[6];
+
+
+
+
+void Setup();
 
 /**
  * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ, ảnh hưởng đến tốc độ chạy của task nên gửi sang task IDLE để 
@@ -34,12 +59,10 @@ esp_err_t TestFlashNVS();
 void app_main(void)
 {
     Setup();
-    char *s = NULL;
     while (1) {
-        if(xQueueReceive(qLogTx,&s,10/portTICK_PERIOD_MS)){
-            uart_write_bytes(UART_NUM_0,s,strlen(s));
-            free(s);
-        }
+        // PostDataFromBoardToServer(1);     
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        
     }
 }
 
@@ -75,8 +98,23 @@ void UartHandleString(void *pvParameter)
         }
     }
 }
+void get_mac_wifi_address(){
+    uint8_t mac[MAC_ADDR_SIZE];
+    esp_read_mac(mac,ESP_MAC_WIFI_STA);
+    ESP_LOGI("MAC address", "MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
+
+void set_mac_address(uint8_t *mac){
+    esp_err_t err = ESP_OK;
+    if (err == ESP_OK) {
+        ESP_LOGI("MAC address", "MAC address successfully set to %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    } else {
+        ESP_LOGE("MAC address", "Failed to set MAC address");
+    }
+}
 
 
+<<<<<<< HEAD
 /**
  * @brief Khởi tạo bộ nhớ flash, khởi tạo vùng nhớ Queue, 
  * khởi tạo các ngoại vi liên quan tới GUI như LCD I2C, 
@@ -91,11 +129,19 @@ void InitProcess()
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( err );
+=======
 
+void Setup()
+{
+    jsHandle_Init(NULL);
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+>>>>>>> ESP32_JSON_POSTGET
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
+<<<<<<< HEAD
 
     cjsMain = cJSON_CreateObject();
     qLogTx = xQueueCreate(3,sizeof(char *));
@@ -153,3 +199,9 @@ void Setup()
 
 
 
+=======
+    ESP_ERROR_CHECK(ret);
+    TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
+    xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
+}
+>>>>>>> ESP32_JSON_POSTGET
