@@ -561,7 +561,6 @@ esp_err_t Brd_FactoryReset()
 
 void Brd_LoadDefaultValue()
 {
-	esp_err_t err = ESP_OK;
     // nvs_flash_erase();
     if(Brd_ReadParamFromFlash() != ESP_OK){
         ESP_LOGW("LoadParam","This board does not have parameters store in Flash, load default value in factory setup");

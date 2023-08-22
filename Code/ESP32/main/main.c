@@ -19,26 +19,23 @@
 #include "esp_mac.h"
 #include "OnlineHandle/OnlineManage.h"
 
-QueueHandle_t qLogTx,qSTM32Tx,qUartHandle;
-uart_port_t uartTarget;
-EventGroupHandle_t evg1;
-TaskHandle_t taskCommon,taskUartHandleString;
-
-
-
-void Setup();
-void SendStringToUART(QueueHandle_t q,char *s);
-void InitProcess();
-
 #define MAC_ADDR_SIZE 6
 
+QueueHandle_t qLogTx,qSTM32Tx,qUartHandle,qSTM32Ready;
+uart_port_t uartTarget;
+TaskHandle_t taskCommon,taskUartHandleString;
 uint8_t mac_address[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 uint8_t MAC_WIFI[6];
 
 
 
-
+void SendStringToUART(QueueHandle_t q,char *s);
+void InitProcess();
 void Setup();
+void STM32_Set_Default_Parameter(char *sOutput);
+void STM32_Ready_GUI(char *s);
+
+
 
 /**
  * @brief Vì dùng ESP_LOG tốn tài nguyên CPU và bộ nhớ, ảnh hưởng đến tốc độ chạy của task nên gửi sang task IDLE để 
@@ -51,12 +48,37 @@ void app_main(void)
 {
     Setup();
     char *s = NULL;
+    char sOutput[50] = {0};
     while (1) {
         if(xQueueReceive(qLogTx,&s,10/portTICK_PERIOD_MS)){
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
         }
+        if(xQueueReceive(qSTM32Ready,&s,10/portTICK_PERIOD_MS)){
+            ESP_LOGI("STM32 1st","%s",s);
+            if(!strcmp(s, MESG_READY_STM32)){
+                STM32_Set_Default_Parameter(sOutput); 
+                STM32_Ready_GUI("STM32 ready");
+                xEventGroupSetBits(evgUART,EVT_UART_STM32_READY);
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                GUI_ShowPointer();
+                GUI_LoadPageAtInit();
+            } else {
+                STM32_Ready_GUI("STM32 not ready");
+            } 
+            
+        }
     }
+}
+
+/**
+ * @brief
+ * 
+*/
+void STM32_Ready_GUI(char *s){
+    LCDI2C_Clear();
+    vTaskDelay(5/portTICK_PERIOD_MS);
+    LCDI2C_Print(s,0,0);
 }
 
 /**
@@ -69,24 +91,36 @@ void UartHandleString(void *pvParameter)
 {
     char *s=NULL;
     char sOutput[50] = {0};
+    EventBits_t e;
+    e = xEventGroupGetBits(evgUART);
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
+
             if(uartTarget == UART_NUM_0){
                 ESP_LOGI("PC","%s",s);
             }
             else if (uartTarget == UART_NUM_2){
                 ESP_LOGI("STM32","%s",s);
             }
-            if(MessageRxHandle(s,sOutput) == ESP_OK){
-                if(uartTarget == UART_NUM_0){
-                    SendStringToUART(qSTM32Tx,sOutput);
-                    memset(sOutput,0,strlen(sOutput));
-                } else if(uartTarget == UART_NUM_2) {
-                    SendStringToUART(qLogTx,s);
-                    memset(sOutput,0,strlen(sOutput));
-                }
-            } 
+
+            if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
+                xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
+                e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,50/portTICK_PERIOD_MS);              
+            }
+
+            if(CHECKFLAG(e, EVT_UART_STM32_READY)){
+                if(MessageRxHandle(s,sOutput) == ESP_OK){
+                    if(uartTarget == UART_NUM_0){
+                        SendStringToUART(qSTM32Tx,sOutput);
+                        memset(sOutput,0,strlen(sOutput));
+                    } else if(uartTarget == UART_NUM_2) {
+                        SendStringToUART(qLogTx,s);
+                        memset(sOutput,0,strlen(sOutput));
+                    }
+                } 
+            }
+            else ESP_LOGE("STM32v","Event bit not received");
             free(s);
         }
     }
@@ -124,16 +158,30 @@ void InitProcess()
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-    qLogTx = xQueueCreate(3,sizeof(char *));
+    qLogTx = xQueueCreate(6,sizeof(char *));
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
-    evg1 = xEventGroupCreate();
+    qSTM32Ready = xQueueCreate(1, strlen(MESG_READY_STM32));
     Brd_LoadDefaultValue();
     Brd_PrintAllParameter();
     UARTConfig();
     GuiInit();
 }
 
+void STM32_Set_Default_Parameter(char *sOutput){
+    MesgValTX paramToSendSTM32[] = {
+        TX_PULSE_TIME,
+        TX_TOTAL_VAN,
+        TX_CYC_INTV_TIME,
+        TX_INTERVAL_TIME,
+    };
+
+    for(uint8_t i = 0; i < sizeof(paramToSendSTM32)/sizeof(MesgValTX); i++){
+        MessageTxHandle(paramToSendSTM32[i], sOutput);
+        SendStringToUART(qSTM32Tx,sOutput);
+        ESP_LOGI("STM32v","%s",sOutput);
+    }
+}
 
 /**
  * @brief Cấp phát vùng nhớ chứa chuỗi s cần gửi qua UART

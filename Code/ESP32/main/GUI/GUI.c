@@ -340,6 +340,7 @@ void GUI_PrintParam(uint8_t index, uint8_t row)
         ESP_LOGI("PrintParam","Unit: %s",Brd_GetUnit(index));
     }
     LCDI2C_Print(paramText[index],POINTER_SLOT,row);
+    
     char StringValue[20];
     // if no string is copied to unit, strlen would be zero
     if(!strlen(unit)) {
@@ -451,8 +452,8 @@ void GuiInit(){
     ButtonInit();
     LCD_init();
     PressureIndicator_Init();
-    GUI_ShowPointer();
-    GUI_LoadPageAtInit();
+    // GUI_ShowPointer();
+    // GUI_LoadPageAtInit();
 }
 
 /*

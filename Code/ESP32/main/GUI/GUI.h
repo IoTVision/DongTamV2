@@ -52,6 +52,7 @@ void GuiInit();
 void GuiTestFull();
 void GUI_ClearPointer();
 void GUI_ShowPointer();
+void GUI_LoadPageAtInit();
 void GUI_GetParam(GUIParam_t *gp, ParamIndex paramNO);
 // void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
 void GUI_LoadPage();

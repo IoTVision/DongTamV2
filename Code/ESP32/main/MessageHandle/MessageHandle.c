@@ -7,7 +7,6 @@
 #include "OnlineHandle/OnlineManage.h"
 #include "freertos/FreeRTOS.h"
 
-uint8_t PI_HandlePressureFromUART(float val);
 
 const char* strRxKey[] = {
 	// Receive message
