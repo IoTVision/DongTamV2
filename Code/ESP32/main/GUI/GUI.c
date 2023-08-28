@@ -6,7 +6,7 @@
 #include "LedButton.h"
 #include "../MessageHandle/MessageHandle.h"
 EventGroupHandle_t evgGUI;
-LCDI2C lcdI2C;
+LCDI2C lcdGUI;
 TaskHandle_t taskGUIHandle;
 GUIParam_t guiParam[LCD_ROWS];
 
@@ -429,9 +429,15 @@ void PressureIndicator_Init()
 esp_err_t LCD_init()
 {
     esp_err_t err = ESP_OK;
-    err = LCDI2C_Config(&lcdI2C);
+    err = LCDI2C_Config(&lcdGUI);
     LCDI2C_TurnOnBackLight();
     return err;
+}
+
+void GUI_resetLCD()
+{
+    LCD_init();
+    GUI_LoadPage();
 }
 
 esp_err_t ButtonInit()

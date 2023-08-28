@@ -121,8 +121,8 @@ void SaveValue()
     ESP_LOGI("NAVSaveVal","Pass");
     EventBits_t e = xEventGroupGetBits(evgGUI);
     if(!CHECKFLAG(e,EVT_SET_VALUE_TO_FLASH)) xEventGroupSetBits(evgGUI,EVT_SET_VALUE_TO_FLASH); 
-
 }
+
 /**
  * @brief Xử lý sự kiện từ nút nhấn nhận được ở TaskScanButton
  * 
@@ -154,6 +154,7 @@ void GUINAV_GetEvent(EventBits_t e)
     HandleEvent(e,EVT_BTN_SET,&SetPointerNowIsValue,&SaveValue);
     HandleEvent(e,EVT_BTN_UP,&PointToPrevParam,&IncreaseValue);
     HandleEvent(e,EVT_BTN_DOWN_RIGHT,&PointToNextParam,&DecreaseValue);
+    HandleEvent(e,EVT_LCD_RESET,&GUI_resetLCD,&GUI_resetLCD);
 }
 
 

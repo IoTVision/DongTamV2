@@ -42,12 +42,16 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
     Each time call xTaskNotify, DelayCountLoop increase by 1
     */
     static uint16_t DelayCountLoop = 0;
+    static uint8_t LCD_ResetCount = 0;
     if(e == RESET_DELAY){
         DelayCountLoop = 0;
+        LCD_ResetCount = 0;
         Delay = BTN_HOLD_DELAY_MAX;
         // do nothing after reset, so must be return
         return;
     }
+
+
     /*if user keep holding down button, check button is UP or DOWN-RIGHT and if only currently selected is value 
     to make delay shorter, the rest is just delay
     
@@ -63,11 +67,25 @@ void BtnHandleWhenHolding(gpio_num_t gpio, EventBits_t e){
         if(DelayCountLoop > DELAY_COUNT_LOOP_THRESHOLD - 1) 
         xTaskNotify(*taskGUIHandle,e,eSetValueWithoutOverwrite);
     }
+    // now button MENU should be handle to reset LCD if it is error
+    else if(gpio == BTN_MENU){
+        ESP_LOGI("Holding Menu","%u",LCD_ResetCount);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        LCD_ResetCount++;
+        // Wait for 5 seconds or above to send notify 
+        if(LCD_ResetCount >= 5){
+            LCD_ResetCount = 0;
+            TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
+            xTaskNotify(*taskGUIHandle,EVT_LCD_RESET,eSetValueWithoutOverwrite);
+        }
+    }
     else {
-        // button SET and MENU are nothing to hanle, just delay and return
+        // button SET are nothing to hanle, just delay and return
         vTaskDelay(100/portTICK_PERIOD_MS);
         return;
     }
+
+
     if(DelayCountLoop >= DELAY_COUNT_LOOP_THRESHOLD && Delay > BTN_HOLD_DELAY_MIN){
         DelayCountLoop=0;
         int temp = Delay - BTN_HOLD_DELAY_DECREASE_STEP;

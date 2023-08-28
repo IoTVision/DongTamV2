@@ -32,6 +32,8 @@
 #define EVT_PARAM_SCROLL_UP (1<<10)
 #define EVT_PARAM_SCROLL_DOWN (1<<11)
 
+#define EVT_LCD_RESET (1 << 12)
+
 #define LENGTH_OF_PARAM     11 //length of paramText
 
 typedef struct {
@@ -56,5 +58,6 @@ void GUI_LoadPageAtInit();
 void GUI_GetParam(GUIParam_t *gp, ParamIndex paramNO);
 // void GUI_SetGuiInfoValue(GUI_Info *gi, uint8_t paramNO, uint32_t value);
 void GUI_LoadPage();
+void GUI_resetLCD();
 TaskHandle_t* GUI_GetTaskHandle();
 #endif
