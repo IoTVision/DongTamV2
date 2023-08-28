@@ -12,22 +12,29 @@ void PI_SetLevel(uint8_t level){
     HC595_ClearByteOutput(INDICATOR_MAX_BITMASK);
 }
 
+/**
+ * @brief Tính toán mức LED cần hiển thị lên LED bar dựa theo áp suất min và max
+ * Lưu ý giá trị LED nhỏ nhất là 2 để hiển thị được LED số 1 (Lý do hiện tại vẫn chưa rõ vì ảnh hưởng của hàm PI_SetLevel)
+ * @param val mức LED hiển thị 
+ * @return uint8_t 
+ */
 uint8_t PI_CalcLevelFromPressure(float val)
 {
 	uint32_t dpHigh = Brd_GetParamIntValue(INDEX_DP_HIGH);
 	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);
 	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
 	uint32_t a = dpLow + dpStep;
-	for(uint8_t i=1; i <= 10;i++){
+    if(val > dpHigh) return INDICATOR_MAX_LEVEL;
+	for(uint8_t i=2; i <= 10;i++){
 		if(a > val){
 			return i; // return level of pressure indicator
 		} else {
 			a += dpStep;
 		}
 		if(a > dpHigh) return i;
-		else if(a < dpLow) return 1;
+		else if(a < dpLow) return 2;
 	} 
-	return 1;
+	return 2;
 }
 
 
@@ -56,7 +63,7 @@ void PI_Init()
         PI_SetLevel(i);
         vTaskDelay(50/portTICK_PERIOD_MS);
     }
-    for(uint8_t i=11;i>0;i--){
+    for(uint8_t i=10;i>1;i--){
         PI_SetLevel(i);
         vTaskDelay(50/portTICK_PERIOD_MS);
     }

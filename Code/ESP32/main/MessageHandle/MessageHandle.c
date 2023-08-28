@@ -110,6 +110,7 @@ esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 
 esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 {
+
 	RTC_t t;
 	uint32_t val=0;
 	float fVal=0;
@@ -190,7 +191,7 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 	case RX_CURRENT_TIME:
 		Brd_SetRTC(t);
 		TaskHandle_t *taskOnlHandle = TaskOnl_GetHandle();
-		xTaskNotify(*taskOnlHandle,0x01,eSetValueWithoutOverwrite);
+		if(taskOnlHandle) xTaskNotify(*taskOnlHandle,0x01,eSetValueWithoutOverwrite);
 	break;
 	case RX_PRESSURE: 
 	PI_SetLevel(PI_CalcLevelFromPressure(fVal));

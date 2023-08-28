@@ -18,4 +18,5 @@
 
 void SendStringToUART(QueueHandle_t q,char *s);
 void UartHandleString(void *pvParameter);
+bool STM32_IsReady();
 #endif

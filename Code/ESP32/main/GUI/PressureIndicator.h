@@ -3,8 +3,8 @@
 
 #include "74HC595.h"
 #include "freertos/FreeRTOS.h"
-#define INDICATOR_MAX_BITMASK 0x03ff
-#define INDICATOR_MIN_BITMASK 0x0200
+#define INDICATOR_MAX_BITMASK 0x01ff
+#define INDICATOR_MIN_BITMASK 0x0100
 #define INDICATOR_MAX_LEVEL 10
 
 #define HC595_OE_MASK (1ULL<<GPIO_NUM_4)

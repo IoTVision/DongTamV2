@@ -20,6 +20,6 @@
 extern LCDI2C lcdI2C;
 extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
 extern uart_port_t uartTarget;
-extern EventGroupHandle_t evg1,evgJson,evgGUI;
+extern EventGroupHandle_t evgGUI;
 extern EventGroupHandle_t evgUART;
 #endif

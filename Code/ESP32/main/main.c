@@ -46,6 +46,7 @@ void STM32_Ready_GUI(char *s);
  */
 void app_main(void)
 {
+    
     Setup();
     char *s = NULL;
     char sOutput[50] = {0};
@@ -66,7 +67,6 @@ void app_main(void)
             } else {
                 STM32_Ready_GUI("STM32 not ready");
             } 
-            
         }
     }
 }
@@ -77,8 +77,10 @@ void app_main(void)
 */
 void STM32_Ready_GUI(char *s){
     LCDI2C_Clear();
-    vTaskDelay(5/portTICK_PERIOD_MS);
+    vTaskDelay(20/portTICK_PERIOD_MS);
     LCDI2C_Print(s,0,0);
+    LedErrorWrite(0);
+    HC595_ShiftOut(NULL,2,1);
 }
 
 /**
@@ -96,7 +98,6 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-
             if(uartTarget == UART_NUM_0){
                 ESP_LOGI("PC","%s",s);
             }
@@ -200,9 +201,17 @@ void SendStringToUART(QueueHandle_t q,char *s)
     else ESP_LOGI("MAIN","Cannot malloc to send queue");
 }
 
+bool STM32_IsReady()
+{
+    EventBits_t e = xEventGroupGetBits(evgUART);
+    if(e & EVT_UART_STM32_READY) return 1;
+    return 0;
+}
+
 
 void Setup()
 {
+    i2cdev_init();
     TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
     TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
     InitProcess();
@@ -212,4 +221,5 @@ void Setup()
     xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
+
 }
