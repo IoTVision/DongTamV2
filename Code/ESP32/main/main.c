@@ -54,7 +54,7 @@ void app_main(void)
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
         }
-        if(xQueueReceive(qSTM32Ready,&s,10/portTICK_PERIOD_MS)){
+        if(xQueueReceive(qSTM32Ready,&s,100/portTICK_PERIOD_MS)){
             ESP_LOGI("STM32 1st","%s",s);
             if(!strcmp(s, MESG_READY_STM32)){
                 STM32_Set_Default_Parameter(sOutput); 
@@ -64,7 +64,7 @@ void app_main(void)
                 GUI_ShowPointer();
                 GUI_LoadPageAtInit();
             } else {
-                STM32_Ready_GUI("STM32 not ready");
+                STM32_Ready_GUI("Wait STM32 ready");
             } 
             
         }
@@ -77,7 +77,7 @@ void app_main(void)
 */
 void STM32_Ready_GUI(char *s){
     LCDI2C_Clear();
-    vTaskDelay(5/portTICK_PERIOD_MS);
+    vTaskDelay(20/portTICK_PERIOD_MS);
     LCDI2C_Print(s,0,0);
 }
 
@@ -97,18 +97,13 @@ void UartHandleString(void *pvParameter)
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
 
-            if(uartTarget == UART_NUM_0){
-                ESP_LOGI("PC","%s",s);
-            }
-            else if (uartTarget == UART_NUM_2){
-                ESP_LOGI("STM32","%s",s);
-            }
+            if(uartTarget == UART_NUM_0) ESP_LOGI("PC","%s",s);
+            else if (uartTarget == UART_NUM_2) ESP_LOGI("STM32","%s",s);
 
             if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
                 xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
                 e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,50/portTICK_PERIOD_MS);              
             }
-
             if(CHECKFLAG(e, EVT_UART_STM32_READY)){
                 if(MessageRxHandle(s,sOutput) == ESP_OK){
                     if(uartTarget == UART_NUM_0){
@@ -203,13 +198,14 @@ void SendStringToUART(QueueHandle_t q,char *s)
 
 void Setup()
 {
+    i2cdev_init();
     TaskHandle_t *taskGUIHandle = GUI_GetTaskHandle();
     TaskHandle_t *taskOnlManage = TaskOnl_GetHandle();
     InitProcess();
     ESP_LOGI("Notify","pass InitProcess");
     xTaskCreate(TaskUart, "TaskUart", 2048, NULL, 3, NULL);
     xTaskCreate(UartHandleString,"UartHandleString",4096,NULL,2,NULL);
-    xTaskCreate(GUITask, "GUITask", 2048, NULL, 2, taskGUIHandle);
+    xTaskCreate(GUITask, "GUITask", 4096, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
 }
