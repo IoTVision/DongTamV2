@@ -115,8 +115,7 @@ void TaskOnlManage(void *pvParameter)
         if(writeResetTime(&resetTime) == ESP_OK) 
         ESP_LOGW("TaskOnl","resetTime:%u",resetTime);
     }
-
-
+    
     ESP_LOGI("TaskOnl","Succesfully created");
     tOnl = xTimerCreate("TimerOnlineManage",pdMS_TO_TICKS(1000),pdTRUE,0,TimerOnline_Callback);
     xTimerStop(tOnl,portMAX_DELAY);

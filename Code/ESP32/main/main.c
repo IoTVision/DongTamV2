@@ -55,9 +55,10 @@ void app_main(void)
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
         }
-        if(xQueueReceive(qSTM32Ready,&s,100/portTICK_PERIOD_MS)){
+        if(xQueueReceive(qSTM32Ready,&s,100/portTICK_PERIOD_MS) && !CHECKFLAG(xEventGroupGetBits(evgUART),EVT_UART_STM32_READY)){
             ESP_LOGI("STM32 1st","%s",s);
             if(!strcmp(s, MESG_READY_STM32)){
+                xQueueReset(qSTM32Ready);
                 STM32_Set_Default_Parameter(sOutput); 
                 STM32_Ready_GUI("STM32 ready");
                 xEventGroupSetBits(evgUART,EVT_UART_STM32_READY);
@@ -98,21 +99,12 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-<<<<<<< HEAD
-            if(uartTarget == UART_NUM_0){
-                ESP_LOGI("PC","%s",s);
-            }
-            else if (uartTarget == UART_NUM_2){
-                ESP_LOGI("STM32","%s",s);
-            }
-=======
 
             if(uartTarget == UART_NUM_0) ESP_LOGI("PC","%s",s);
             else if (uartTarget == UART_NUM_2) ESP_LOGI("STM32","%s",s);
->>>>>>> LCD_Reset
 
             if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
-                xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
+                if(qSTM32Ready) xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
                 e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,50/portTICK_PERIOD_MS);              
             }
             if(CHECKFLAG(e, EVT_UART_STM32_READY)){
@@ -144,6 +136,7 @@ void set_mac_address(uint8_t *mac){
     } else {
         ESP_LOGE("MAC address", "Failed to set MAC address");
     }
+
 }
 
 
