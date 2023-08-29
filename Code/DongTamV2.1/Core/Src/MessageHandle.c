@@ -92,6 +92,15 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	return HAL_OK;
 }
 
+HAL_StatusTypeDef MessageTxPMax(float pMax, char *outputStr)
+{
+	char s[40]={0};
+	sprintf(s,"P: %.2f\r\n", pMax);
+	strcpy(outputStr,s);
+
+	return HAL_OK;
+}
+
 /**
  * @brief Xử lý chuỗi nhận được, so sánh với các chuỗi đã có trong strRxKey
  * @param inputStr chuỗi cần xử lý
