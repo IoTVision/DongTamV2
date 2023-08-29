@@ -92,6 +92,16 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	return HAL_OK;
 }
 
+HAL_StatusTypeDef MessageTxPMax(float pMax, char *outputStr)
+{
+	char s[40]={0};
+	sprintf(s,"Pressure max: %.2f", pMax);
+	strcpy(outputStr,s);
+	strcat(outputStr,"\r\n");
+
+	return HAL_OK;
+}
+
 /**
  * @brief Xử lý chuỗi nhận được, so sánh với các chuỗi đã có trong strRxKey
  * @param inputStr chuỗi cần xử lý

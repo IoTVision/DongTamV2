@@ -66,6 +66,8 @@ char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
 MesgValRX mesgRxRet;
 uint16_t timerArray[2];
 char outputStr[50];
+char currentTimeStr[50];
+char currentVanState[50];
 
 //extern BoardParameter brdParam;
 /* USER CODE END PV */
@@ -219,18 +221,27 @@ int main(void)
 		  memset(mesgRX,0,sizeof(mesgRX));
 	  }
 	  ProcedureTriggerVan(outputStr);
-	  if(Brd_GetVanProcState() == BRD_PULSE_TIME){
+//	  if(Brd_GetVanProcState() == BRD_PULSE_TIME){
+//		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+//	  }
+	  if(Brd_GetVanProcState() == BRD_VAN_OFF){
 		  // log pressure
 		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+		  HAL_Delay(1);
+		  MessageTxHandle(TX_CURRENT_TIME_FROM_TICK, currentTimeStr);
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)currentTimeStr, strlen(currentTimeStr), HAL_MAX_DELAY);
+		  HAL_Delay(1);
+		  MessageTxHandle(TX_VANSTATE, currentVanState);
+		  HAL_UART_Transmit(uartTarget,(uint8_t*)currentVanState, strlen(currentVanState), HAL_MAX_DELAY);
 	  }
-	  if(Brd_GetVanProcState() == BRD_INTERVAL_TIME && Brd_GetHC165State()){
-		  // log VanState
-		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
-		  Brd_SetHC165State(false);
-	  }
-	  if(Brd_SendingPressurePeriodicly(outputStr) == HAL_OK){
-		  HAL_UART_Transmit(&huart3,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
-	  }
+//	  if(Brd_GetVanProcState() == BRD_INTERVAL_TIME && Brd_GetHC165State()){
+//		  // log VanState
+//		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+//		  Brd_SetHC165State(false);
+//	  }
+//	  if(Brd_SendingPressurePeriodicly(outputStr) == HAL_OK){
+//		  HAL_UART_Transmit(&huart3,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+//	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
