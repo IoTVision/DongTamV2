@@ -64,6 +64,7 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 		break;
 	case TX_TIME:
 		RTC_PackTimeToString(Brd_GetRTC(),(s+len));
+		Brd_RTC_SetTickCount(0);
 		break;
 	case TX_CURRENT_TIME_FROM_TICK:
 		RTC_PackTimeToString(Brd_RTC_GetCurrentTimeFromTick(),(s+len));
@@ -173,6 +174,7 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			break;
 		case RX_SET_TIME:
 			if(pValRet == HAL_OK) MessageTxHandle(TX_TIME,outputStr);
+			Brd_RTC_SetTickCount(0);
 			return HAL_OK;
 			break;
 		case RX_GET_TIME:

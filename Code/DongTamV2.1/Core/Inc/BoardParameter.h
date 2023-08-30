@@ -80,8 +80,7 @@ HAL_StatusTypeDef Brd_SetTimerArray(uint8_t element, uint16_t val);
 HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val);
 
 
-HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* outputStr);
-
+HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* pressureStr,char *currentTimeStr);
 
 void Brd_SetHC165State(bool state);
 

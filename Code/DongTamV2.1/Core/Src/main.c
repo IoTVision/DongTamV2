@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RTC_RESET_COUNT 3600
+#define RTC_RESET_COUNT 1200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,6 +66,7 @@ char mesgRX[MAX_MESSAGE],mesgTX[MAX_MESSAGE];
 MesgValRX mesgRxRet;
 uint16_t timerArray[2];
 char outputStr[50];
+char currentTimeStr[30];
 
 //extern BoardParameter brdParam;
 /* USER CODE END PV */
@@ -115,8 +116,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			Brd_RTC_SetTickCount(0); // reset tick
 			Brd_GetRTC(); // refresh board time by request RTC IC to send new time format
 		}
-		else rtcTick++;
-		Brd_RTC_SetTickCount(rtcTick);
+		else {
+			rtcTick++;
+			Brd_RTC_SetTickCount(rtcTick);
+		}
 	}
 }
 
@@ -228,8 +231,10 @@ int main(void)
 		  HAL_UART_Transmit(uartTarget,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
 		  Brd_SetHC165State(false);
 	  }
-	  if(Brd_SendingPressurePeriodicly(outputStr) == HAL_OK){
-		  HAL_UART_Transmit(&huart3,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+	  if(Brd_SendingPressurePeriodicly(outputStr,currentTimeStr) == HAL_OK){
+		  HAL_UART_Transmit(&huart1,(uint8_t*)outputStr, strlen(outputStr), HAL_MAX_DELAY);
+		  HAL_Delay(1);
+		  HAL_UART_Transmit(&huart1,(uint8_t*)currentTimeStr, strlen(currentTimeStr), HAL_MAX_DELAY);
 	  }
     /* USER CODE END WHILE */
 
@@ -569,7 +574,7 @@ void SetUp()
 	UartIdle_Init();
 	hc165_SetUp();
 	hc595_SetUp();
-
+	HAL_Delay(2000);
 	HAL_UART_Transmit(&huart1, (uint8_t*)"Hello ESP32\n", strlen("Hello ESP32\n"), HAL_MAX_DELAY);
 }
 

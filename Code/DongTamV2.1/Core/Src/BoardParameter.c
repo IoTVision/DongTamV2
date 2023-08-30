@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 
-#define BRD_SENDING_PRESSURE_PERIODIC_MS 3000
+#define BRD_SENDING_PRESSURE_PERIODIC_MS 5000
 
 BoardParameter brdParam;
 extern UART_HandleTypeDef huart3;
@@ -135,14 +135,12 @@ void CycleTimeHandle()
 	}
 }
 
-HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* outputStr)
+HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* pressureStr,char *currentTimeStr)
 {
 	if(Brd_GetTimerArray(3) * TIMER_PERIOD_MS < BRD_SENDING_PRESSURE_PERIODIC_MS) return HAL_ERROR;
-	char outputStr2[50] = {0};
 	Brd_SetTimerArray(3, 0);
-	MessageTxHandle(TX_PRESSURE, outputStr);
-	MessageTxHandle(TX_CURRENT_TIME_FROM_TICK, outputStr2);
-	strcat(outputStr,outputStr2);
+	MessageTxHandle(TX_PRESSURE, pressureStr);
+	MessageTxHandle(TX_CURRENT_TIME_FROM_TICK, currentTimeStr);
 	return HAL_OK;
 }
 
@@ -235,7 +233,6 @@ RTC_t Brd_RTC_GetCurrentTimeFromTick()
 		currentRTC.minute ++;
 	}
 	if(currentRTC.minute > 59){
-		currentRTC.second -= 60;
 		currentRTC.minute -= 60;
 		currentRTC.hour ++;
 	}
