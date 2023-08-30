@@ -32,7 +32,7 @@ void VanOn(char *outputStr,uint8_t VanTrigger)
 	if(VanTrigger > 16) return;
 	HC595_SetBitOutput(VanTrigger);
 	HC595_ShiftOut(NULL, 2, 1);
-	MessageTxHandle(TX_PRESSURE, outputStr);
+//	MessageTxHandle(TX_PRESSURE, outputStr);
 	vanProcState = BRD_PULSE_TIME;
 
 }
@@ -45,7 +45,7 @@ void VanOn(char *outputStr,uint8_t VanTrigger)
 void VanOff(char *outputStr,uint8_t VanTrigger)
 {
 	if(VanTrigger > 16) return;
-	MessageTxHandle(TX_VANSTATE, outputStr);
+//	MessageTxHandle(TX_VANSTATE, outputStr);
 	HC595_ClearBitOutput(VanTrigger);
 	HC595_ShiftOut(NULL, 2, 1);
 	vanProcState = BRD_INTERVAL_TIME;
@@ -75,8 +75,11 @@ void CheckCycleIntervalTime(uint16_t *cycleTime,uint16_t *currentVanOn)
  */
 void PulseTimeHandle(char *outputStr)
 {
-	MessageTxHandle(TX_PRESSURE, outputStr);
+	static float pMax = 0;
+	Brd_GetMaxPressureWhenVanOn(&pMax, outputStr);
 	if(Brd_GetTimerArray(0) * TIMER_PERIOD_MS >= Brd_GetPulseTime()){
+		MessageTxPMax(pMax, outputStr);
+		pMax = 0;
 		Brd_SetTimerArray(0,0);
 		Brd_SetVanProcState(BRD_VAN_OFF);
 	}
@@ -163,7 +166,7 @@ void ProcedureTriggerVan(char *outputStr)
 			break;
 		case BRD_VAN_ON:
 			VanToTrigger = CheckVanInUsed(&currentVanOn);
-			LogDataValue("VanToTrig:", VanToTrigger);
+//			LogDataValue("VanToTrigOn:", VanToTrigger);
 			if(VanToTrigger > 16){
 				vanProcState = BRD_CYCLE_INTERVAL_TIME;
 				break;
@@ -188,6 +191,15 @@ void ProcedureTriggerVan(char *outputStr)
 			vanProcState = PROC_IDLE;
 		break;
 	}
+}
+
+void Brd_GetMaxPressureWhenVanOn(float *pMax, char *outputStr){
+	float currentP = Brd_GetPressure();
+/*These 3 lines below are used for log continuos pressure in Pulse time*/
+//	char s[50];
+//	sprintf(s,"P:%.2f \r\n",currentP);
+//	strcpy(outputStr,s);
+	if(currentP > *pMax) *pMax = currentP;
 }
 
 uint32_t Brd_GetVanState(){return HC165_ReadState(2);}

@@ -66,6 +66,7 @@ uint16_t Brd_GetTimerArray(uint8_t element);
 uint32_t Brd_GetVanState();
 RTC_t Brd_RTC_GetCurrentTimeFromTick();
 uint16_t Brd_RTC_GetTickCount();
+void Brd_GetMaxPressureWhenVanOn(float *pMax, char *outputStr);
 
 void Brd_RTC_SetTickCount(uint16_t tick);
 HAL_StatusTypeDef Brd_SetTotalVan(uint8_t val);

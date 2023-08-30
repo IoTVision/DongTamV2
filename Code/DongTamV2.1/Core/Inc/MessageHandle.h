@@ -52,6 +52,6 @@ typedef HAL_StatusTypeDef (*pValueHandle)(void *pvParameter);
 
 HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr);
 HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr);
-
+HAL_StatusTypeDef MessageTxPMax(float pMax, char *outputStr);
 
 #endif /* INC_MESSAGEHANDLE_H_ */
