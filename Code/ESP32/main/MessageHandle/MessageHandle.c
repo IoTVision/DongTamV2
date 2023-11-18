@@ -24,9 +24,11 @@ const char* strRxKey[] = {
 	"saveFlash",
 	"trigVan",
 	"Float",//START_FLOAT_VALUE
-	"P",
+	"Pressure",// -> this is String match with STM32, do not modify
 	"DoNothing",//START_TIME_FORMAT
 	"CurrentTime",// -> this is String match with STM32, do not modify
+	"DoNothing",//START_REQUEST
+	"VanProcState",// -> this is String match with STM32, do not modify
 	"End",
 };
 
@@ -46,6 +48,8 @@ const char* strTxKey[] = {
 	"SetIntervalTime: ",
 	"SetTime: ",
 	"GetTime: ",
+	"IsOnProcedure",
+	"Hello STM32",
 };
 
 /**	
@@ -71,6 +75,10 @@ esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	char s[30] = {0};
 	switch (mesgValTX)
 	{
+	case TX_IS_ON_PROCEDURE:
+		sprintf(outputStr,"%s",strTxKey[mesgValTX]);
+		return ESP_OK;
+		break;
 	case TX_TOTAL_VAN:
 		val = Brd_GetParamIntValue(INDEX_TOTAL_VAN);
 		break;
@@ -91,12 +99,18 @@ esp_err_t MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 		if(!strcmp(s,"On")){
 			val = 1;
 			LedStatusWrite(1);
+			HC595_ShiftOut(NULL,2,1);
 		} else if(!strcmp(s,"Off")){
 			val = 0;
-			LedStatusWrite(0);
+			LedStatusWrite(0);			
+			HC595_ShiftOut(NULL,2,1);
 		} else return ESP_ERR_INVALID_ARG;
 		HC595_ShiftOut(NULL,2,1);
 		break;
+	case TX_HELLO_STM32:
+		sprintf(outputStr,"%s",strTxKey[mesgValTX]);
+		return ESP_OK;
+	break;
 	default:
 		break;
 	}
@@ -129,8 +143,16 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
 			return ESP_ERR_INVALID_ARG;
 		}
-	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX < RX_END_MESSAGE){
+	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX < RX_START_BOOLEAN){
 		t = RTC_GetTimeFromString(inputStr);
+	} else if (mesgValRX > RX_START_BOOLEAN && mesgValRX < RX_END_MESSAGE){
+		itemConverted = sscanf(inputStr,MESG_PATTERN_KEY_VALUE_INT,&val);
+		// check if value can be obtained from string
+		if(itemConverted != 1) {
+			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
+			return ESP_ERR_INVALID_ARG;
+		}
+	
 	}
 	switch (mesgValRX)
 	{
@@ -139,7 +161,7 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 		LedErrorWrite(1);
 		LedStatusWrite(0);
 		HC595_ShiftOut(NULL,2,1);
-	}
+	} 
 	break;
 	case RX_TOTAL_VAN:
 	Brd_SetParamInt(INDEX_TOTAL_VAN,val,NULL);
@@ -185,17 +207,31 @@ esp_err_t MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr)
 		LedErrorWrite(0);
 		LedStatusWrite(1);
 		HC595_ShiftOut(NULL,2,1);
-		ESP_LOGI("GetValue","TrigVan");
 		TX_STM32_TrigVan(val);
+		xEventGroupSetBits(evgUART,EVT_UART_IS_ON_PROCEDURE);
 	break;
 	case RX_CURRENT_TIME:
 		Brd_SetRTC(t);
 		TaskHandle_t *taskOnlHandle = TaskOnl_GetHandle();
-		if(taskOnlHandle) xTaskNotify(*taskOnlHandle,0x01,eSetValueWithoutOverwrite);
+		xTaskNotify(*taskOnlHandle,0x01,eSetValueWithoutOverwrite);
 	break;
 	case RX_PRESSURE: 
 	PI_SetLevel(PI_CalcLevelFromPressure(fVal));
 	Brd_SetPressure(fVal);
+	break;
+	case RX_VAN_PROC_STATE:
+	if(val){
+		// Temporarily use this way to set param "TrigVan" from "Off" to "On" and show on LCD
+		uint8_t valueStringIndex = 31; // this is value of "On" according to index of paramValString in BoardParameter.c
+		LedErrorWrite(0);
+		LedStatusWrite(1);
+		HC595_ShiftOut(NULL,2,1);
+		// Set this parameter "TrigVan" on LCD to value "On"
+		char s[20] = {0};
+		Brd_SetParamStringValueIndex(INDEX_TRIG_VAN,&valueStringIndex,s);
+		ESP_LOGI("SetString","Result:%s,%d",s,valueStringIndex);
+		xEventGroupSetBits(evgUART,EVT_UART_IS_ON_PROCEDURE);
+	}
 	break;
 	default:
 		break;

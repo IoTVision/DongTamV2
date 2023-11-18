@@ -6,8 +6,8 @@
 #define EVT_BTN_UP (1<<2)
 #define EVT_BTN_DOWN_RIGHT (1<<3)
 
-#define LED_ERROR_MASK 10
-#define LED_STATUS_MASK 11
+#define LED_ERROR_MASK 9
+#define LED_STATUS_MASK 10
 
 #define BTN_MENU GPIO_NUM_36
 #define BTN_SET GPIO_NUM_39

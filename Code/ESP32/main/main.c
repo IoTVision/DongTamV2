@@ -5,7 +5,6 @@
 
 #include "./ShareVar.h"
 #include "./UART.h"
-#include "driver/dac.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "RTC_Format.h"
@@ -18,14 +17,13 @@
 #include "esp_http_client.h"
 #include "esp_mac.h"
 #include "OnlineHandle/OnlineManage.h"
-
-#define MAC_ADDR_SIZE 6
+#include "freertos/timers.h"
+#include "esp_timer.h"
 
 QueueHandle_t qLogTx,qSTM32Tx,qUartHandle,qSTM32Ready;
 uart_port_t uartTarget;
 TaskHandle_t taskCommon,taskUartHandleString;
-uint8_t mac_address[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
-uint8_t MAC_WIFI[6];
+TimerHandle_t tPingHello;
 
 
 
@@ -34,7 +32,7 @@ void InitProcess();
 void Setup();
 void STM32_Set_Default_Parameter(char *sOutput);
 void STM32_Ready_GUI(char *s);
-
+void CheckVanProcedureIsProcessing(char* sOutput);
 
 
 /**
@@ -46,7 +44,6 @@ void STM32_Ready_GUI(char *s);
  */
 void app_main(void)
 {
-    
     Setup();
     char *s = NULL;
     char sOutput[50] = {0};
@@ -55,25 +52,32 @@ void app_main(void)
             uart_write_bytes(UART_NUM_0,s,strlen(s));
             free(s);
         }
-        if(xQueueReceive(qSTM32Ready,&s,100/portTICK_PERIOD_MS) && !CHECKFLAG(xEventGroupGetBits(evgUART),EVT_UART_STM32_READY)){
-            ESP_LOGI("STM32 1st","%s",s);
+        if(xQueueReceive(qSTM32Ready,&s,100/portTICK_PERIOD_MS) 
+        && !CHECKFLAG(xEventGroupGetBits(evgUART),EVT_UART_STM32_READY)){
             if(!strcmp(s, MESG_READY_STM32)){
+                xTimerStop(tPingHello,10/portTICK_PERIOD_MS);
+                xTimerDelete(tPingHello,10/portTICK_PERIOD_MS);
                 xQueueReset(qSTM32Ready);
-                STM32_Set_Default_Parameter(sOutput); 
-                STM32_Ready_GUI("STM32 ready");
+                STM32_Ready_GUI("Ready");// show this notification to LCD 
                 xEventGroupSetBits(evgUART,EVT_UART_STM32_READY);
-                vTaskDelay(1000/portTICK_PERIOD_MS);
+                CheckVanProcedureIsProcessing(sOutput);
+                vTaskDelay(500/portTICK_PERIOD_MS);
                 GUI_ShowPointer();
                 GUI_LoadPageAtInit();
             } else {
-                STM32_Ready_GUI("Wait STM32 ready");
+                STM32_Ready_GUI("Not ready");
             } 
         }
+        Brd_ESP_CheckResetInNewDay();
     }
 }
 
+
+
+
 /**
- * @brief
+ * @brief Dùng để thông báo lên màn hình LCD STM32 có thể giao tiếp bình thường 
+ * Chuyển giao diện thông báo từ "Wait for STM32 ready" sang giao diện cài đặt thông số
  * 
 */
 void STM32_Ready_GUI(char *s){
@@ -84,8 +88,41 @@ void STM32_Ready_GUI(char *s){
     HC595_ShiftOut(NULL,2,1);
 }
 
+void TimerHello_Callback(TimerHandle_t xTimer)
+{   
+    char sOutput[50] = {0};
+    MessageTxHandle(TX_HELLO_STM32,sOutput);
+    ESP_LOGI("to STM32","Sending: %s",sOutput);
+    SendStringToUART(qSTM32Tx,sOutput);
+}
+
+
+
+
 /**
- * @brief Task xử lý chuỗi từ bên file UART.c gửi sang thông qua qUARTHandle,
+ * @brief Dùng để kiểm tra STM32 có đang trong chu trình kích van hay không
+ * Nếu STM32 đang trong chu trình kích van thì không gửi thông số board từ ESP32 qua
+ * Tính năng này dùng để tránh trường hợp ESP32 reset sau khi hoạt động trong một khoảng thời gian
+ * 
+ */
+void CheckVanProcedureIsProcessing(char *sOutput)
+{
+    MessageTxHandle(TX_IS_ON_PROCEDURE,sOutput);
+    SendStringToUART(qSTM32Tx,sOutput);
+    if((xEventGroupWaitBits(evgUART,EVT_UART_IS_ON_PROCEDURE,pdFALSE,pdFALSE,5000/portTICK_PERIOD_MS) & EVT_UART_IS_ON_PROCEDURE) != EVT_UART_IS_ON_PROCEDURE){
+        /*
+        Should be wait long enough (in this case 5s) after sending message "IsOnProcedure" to STM32 
+        to check whether Van Procedure is processing or not.
+        If it's processing, it means only ESP32 is reset by something and STM32 is not reset 
+        Because Van Procedure is still processing, no need to send BoardParameter to STM32, only send if both of them are reset 
+        */
+        STM32_Set_Default_Parameter(sOutput);
+        ESP_LOGW("CheckProc","No procedure, load param to STM32");
+    } else ESP_LOGW("CheckProc","Procedure is processing");
+}
+
+/**
+ * @brief Task xử lý chuỗi nhận được từ bên file UART.c gửi sang thông qua queue qUARTHandle,
  * các thao tác xử lý chuỗi sẽ thực hiện tại đây 
  * 
  * @param pvParameter Không dùng
@@ -99,46 +136,28 @@ void UartHandleString(void *pvParameter)
     while(1){
         if(xQueueReceive(qUartHandle,&s,10/portTICK_PERIOD_MS))
         {
-
+            // for debug UART message
             if(uartTarget == UART_NUM_0) ESP_LOGI("PC","%s",s);
             else if (uartTarget == UART_NUM_2) ESP_LOGI("STM32","%s",s);
 
             if (!CHECKFLAG(e, EVT_UART_STM32_READY)){
+                //Send string that received from STM32 (or PC) to queue, this queue will be handle at IDLE task main
                 if(qSTM32Ready) xQueueSend(qSTM32Ready,&s,portMAX_DELAY);
-                e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,50/portTICK_PERIOD_MS);              
-            }
+                // if flag EVT_UART_STM32_READY is set, stop CHECK this flag and not clear it 
+                e = xEventGroupWaitBits(evgUART,EVT_UART_STM32_READY,pdFALSE,pdFALSE,10/portTICK_PERIOD_MS);              
+            } 
             if(CHECKFLAG(e, EVT_UART_STM32_READY)){
                 if(MessageRxHandle(s,sOutput) == ESP_OK){
-                    if(uartTarget == UART_NUM_0){
-                        SendStringToUART(qSTM32Tx,sOutput);
-                        memset(sOutput,0,strlen(sOutput));
-                    } else if(uartTarget == UART_NUM_2) {
-                        SendStringToUART(qLogTx,s);
-                        memset(sOutput,0,strlen(sOutput));
-                    }
+                    if(uartTarget == UART_NUM_0) SendStringToUART(qSTM32Tx,sOutput);
+                    else if(uartTarget == UART_NUM_2) SendStringToUART(qLogTx,s);
+                    memset(sOutput,0,strlen(sOutput));
                 } 
-            }
-            else ESP_LOGE("STM32v","Event bit not received");
+            }             
             free(s);
+            
         }
     }
 }
-void get_mac_wifi_address(){
-    uint8_t mac[MAC_ADDR_SIZE];
-    esp_read_mac(mac,ESP_MAC_WIFI_STA);
-    ESP_LOGI("MAC address", "MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
-
-void set_mac_address(uint8_t *mac){
-    esp_err_t err = ESP_OK;
-    if (err == ESP_OK) {
-        ESP_LOGI("MAC address", "MAC address successfully set to %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    } else {
-        ESP_LOGE("MAC address", "Failed to set MAC address");
-    }
-
-}
-
 
 /**
  * @brief Khởi tạo bộ nhớ flash, khởi tạo vùng nhớ Queue, 
@@ -157,14 +176,30 @@ void InitProcess()
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
+
+    if(readResetTimeFromFlash() != ESP_OK){
+        if(writeResetTimeToFlash() == ESP_OK)
+        ESP_LOGW("ResetTime","Not found reset time in flash, write it in flash for the first time");
+    } else {
+        uint16_t resetTime = Brd_GetResetTime();
+        resetTime++;
+        Brd_SetResetTime(resetTime);
+        if(writeResetTimeToFlash() == ESP_OK) 
+        ESP_LOGW("ResetTime","resetTime:%u",Brd_GetResetTime());
+    }
+
+    Brd_GetStartupTime();
     qLogTx = xQueueCreate(6,sizeof(char *));
     qUartHandle = xQueueCreate(6,sizeof(char *));
     qSTM32Tx = xQueueCreate(4,sizeof(char *));
-    qSTM32Ready = xQueueCreate(1, strlen(MESG_READY_STM32));
+    qSTM32Ready = xQueueCreate(5, strlen(MESG_READY_STM32));
+    tPingHello = xTimerCreate("Timer Hello",pdMS_TO_TICKS(3000),pdTRUE,0,TimerHello_Callback);
+    xTimerStart(tPingHello,10/portTICK_PERIOD_MS);
     Brd_LoadDefaultValue();
     Brd_PrintAllParameter();
     UARTConfig();
     GuiInit();
+    
 }
 
 void STM32_Set_Default_Parameter(char *sOutput){
@@ -173,6 +208,7 @@ void STM32_Set_Default_Parameter(char *sOutput){
         TX_TOTAL_VAN,
         TX_CYC_INTV_TIME,
         TX_INTERVAL_TIME,
+        TX_TRIG_VAN,
     };
 
     for(uint8_t i = 0; i < sizeof(paramToSendSTM32)/sizeof(MesgValTX); i++){
@@ -199,12 +235,7 @@ void SendStringToUART(QueueHandle_t q,char *s)
     else ESP_LOGI("MAIN","Cannot malloc to send queue");
 }
 
-bool STM32_IsReady()
-{
-    EventBits_t e = xEventGroupGetBits(evgUART);
-    if(e & EVT_UART_STM32_READY) return 1;
-    return 0;
-}
+
 
 
 void Setup()
@@ -219,5 +250,6 @@ void Setup()
     xTaskCreate(GUITask, "GUITask", 4096, NULL, 2, taskGUIHandle);
     xTaskCreate(TaskScanButton, "TaskScanButton", 2048, NULL, 1, NULL);
     xTaskCreatePinnedToCore(TaskOnlManage,"TaskOnlManage",4096,NULL,3,taskOnlManage,1);
-
+    STM32_Ready_GUI("Not ready");
+    
 }

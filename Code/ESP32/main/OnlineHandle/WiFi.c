@@ -19,6 +19,20 @@
 #define WIFI_FAIL_BIT      BIT1
 
 static int s_retry_num = 0;
+WiFi_ID wid[] = {
+    {
+        .ssid = "SpiritBoi",
+        .password = "248715121a",
+    },
+    {
+        .ssid = "DONG TAM",
+        .password = "danthang123",
+    },
+    {
+        .ssid = "IoTVision_2.4GHz",
+        .password = "iotvision@2022",
+    }, 
+};
 
 
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -47,7 +61,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_init_sta(void)
+void wifi_init_sta()
 {
     // OnlEvt_CreateEventGroup();
     ESP_ERROR_CHECK(esp_netif_init());
@@ -70,35 +84,38 @@ void wifi_init_sta(void)
                                                         &event_handler,
                                                         NULL,
                                                         &instance_got_ip));
+    ESP_LOGI("WiFi_Station", "wifi_init_sta init done");
+}
 
+
+void wifi_SwitchToWiFiID(WiFi_ID wid)
+{
+    ESP_ERROR_CHECK(esp_wifi_stop());
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = USER_WIFI_SSID,
-            .password = USER_WIFI_PASS,
-            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
-             * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
-             * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
-	     * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
-             */
             .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
     };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    strcpy((char*)wifi_config.sta.ssid,wid.ssid);
+    strcpy((char*)wifi_config.sta.password,wid.password);
+    ESP_LOGW("Switch to","ssid:%s,pass:%s",wid.ssid,wid.password);
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
-
-    ESP_LOGI("WiFi_Station", "wifi_init_sta finished.");
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
     OnlEvt_WaitBit(ONL_EVT_WIFI_CONNECTED | ONL_EVT_WIFI_FAIL,pdFALSE,pdFALSE,portMAX_DELAY);
     if (OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED)) {
-        ESP_LOGI("WiFi_Station", "connected to ap SSID:%s password:%s",USER_WIFI_SSID, USER_WIFI_PASS);
+        ESP_LOGI("WiFi_Station", "connected to ap SSID:%s password:%s",wid.ssid, wid.password);
     } else if(OnlEvt_CheckBit(ONL_EVT_WIFI_FAIL)){
-        ESP_LOGI("WiFi_Station", "Failed to connect to SSID:%s, password:%s",USER_WIFI_SSID, USER_WIFI_PASS);
+        ESP_LOGI("WiFi_Station", "Failed to connect to SSID:%s, password:%s",wid.ssid, wid.password);
     } else {
         ESP_LOGE("WiFi_Station", "UNEXPECTED EVENT");
     }
 }
+
+WiFi_ID wifi_GetID(uint8_t index){return wid[index];}
+uint8_t wifi_GetSizeOfArrayWiFiID(){ return sizeof(wid)/sizeof(WiFi_ID);}

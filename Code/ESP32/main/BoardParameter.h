@@ -128,4 +128,10 @@ uint32_t Brd_GetParamIntValue(ParamIndex index);
 esp_err_t Brd_SetParamStringValueIndex(ParamIndex index,uint8_t *stringValueIndex, char *outputStr);
 uint8_t Brd_GetParamStringValueIndex(ParamIndex index);
 char* Brd_ConvertStringValueIndexToString(uint8_t stringValueIndex);
+void Brd_GetStartupTime();
+void Brd_ESP_CheckResetInNewDay();
+esp_err_t readResetTimeFromFlash();
+esp_err_t writeResetTimeToFlash();
+uint16_t Brd_GetResetTime();
+void Brd_SetResetTime(uint16_t rstTime);
 #endif

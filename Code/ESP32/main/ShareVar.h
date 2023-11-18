@@ -17,6 +17,8 @@
 #define EVT_UART_DELETE_TASK_BIG_SIZE (1<<1)
 #define EVT_UART_OVERSIZE_HW_FIFO (1<<2)
 #define EVT_UART_STM32_READY (1<<3)
+#define EVT_UART_IS_ON_PROCEDURE (1<<4)
+#define EVT_UART_SEND_HELLO_MESSAGE (1<<5)
 extern LCDI2C lcdI2C;
 extern QueueHandle_t qUartHandle,qSTM32Tx,qLogTx;
 extern uart_port_t uartTarget;

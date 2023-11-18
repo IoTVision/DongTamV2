@@ -15,8 +15,6 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 
-#define LED_ERROR_MASK 10
-#define LED_STATUS_MASK 11
 
 #define EVT_BTN_MENU (1<<0)
 #define EVT_BTN_SET (1<<1)

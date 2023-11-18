@@ -76,7 +76,7 @@ void GUITask(void *pvParameter)
     EventBits_t e;
     while(1){
         if(xTaskNotifyWait(pdFALSE,pdTRUE,&e,10/portTICK_PERIOD_MS)){
-            ESP_LOGI("GUITask","Get notify");
+            ESP_LOGI("GUITask","Get notify %lu",e);
             GUI_ClearPointer();
             GUINAV_GetEvent(e);
             GUI_ShowPointer();

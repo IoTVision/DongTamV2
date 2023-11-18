@@ -18,10 +18,10 @@ HTTP_CODE_e onl_HTTP_SendToServer(int a)
         char s[300] = {0};
         snprintf(s,300,  
         "{'IMEI': \"AC67B2F6E568\", 'Power':1, 'FAN':1, 'ODCMode':1, 'ValveError':0, 'VanKich':0, 'DeltaPH':%ld, 'DeltaP':%.2f,'DeltaPL':%ld,'LED10Bar':%u,'RTC': \"%d/%d/%d %d:%d:%d\"}",
-        Brd_GetParamIntValue(INDEX_DP_HIGH),
+        Brd_GetParamIntValue(INDEX_DP_HIGH) + a,
         Brd_GetPressure(),
         Brd_GetParamIntValue(INDEX_DP_LOW),
-        PI_CalcLevelFromPressure(Brd_GetPressure()),
+        PI_CalcLevelFromPressure(Brd_GetPressure())-1,
         t.day,t.month,t.year+2000,t.hour,t.minute,t.second);
         http_code = http_post(URL_POST_IOTVISION_DONGTAM,s);
     }

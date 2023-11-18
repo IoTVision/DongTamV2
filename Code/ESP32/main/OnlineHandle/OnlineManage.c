@@ -9,11 +9,12 @@
 #include "RTC_Format.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "BoardParameter.h"
 TimerHandle_t tOnl,tRTC; 
 TaskHandle_t taskHandleOnl;
 
 RTC_t rtc;
-nvs_handle_t nvsReset;
+
 
 #define TIMER_COUNT_EXPIRE_TRIGGER_RECONNECT 5
 #define TIMER_COUNT_EXPIRE_TRIGGER_PING 10
@@ -67,64 +68,30 @@ void onl_Handle_Reconnect_Sequence(){
     }
 }
 
-esp_err_t readResetTime(uint8_t *resetTime)
-{
-    esp_err_t err;
-    err = nvs_open("Board", NVS_READONLY, &nvsReset);
-    if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-    } 
-    else {
-        size_t sz;
-        err = nvs_get_blob(nvsReset,"RstT",NULL,&sz);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-        err = nvs_get_blob(nvsReset,"RstT",resetTime,&sz);
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    }
-    nvs_close(nvsReset);
-	ESP_LOGI("BoardReadFlash","Read success");
-    return err;
 
-}
-
-esp_err_t writeResetTime(uint8_t *resetTime)
-{
-	esp_err_t err;
-	err = nvs_open("Board", NVS_READWRITE, &nvsReset);
-    if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-    } 
-    else {
-        err = nvs_set_blob(nvsReset,"RstT",(void*)resetTime,sizeof(resetTime));
-        err = nvs_commit(nvsReset);
-    }
-    nvs_close(nvsReset);
-    ESP_LOGI("BoardWriteFlash","Write parameter and close");
-    vTaskDelay(10/portTICK_PERIOD_MS);
-	return err;
-}
 
 void TaskOnlManage(void *pvParameter)
 {
-    uint8_t resetTime = 0;
-    if(readResetTime(&resetTime) != ESP_OK){
-        if(writeResetTime(&resetTime) == ESP_OK)
-        ESP_LOGW("TaskOnl","Not found reset time in flash, write it in flash for the first time");
-    } else {
-        resetTime ++;
-        if(writeResetTime(&resetTime) == ESP_OK) 
-        ESP_LOGW("TaskOnl","resetTime:%u",resetTime);
-    }
+    
     
     ESP_LOGI("TaskOnl","Succesfully created");
     tOnl = xTimerCreate("TimerOnlineManage",pdMS_TO_TICKS(1000),pdTRUE,0,TimerOnline_Callback);
     xTimerStop(tOnl,portMAX_DELAY);
     wifi_init_sta();
+    uint8_t i = 0;
+    while(!OnlEvt_CheckBit(ONL_EVT_WIFI_CONNECTED)){
+        if(i >= wifi_GetSizeOfArrayWiFiID()) i = 0;
+        else {
+            WiFi_ID wid = wifi_GetID(i);
+            wifi_SwitchToWiFiID(wid);
+            i++; 
+        }
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
     while (1){
         onl_Handle_Reconnect_Sequence();
-        onl_HTTP_SendToServer((int)resetTime);
-        printf("%lu\n",esp_get_free_heap_size());
-        vTaskDelay(2000/portTICK_PERIOD_MS);
+        onl_HTTP_SendToServer(Brd_GetResetTime());
+        vTaskDelay(10/portTICK_PERIOD_MS);
     }
     
 }

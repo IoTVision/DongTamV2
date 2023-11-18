@@ -1,5 +1,6 @@
 #include "PressureIndicator.h"
 #include "BoardParameter.h"
+#include "math.h"
 HC595 LedBar;
 
 void PI_SetLevel(uint8_t level){
@@ -24,9 +25,9 @@ uint8_t PI_CalcLevelFromPressure(float val)
 	uint32_t dpLow = Brd_GetParamIntValue(INDEX_DP_LOW);
 	uint32_t dpStep = (uint32_t)((dpHigh - dpLow)/10); 
 	uint32_t a = dpLow + dpStep;
-    if(val > dpHigh) return INDICATOR_MAX_LEVEL;
+    if(abs(val) > dpHigh) return INDICATOR_MAX_LEVEL;
 	for(uint8_t i=2; i <= 10;i++){
-		if(a > val){
+		if(a > abs(val)){
 			return i; // return level of pressure indicator
 		} else {
 			a += dpStep;

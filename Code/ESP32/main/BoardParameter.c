@@ -6,10 +6,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 BoardParameter brdParam;
 nvs_handle_t brdNVS_Storage;
+nvs_handle_t nvsReset;
+uint16_t resetTime = 0;
+uint64_t espStartupTime = 0;
 extern const char *paramText[];
-
 char *Brd_NVS_Key[] = {
     "StartParam", //not use
     "TotalVan:",
@@ -568,8 +571,8 @@ void Brd_LoadDefaultValue()
     } 
     else {
         // force this parameter to off value value when initialize
-        uint8_t trigVanValueOff = 1;
-        Brd_SetParamStringValueIndex(INDEX_TRIG_VAN,&trigVanValueOff,NULL);
+        // uint8_t trigVanValueOff = 1;
+        // Brd_SetParamStringValueIndex(INDEX_TRIG_VAN,&trigVanValueOff,NULL);
         return;
     }
 }
@@ -586,6 +589,65 @@ esp_err_t Brd_SetRTC(RTC_t t)
     brdParam.RTCtime = t;
     return ESP_OK;
     
+}
+void Brd_GetStartupTime()
+{
+    espStartupTime = esp_timer_get_time();
+    ESP_LOGI("StartupTime","%llu",espStartupTime); 
+}
+
+//86400000000
+
+/**
+ * @brief Vì ESP32 chạy không ổn định trong thời gian dài nên cần phải reset định kỳ khi bắt đầu ngày mới
+ */
+void Brd_ESP_CheckResetInNewDay()
+{
+    RTC_t t = Brd_GetRTC();
+    // 1.5 day
+    if(esp_timer_get_time() - espStartupTime > 129600000000 ){
+        if(t.hour == 0) esp_restart();
+    }
+}
+
+uint16_t Brd_GetResetTime(){return resetTime;}
+void Brd_SetResetTime(uint16_t rstTime){resetTime = rstTime;} 
+
+esp_err_t readResetTimeFromFlash()
+{
+    esp_err_t err;
+    err = nvs_open("Board", NVS_READONLY, &nvsReset);
+    if (err != ESP_OK) {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    } 
+    else {
+        size_t sz;
+        err = nvs_get_blob(nvsReset,"RstT",NULL,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+        err = nvs_get_blob(nvsReset,"RstT",&resetTime,&sz);
+        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
+    }
+    nvs_close(nvsReset);
+	ESP_LOGI("BoardReadFlash","Read success");
+    return err;
+
+}
+
+esp_err_t writeResetTimeToFlash()
+{
+	esp_err_t err;
+	err = nvs_open("Board", NVS_READWRITE, &nvsReset);
+    if (err != ESP_OK) {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    } 
+    else {
+        err = nvs_set_blob(nvsReset,"RstT",(void*)&resetTime,sizeof(resetTime));
+        err = nvs_commit(nvsReset);
+    }
+    nvs_close(nvsReset);
+    ESP_LOGI("BoardWriteFlash","Write parameter and close");
+    vTaskDelay(10/portTICK_PERIOD_MS);
+	return err;
 }
 
 void Brd_SetPressure(float pressure){brdParam.pressure = pressure;}

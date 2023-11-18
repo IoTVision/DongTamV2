@@ -23,6 +23,8 @@ typedef enum MesgValTX{
 	TX_INTERVAL_TIME,// below this is data type that not belong to integer, above this is integer
 	TX_SET_TIME,
 	TX_GET_TIME,
+	TX_IS_ON_PROCEDURE,
+	TX_HELLO_STM32,
 }MesgValTX;
 
 
@@ -43,6 +45,8 @@ typedef enum MesgValRX{
 	RX_PRESSURE,
 	RX_START_TIME_FORMAT,//mark from this to below will get time format
 	RX_CURRENT_TIME,
+	RX_START_BOOLEAN,//mark from this to below will get request TRUE or FALSE
+	RX_VAN_PROC_STATE,
 	RX_END_MESSAGE,
 }MesgValRX;
 

@@ -10,8 +10,11 @@
 // #include "wifi_manager.h"
 
 #include "esp_mac.h"
-#define USER_WIFI_SSID "IoTVision_2.4GHz"
-#define USER_WIFI_PASS "iotvision@2022"
+
+typedef struct WiFi_ID{
+    char ssid[32];
+    char password[64];
+}WiFi_ID;
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
@@ -31,5 +34,8 @@
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
 #endif
 
-void wifi_init_sta(void);
+void wifi_init_sta();
+WiFi_ID wifi_GetID(uint8_t index);
+uint8_t wifi_GetSizeOfArrayWiFiID();
+void wifi_SwitchToWiFiID(WiFi_ID wid);
 #endif
