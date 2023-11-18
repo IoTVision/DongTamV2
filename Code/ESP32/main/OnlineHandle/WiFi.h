@@ -16,6 +16,9 @@ typedef struct WiFi_ID{
     char password[64];
 }WiFi_ID;
 
+
+
+
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
 #elif CONFIG_ESP_WIFI_AUTH_WEP

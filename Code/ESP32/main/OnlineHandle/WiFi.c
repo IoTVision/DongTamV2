@@ -21,16 +21,20 @@
 static int s_retry_num = 0;
 WiFi_ID wid[] = {
     {
-        .ssid = "SpiritBoi",
-        .password = "248715121a",
-    },
-    {
         .ssid = "DONG TAM",
         .password = "danthang123",
     },
     {
+        .ssid = "SpiritBoi",
+        .password = "248715121a",
+    },
+    {
         .ssid = "IoTVision_2.4GHz",
         .password = "iotvision@2022",
+    },
+    {
+        .ssid = "NDH",
+        .password = "12345678",
     }, 
 };
 
@@ -93,7 +97,7 @@ void wifi_SwitchToWiFiID(WiFi_ID wid)
     ESP_ERROR_CHECK(esp_wifi_stop());
     wifi_config_t wifi_config = {
         .sta = {
-            .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+            .threshold.authmode = WIFI_AUTH_WPA_WPA2_PSK,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
     };
