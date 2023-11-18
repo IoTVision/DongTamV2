@@ -36,6 +36,7 @@ typedef struct BoardParameter
     uint16_t timerArray[4];// 1 for pulse time, 2 for interval time, 3 for Cycle interval time and 4 is sending pressure periodicly
     RTC_t RTCtime;
     bool HC165_state;
+    bool IsConnectESP32;
 }BoardParameter;
 
 
@@ -79,6 +80,10 @@ HAL_StatusTypeDef Brd_SetRTC(RTC_t t);
 HAL_StatusTypeDef Brd_SetCycleTime(uint16_t val);
 HAL_StatusTypeDef Brd_SetTimerArray(uint8_t element, uint16_t val);
 HAL_StatusTypeDef Brd_SetCycleIntervalTime(uint16_t val);
+
+bool Brd_ESP32_IsConnected();
+void Brd_ESP32_SetConnectIsTrue();
+void Brd_ESP32_SetConnectIsFalse();
 
 
 HAL_StatusTypeDef Brd_SendingPressurePeriodicly(char* pressureStr,char *currentTimeStr);

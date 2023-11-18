@@ -18,6 +18,8 @@ const char* strRxKey[] = {
 	"GetTime",
 	"Do nothing",
 	"SetTime",
+	"Do nothing",
+	"IsOnProcedure",
 };
 
 const char* strTxKey[] = {
@@ -26,12 +28,13 @@ const char* strTxKey[] = {
 	"Van: ",
 	"VanState: ",
 	"Time: ",
-	"P: ",
+	"Pressure: ",
 	"TotalVan: ",
 	"PulseTime: ",
 	"IntervalTime: ",
 	"CycleIntervalTime: ",
-	"CurrentTime: "
+	"CurrentTime: ",
+	"VanProcState: ",
 };
 
 HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputStr);
@@ -84,6 +87,9 @@ HAL_StatusTypeDef MessageTxHandle(MesgValTX mesgValTX,char *outputStr)
 	case TX_CYC_INTV_TIME:
 		sprintf((s+len),"%u",Brd_GetCycleIntervalTime());
 		break;
+	case TX_VAN_IS_ON_PROCEDURE:
+		sprintf((s+len),"%u",Brd_GetVanProcState());
+		break;
 	default:
 		break;
 	}
@@ -116,7 +122,14 @@ HAL_StatusTypeDef MessageRxHandle(char *inputStr, char* outputStr)
 		if(strstr(inputStr,strRxKey[i]))
 			return MesgGetValue(i,inputStr,outputStr);
 	}
-	return HAL_OK;
+	if(!strcmp(inputStr,"Hello STM32")){
+		strcpy(outputStr,"Hello ESP32");
+		Brd_ESP32_SetConnectIsTrue();
+		memset(inputStr,0,strlen(inputStr));
+		return HAL_OK;
+	}
+	memset(inputStr,0,strlen(inputStr));
+	return HAL_ERROR;
 }
 
 /**
@@ -139,9 +152,11 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 			if(outputStr) strcpy(outputStr,"--->Cannot parse value\n");
 			return HAL_ERROR;
 		}
-	} else if (mesgValRX > RX_START_TIME_FORMAT){
+	} else if (mesgValRX > RX_START_TIME_FORMAT && mesgValRX < RX_START_BOOLEAN){
 		t = RTC_GetTimeFromString(inputStr);
 		if(Brd_SetRTC(t) == HAL_ERROR) return HAL_ERROR;
+	} else if (mesgValRX > RX_START_BOOLEAN){
+		__NOP();
 	}
 	switch(mesgValRX){
 		case RX_SET_VAN:
@@ -171,6 +186,10 @@ HAL_StatusTypeDef MesgGetValue(MesgValRX mesgValRX, char*inputStr,char *outputSt
 		case RX_INTERVAL_TIME:
 			pValRet = Brd_SetIntervalTime(val);
 			if(pValRet == HAL_OK) MessageTxHandle(TX_INTERVAL_TIME,outputStr);
+			break;
+		case RX_VAN_IS_ON_PROCEDURE:
+			MessageTxHandle(TX_VAN_IS_ON_PROCEDURE, outputStr);
+			return HAL_OK;
 			break;
 		case RX_TRIG_VAN:
 			if(val) {

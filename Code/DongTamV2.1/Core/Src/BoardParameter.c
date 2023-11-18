@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 
-#define BRD_SENDING_PRESSURE_PERIODIC_MS 5000
+#define BRD_SENDING_PRESSURE_PERIODIC_MS 3000
 
 BoardParameter brdParam;
 extern UART_HandleTypeDef huart3;
@@ -371,6 +371,9 @@ PCF8563_Handle* Brd_GetAddress_PCF8563(){return &brdParam.pcf;}
 AMS5915* Brd_GetAddress_AMS5915(){return &brdParam.ams;}
 bool Brd_GetHC165State(void){return brdParam.HC165_state;}
 
+bool Brd_ESP32_IsConnected(){return brdParam.IsConnectESP32;}
+void Brd_ESP32_SetConnectIsTrue(){brdParam.IsConnectESP32 = 1;}
+void Brd_ESP32_SetConnectIsFalse(){brdParam.IsConnectESP32 = 0;}
 
 int8_t LogDataValue(char *s,uint32_t value)
 {
