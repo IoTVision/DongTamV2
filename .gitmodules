@@ -1,12 +1,15 @@
 [submodule "Code/ESP32/DongTamESP32/components"]
 	path = Code/ESP32/DongTamESP32/components
-	url = https://github.com/IoTVision/ESP32_FirmwareLibrary.git
+	url = https://github.com/TM-khoa/STM32-Library.git
 [submodule "Code/DongTamV2/IoTVision_STM32Library"]
 	path = Code/DongTamV2/IoTVision_STM32Library
-	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
+	url = https://github.com/TM-khoa/STM32-Library.git
 [submodule "Code/DongTamV2/Lib"]
 	path = Code/DongTamV2/Lib
-	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
+	url = https://github.com/TM-khoa/STM32-Library.git
 [submodule "Code/DongTamV2.1/IoTVision_STM32Library"]
 	path = Code/DongTamV2.1/IoTVision_STM32Library
-	url = https://github.com/IoTVision/STM32_FirmwareLibrary.git
+	url = https://github.com/TM-khoa/STM32-Library.git
+[submodule "Code/ESP32/components"]
+	path = Code/ESP32/components
+	url = https://github.com/TM-khoa/ESP32-Library.git
